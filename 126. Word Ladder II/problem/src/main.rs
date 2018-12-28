@@ -1,3 +1,5 @@
+pub struct Solution {}
+
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::usize;
@@ -31,20 +33,13 @@ impl PartialOrd for State {
     }
 }
 
-fn convert_vector(vs: Vec<&str>) -> Vec<String> {
-    vs.iter().map(|&e| e.to_string()).collect::<Vec<_>>()
-}
-
 fn vec_idx_to_str(vs: &Vec<usize>, usize_to_str: &Vec<String> ) -> Vec<String> {
     vs.iter().map(|&e| usize_to_str[e].clone()).collect::<Vec<_>>()
 }
 
 /// Computes a simplified lex distance
 pub fn lex_distance(s1: &str, s2: &str) -> u16
-//pub fn  lex_distance<S>( p1: S, p2: S ) -> u16  where S: Into<&String>
-{
-    //let s1 : &String = p1.into();
-    //let s2 : &String = p2.into();
+{    
     let mut diff_count = 0;
 
     for (c1, c2) in s1.chars().zip(s2.chars()) {
@@ -66,7 +61,7 @@ fn test_lex_distance() {
     assert_eq!(4, lex_distance("abcd", "bcd"));
 }
 
-pub struct Solution {}
+
 
 impl Solution {
     pub fn find_ladders(
@@ -84,10 +79,8 @@ impl Solution {
 
         let mut adj_list: Vec<Vec<usize>> = vec![Vec::new(); word_list.len()];
 
-        let mut all_paths = Vec::new();
-
         if word_list.iter().find(|&x| *x == end_word).is_none() {
-            return all_paths;
+            return Vec::new();
         }
 
         let mut start: Option<usize> = None;
@@ -144,8 +137,6 @@ impl Solution {
             // a lower cost going through this node
             for neighbor_node in &adj_list[position] {
 
-                
-
                 let next = State {
                     cost: cost + 1,
                     position: *neighbor_node,
@@ -173,13 +164,14 @@ impl Solution {
                             assert!(cost <= p_cost);
                         }
                     }
-                    //if prev[next.position].is_empty() {
-                    prev[next.position].push(position);
-                    //}
+                    if !prev[next.position].contains(&position) {
+                        prev[next.position].push(position);
+                    }
                 }
             }
         }
 
+/*
         println!("distance from start {} to end {} is {}", start, stop, dist[stop]);
         println!("Adj list is {:?}", adj_list);
         for (i, item) in prev.iter().enumerate() {
@@ -194,21 +186,85 @@ impl Solution {
                 dist[i]
             );
         }
-        let mut x = Vec::new();
-        x.push(convert_vector(vec!["hit", "hot", "dot", "dog", "cog"]));
-        x.push(convert_vector(vec!["hit", "hot", "lot", "log", "cog"]));
-        return x;
+*/
+        if dist[stop] == usize::MAX {
+            return Vec::new();
+        }
+
+        //the +1 is because the distance is edges and we want # of nodes
+        let min_sol_length = dist[stop] + 1;
+        
+        let mut all_paths : Vec<Vec<usize>> = Vec::new();
+
+        //generate all_paths from the prev lists
+        all_paths.push( vec![stop] );
+
+        while all_paths[0].len() < min_sol_length
+        {
+            let all_path_cur_len = all_paths.len();
+
+            for all_path_index in 0..all_path_cur_len
+            {
+                let last_node:usize;
+                {
+                    //This adds on the 1st prev node to the end of the path
+                    let path : &mut Vec<usize> = &mut all_paths[all_path_index];
+                    last_node = *path.last().unwrap();                    
+                    path.push( prev[last_node][0] );
+                }
+
+                //if we had more than 1 choice, we need to clone new paths 
+                for prev_node in prev[last_node].iter().skip(1)
+                {                    
+                    let mut new_path = all_paths[all_path_index].clone();
+                    //Since we added a node already above
+                    *new_path.last_mut().unwrap() = *prev_node ;
+                    all_paths.push(new_path);                    
+                }
+                
+            }
+        }
+
+        //convert nodes to strings
+        let mut all_path_strings: Vec<Vec<String>> = Vec::new();
+
+        for p in all_paths.iter() {
+            let ps = p.iter().rev().map( |n| word_list[*n].clone()).collect::<Vec<String>>();
+            all_path_strings.push(ps);
+        }
+
+        return all_path_strings;
     }
 }
 
 fn main() {
-    let checks: [((&'static str, &'static str, Vec<&str>), Vec<Vec<&str>>); 1] = [(
+    let checks: [((&'static str, &'static str, Vec<&str>), Vec<Vec<&str>>); 3] = [(
         ("hit", "cog", vec!["hot", "dot", "dog", "lot", "log", "cog"]),
         vec![
-            vec!["hit", "hot", "dot", "dog", "cog"],
             vec!["hit", "hot", "lot", "log", "cog"],
+            vec!["hit", "hot", "dot", "dog", "cog"],
+            
         ],
-    )];
+    ),
+    
+ (   ("hot",
+    "dog",
+vec!["hot","dog"]),
+vec![]
+),
+
+(( "red",
+"tax",
+vec!["ted","tex","red","tax","tad","den","rex","pee"]),
+
+vec![
+    vec!["red","ted","tad","tax"],
+    vec!["red","rex","tex","tax"],
+    vec!["red","ted","tex","tax"]
+    
+    ]
+)
+    ];
 
     println!("Hello, world!");
 
