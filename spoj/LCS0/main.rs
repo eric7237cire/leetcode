@@ -50,7 +50,7 @@ impl BitLCS
     ///Initializes a_strings with the given string
     fn alphastrings(&mut self, s: &[usize]) 
     {
-        println!("S length={}", s.len());
+        //println!("S length={}", s.len());
         self.a_len = s.len();
         let nwords = (s.len() + WLEN - 1) / WLEN;
         
@@ -66,10 +66,12 @@ impl BitLCS
 
 
     /*** debug ***/
+    /*
         for i in 0..self.alpha.len() {
             println!("%c-string : {}", self.alpha[i]);
             self.debug_print(&self.a_strings[i]);            
         }
+        */
     /*** debug ended ***/
 
         return;
@@ -192,13 +194,14 @@ fn main() {
     //println!("{}", ans);
 
     
-    let alpha : [char;4] = ['a', 'c', 'g', 't'];
+    // let alpha : [char;4] = ['a', 'c', 'g', 't'];
+    let alpha : [char;26] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p','q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];	/* alphabet */
     let mut lcs = BitLCS::init(alpha.iter());
     
-    println!("String A: {:?}", line1.chars().rev().collect::<String>());
+    //println!("String A: {:?}", line1.chars().rev().collect::<String>());
     let str1: Vec<usize> = lcs.to_index_vec(line1.chars().rev());
     let str2: Vec<usize> = lcs.to_index_vec(line2.chars().rev());
-    println!("String A: {:?}", str1);
+    //println!("String A: {:?}", str1);
 
     lcs.alphastrings(&str1);
 
