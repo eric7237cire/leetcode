@@ -1,0 +1,7 @@
+[package]
+name = "codewars"
+version = "0.1.0"
+authors = ["eg-novelt <eg@novel-t.ch>"]
+edition = "2018"
+
+[dependencies]
