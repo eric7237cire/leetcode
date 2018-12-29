@@ -1,3 +1,24 @@
+//Far more succinct solution: https://www.codewars.com/kata/reviews/589c4c614aa12cb8bc001a32/groups/5bc60d8adcb0ac1e02000886
+/*
+fn prime_factors(n: i64) -> String {
+  let mut n = n as u64;
+  let mut d = 2;
+  let mut mem = std::collections::BTreeMap::new();
+  while d <= n {
+    if n % d == 0 {
+      n /= d;
+      let old = mem.entry(d).or_insert(0);
+      *old += 1;
+    } else {
+      d += 1;
+    }
+  }
+  mem.iter().map(|(key, val)| match *val {
+    1 => format!("({})", key),
+    _ => format!("({}**{})", key, val),
+  }).collect::<String>()
+}
+*/
 fn prime_factors(n: i64) -> String {
     let mut n: u64 = n as u64;
     let n2 = (n as f64).sqrt() as u64 + 1;
