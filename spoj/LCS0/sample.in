@@ -1,0 +1,22 @@
+ctaccatctt
+ctatgtacaa
+abababab
+bcbb
+
+string 'a': CTACCATCTT
+string 'b': CTATGTACAA
+A-string :  0010010000
+C-string :  1001100100
+G-string :  0000000000
+T-string :  0100001011
+row[ 1] :   0000010000
+row[ 2] :   0010010000
+row[ 3] :   1000100100
+row[ 4] :   0010010100
+row[ 5] :   0110001001
+row[ 6] :   0110001001
+row[ 7] :   0110000011
+row[ 8] :   0100010011
+row[ 9] :   0100001011
+row[10] :   1000100111
+Bit-lcs:    5, %length(ave): 50%

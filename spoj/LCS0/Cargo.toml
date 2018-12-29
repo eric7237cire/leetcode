@@ -1,0 +1,11 @@
+[package]
+name = "LCS0"
+version = "0.1.0"
+authors = ["eg-novelt <eg@novel-t.ch>"]
+edition = "2018"
+
+[dependencies]
+
+[[bin]]
+name = "LCS0"
+path = "main.rs"
