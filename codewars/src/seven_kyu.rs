@@ -37,3 +37,28 @@ fn fixed_tests() {
     assert_eq!(encode("scout".to_string(), 1939), vec![20, 12, 18, 30, 21]);
     assert_eq!(encode("masterpiece".to_string(), 1939), vec![14, 10, 22, 29, 6, 27, 19, 18, 6, 12, 8]);
 }
+
+fn new_avg(arr: &[f64], newavg: f64) -> Option<i32> {
+    match newavg*(1+arr.len()) as f64 - arr.iter().sum::<f64>() {
+        n if n >= 0f64 => Some( n.ceil() as i32),
+        _ => None
+    }
+}
+
+//use std::time::Instant;
+
+fn test_new_avg(arr: &[f64], newavg: f64, exp: Option<i32>) -> () {
+  assert_eq!(exp, new_avg(arr, newavg))
+}
+
+#[test]
+fn new_avg_tests() {
+  let a1 = [14.0, 30.0, 5.0, 7.0, 9.0, 11.0, 16.0];
+  test_new_avg(&a1, 90.0, Some(628));
+  let a2 = [14.0, 30.0, 5.0, 7.0, 9.0, 11.0, 15.0];
+  test_new_avg(&a2, 92.0, Some(645));
+  let a3 = [14.0, 30.0, 5.0, 7.0, 9.0, 11.0, 15.0];
+  test_new_avg(&a3, 2.0, None);
+  let a4 = [14000.25, 300.76, 50.56, 70.0, 90.0, 11.0, 150.48, 1200.98];
+  test_new_avg(&a4, 4800.0, Some(27326));
+}
