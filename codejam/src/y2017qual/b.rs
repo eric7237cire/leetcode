@@ -24,24 +24,24 @@ fn solve(n_str:&str) -> usize {
     debug!("n_str={}", n_str);
     let mut number: Vec<u8> = n_str.chars().filter(|c| c.is_digit(10)).map( |c| c.to_digit(10).unwrap() as u8 ).collect();
 
-    let mut max_digit = 0u8;
     // Keep track of first instance of max digit
-    let mut max_digit_pos = 0;
+    let mut max_digit_pos : Option<usize> = None;
     for pos in 0..number.len() {
 
         let digit = number[pos];
-        if digit > max_digit {
-            max_digit_pos = pos;
+        match max_digit_pos {
+            Some(max_d_pos) if digit > number[max_d_pos] => max_digit_pos = Some(pos),
+            None => max_digit_pos = Some(pos),
+            _ => ()
         }
-
-        if digit >= max_digit {
-            max_digit = digit;
+        let max_digit_pos = max_digit_pos.unwrap();
+        if digit >= number[max_digit_pos] {
             continue;
         }
 
         number[max_digit_pos] -= 1;
-        for j in max_digit_pos+1..number.len() {
-            number[j] = 9;
+        for n in number.iter_mut().skip(max_digit_pos+1) {
+            *n = 9;
         }
     }
 
