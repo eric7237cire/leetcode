@@ -1,5 +1,7 @@
 
-//use y2017qual::a;
+//use self::y2017qual::a::solve_case;
+#![allow(dead_code)]
+use self::y2017qual::b::solve_case;
 mod y2017qual;
 
 #[macro_use] extern crate log;
@@ -27,7 +29,7 @@ fn main() {
                    .build(LevelFilter::Debug))
         .unwrap();
 
-    let handler = log4rs::init_config(config).unwrap();
+    let _handler = log4rs::init_config(config).unwrap();
 
     //println!("Hello, world!");
     debug!("[bar] debug");
@@ -37,8 +39,8 @@ fn main() {
     for case in 1..=t
     {
         debug!("Solving case {}", case);
-        println!("Case #{}:", case);
-        y2017qual::a::solve_case();        
+        print!("Case #{}: ", case);
+        solve_case();        
     }
     
 }
