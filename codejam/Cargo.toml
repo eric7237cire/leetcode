@@ -1,0 +1,9 @@
+[package]
+name = "codejam"
+version = "0.1.0"
+authors = ["eric7237cire <eric7237cire@hotmail.fr>"]
+edition = "2018"
+
+[dependencies]
+log4rs = "0.8.1"
+log = "*"
