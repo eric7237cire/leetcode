@@ -1,7 +1,7 @@
 
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
-use self::y2017qual::b::solve_case;
+use self::y2017qual::c::solve_case;
 mod y2017qual;
 
 #[macro_use] extern crate log;
@@ -18,12 +18,14 @@ use std::io::stdin;
 fn main() {
     //Init logging
     let logfile = FileAppender::builder()
+        .append(false)
         .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
         .build("log/output.log")
         .unwrap();
 
     let config = Config::builder()
         .appender(Appender::builder().build("logfile", Box::new(logfile)))
+        
         .build(Root::builder()
                    .appender("logfile")
                    .build(LevelFilter::Debug))
@@ -32,7 +34,7 @@ fn main() {
     let _handler = log4rs::init_config(config).unwrap();
 
     //println!("Hello, world!");
-    debug!("[bar] debug");
+    debug!("debug");
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
