@@ -1,10 +1,11 @@
 use std::collections::HashSet;
 use std::fmt;
 use std::io::stdin;
-use std::mem;
 use std::thread;
 
 type BoardInt = i32;
+//true means spot is free, false is taken/unavailable
+type BoardVV = Vec<Vec<bool>>;
 #[derive(PartialEq, Debug, Eq, Hash, Clone)]
 struct RowCol(BoardInt, BoardInt);
 
@@ -77,8 +78,6 @@ pub fn solve_all_cases()
         // collect each child thread's return-value
         print!("{}", child.join().unwrap());
     }
-    //let ans = solve(nums[0], nums[1]);
-    //println!("{} {}", ans.0, ans.1);
 }
 
 fn solve(
@@ -88,134 +87,113 @@ fn solve(
     existing_rooks: Vec<RowCol>,
 ) -> String
 {
-    //debug!("Solving case {}", case_num);
+    let rooks = b.add_pieces(true);
+    let bishops = b.add_pieces(false);
 
-    let mut b = Board::new(n as BoardInt);
+    let score = b.existing_bishops.len() + bishops.len() + b.existing_rooks.len() + rooks.len();
 
-    b.existing_bishops = existing_bishops;
-    b.existing_rooks = existing_rooks;
-
-    b.solution(true);
-    b.solution(false);
-
-    let score = b.existing_bishops.len() + b.bishops.len() + b.existing_rooks.len() + b.rooks.len();
-
-    let mut added_pieces: HashSet<RowCol> = b.rooks.iter().map(|rc| rc.clone()).collect();
-    added_pieces.extend(b.bishops.iter().map(|rc| rc.clone()));
+    let mut added_pieces: HashSet<RowCol> = rooks.iter().map(|rc| rc.clone()).collect();
+    added_pieces.extend(bishops.iter().map(|rc| rc.clone()));
 
     let mut answer_str = format!("Case #{}: {} {}\n", case_num, score, added_pieces.len());
 
-    answer_str += &b.write_solution_lines();
+    answer_str += &b.write_solution_lines(&rooks, &bishops);
 
     return answer_str;
 }
 
 struct Board
 {
-    N: BoardInt,
-    rooks: Vec<RowCol>,
-    bishops: Vec<RowCol>,
-
+    n: BoardInt,
     existing_bishops: Vec<RowCol>,
     existing_rooks: Vec<RowCol>,
-
-    board: Vec<Vec<bool>>,
-    pivot_board: Vec<Vec<bool>>,
 }
 
 impl Board
 {
-    fn new(size: BoardInt) -> Board
+    fn new(n: BoardInt,existing_bishops: Vec<RowCol>,
+    existing_rooks: Vec<RowCol>,) -> Board
     {
         Board {
-            N: size,
-            rooks: Vec::new(),
-            bishops: Vec::new(),
-
-            existing_bishops: Vec::new(),
-            existing_rooks: Vec::new(),
-
-            board: vec![vec![false; size as usize]; size as usize],
-            pivot_board: Vec::new(),
+            n,
+            existing_bishops,
+            existing_rooks,
         }
     }
 
     fn convert_to_tilted_board_coords(&self, row: BoardInt, col: BoardInt) -> RowCol
     {
         // https://math.stackexchange.com/questions/383321/rotating-x-y-points-45-degrees
-        RowCol(row + col, col - row + self.N)
+        RowCol(row + col, col - row + self.n)
     }
 
     fn convert_to_board_coords(&self, row: BoardInt, col: BoardInt) -> RowCol
     {
         // Kind of guessed this one, looks the translation needs to be spread around too
-        RowCol(((row - col) + self.N) / 2, ((row + col) - self.N) / 2)
+        RowCol(((row - col) + self.n) / 2, ((row + col) - self.n) / 2)
     }
 
     fn convert_to_board_coords_opt(&self, row: BoardInt, col: BoardInt) -> Option<RowCol>
     {
-        if ((row - col) + self.N) % 2 != 0 {
+        if ((row - col) + self.n) % 2 != 0 {
             return None;
         }
-        if ((row + col) - self.N) % 2 != 0 {
+        if ((row + col) - self.n) % 2 != 0 {
             return None;
         }
         // Kind of guessed this one, looks the translation needs to be spread around too
-        let ret = RowCol(((row - col) + self.N) / 2, ((row + col) - self.N) / 2);
+        let ret = RowCol(((row - col) + self.n) / 2, ((row + col) - self.n) / 2);
 
-        if ret.0 < 0 || ret.0 >= self.N {
+        if ret.0 < 0 || ret.0 >= self.n {
             return None;
         }
-        if ret.1 < 0 || ret.1 >= self.N {
+        if ret.1 < 0 || ret.1 >= self.n {
             return None;
         }
         return Some(ret);
     }
 
-    fn create_pivot_board(&mut self)
+    fn create_pivot_board(&self) -> BoardVV
     {
-        self.pivot_board = vec![vec![false; 2 * self.N as usize]; 2 * self.N as usize];
+        let mut board = vec![vec![false; 2 * self.n as usize]; 2 * self.n as usize];
 
-        for row in 0..self.N {
-            for col in 0..self.N {
+        for row in 0..self.n {
+            for col in 0..self.n {
                 // 45 rotation, x+y, y-x
                 // and a translation up N to avoid nulls
                 let coords = self.convert_to_tilted_board_coords(row, col);
                 //Only pivot-able coordinates are open/true
-                self.pivot_board[coords.0 as usize][coords.1 as usize] = true;
+                board[coords.0 as usize][coords.1 as usize] = true;
 
                 let check_coords = self.convert_to_board_coords(coords.0, coords.1);
                 assert_eq!(RowCol(row, col), check_coords);
             }
         }
 
-        mem::swap(&mut self.board, &mut self.pivot_board);
-        self.pivot_board.clear();
-        //self.board = self.pivot_board;
+        board
     }
 
-    fn write_solution_lines(&self) -> String
+    fn write_solution_lines(&self, rooks: &Vec<RowCol>, bishops: &Vec<RowCol>) -> String
     {
         let mut ret_str = String::new();
-        let n_rows = self.board.len();
-        let n_cols = self.board[0].len();
-        for row in 0..n_rows {
-            for col in 0..n_cols {
+        
+        for row in 0..self.n {
+            for col in 0..self.n {
                 let coord = RowCol(row as BoardInt, col as BoardInt);
                 let rc_str = format!(" {} {}\n", row + 1, col + 1);
 
-                if self.bishops.contains(&coord)
-                    && (self.rooks.contains(&coord) || self.existing_rooks.contains(&coord))
+                if bishops.contains(&coord)
+                    && (rooks.contains(&coord) || self.existing_rooks.contains(&coord))
                 {
                     ret_str += "o";
                     ret_str += &rc_str;
-                } else if self.rooks.contains(&coord) && self.existing_bishops.contains(&coord) {
+                } else if rooks.contains(&coord) && self.existing_bishops.contains(&coord) {
                     ret_str += "o";
                     ret_str += &rc_str;
-                } else if self.rooks.contains(&coord) {
+                } else if rooks.contains(&coord) {
                     ret_str += "x";
                     ret_str += &rc_str;
-                } else if self.bishops.contains(&coord) {
+                } else if bishops.contains(&coord) {
                     ret_str += "+";
                     ret_str += &rc_str;
                 }
@@ -225,17 +203,17 @@ impl Board
         ret_str
     }
 
-    fn set_col(&mut self, col: usize, v: bool)
+    fn set_col(&self, board: &mut BoardVV, col: usize, v: bool)
     {
-        for r in 0usize..self.board.len() {
-            self.board[r][col] = v;
+        for r in 0usize..board.len() {
+            board[r][col] = v;
         }
     }
 
-    fn set_row(&mut self, row: usize, v: bool)
+    fn set_row(&self, board: &mut BoardVV, row: usize, v: bool)
     {
-        for c in 0usize..self.board.len() {
-            self.board[row][c] = v;
+        for c in 0usize..board.len() {
+            board[row][c] = v;
         }
     }
 
@@ -269,47 +247,41 @@ impl Board
     }
 
     #[cfg(not(feature = "debug_print"))]
-    fn print_board(&self, is_rooks: bool)
+    fn print_board(&self, _: bool)
     {
+        //Do nothing, compiled out
     }
 
-    fn solution(&mut self, is_rooks: bool)
+    fn add_pieces(&self, is_rooks: bool) -> Vec<RowCol>
     {
+        let mut board : BoardVV;
         if is_rooks {
-            self.board = vec![vec![true; self.N as usize]; self.N as usize];
+            board = vec![vec![true; self.n as usize]; self.n as usize];
             self.print_board(is_rooks);
-            let rooks_clone = self.existing_rooks.clone();
-            let rook_it = rooks_clone.iter();
-            for RowCol(row, col) in rook_it {
-                self.set_row(*row as usize, false);
-                self.set_col(*col as usize, false);
+            
+            for RowCol(row, col) in self.existing_rooks.iter() {
+                self.set_row(&mut board, *row as usize, false);
+                self.set_col(&mut board, *col as usize, false);
             }
-            debug!("After placing {} existing rooks", self.existing_rooks.len());
-            self.print_board(is_rooks);
+           
         } else {
-            self.create_pivot_board();
-
-            let bishops_clone = self.existing_bishops.clone();
-            for RowCol(row, col) in bishops_clone.iter() {
+            board = self.create_pivot_board();
+            for RowCol(row, col) in  self.existing_bishops.iter() {
                 let t_rc = self.convert_to_tilted_board_coords(*row, *col);
 
-                self.set_row(t_rc.0 as usize, false);
-                self.set_col(t_rc.1 as usize, false);
+                self.set_row(&mut board,t_rc.0 as usize, false);
+                self.set_col(&mut board,t_rc.1 as usize, false);
             }
-            debug!(
-                "After placing {} existing bishops",
-                self.existing_bishops.len()
-            );
-            self.print_board(is_rooks);
+            
+            
         }
 
-        let n_rows = self.board[0].len();
+        let n_rows = board[0].len();
         let mut piece_array: Vec<RowCol> = Vec::new();
 
         for index in 0..n_rows {
             // Find row with smallest number of empty columns (value 0)
-            let mut row_sums: Vec<usize> = self
-                .board
+            let mut row_sums: Vec<usize> = board
                 .iter()
                 .map(|row| {
                     row.iter()
@@ -339,7 +311,7 @@ impl Board
 
             // Find first free column (free=true/1)
 
-            let min_col = (self.board[min_row]
+            let min_col = (board[min_row]
                 .iter()
                 .enumerate()
                 //-idx to get the first column
@@ -349,7 +321,7 @@ impl Board
                 .1
                 * -1) as usize;
 
-            if self.board[min_row][min_col] == false {
+            if board[min_row][min_col] == false {
                 break;
             }
 
@@ -359,8 +331,8 @@ impl Board
                 piece_array
                     .push(self.convert_to_board_coords(min_row as BoardInt, min_col as BoardInt));
             }
-            self.set_row(min_row, false);
-            self.set_col(min_col, false);
+            self.set_row(&mut board,min_row, false);
+            self.set_col(&mut board,min_col, false);
             debug!(
                 "After processing row {}.  Placed at {},{}",
                 index, min_row, min_col
@@ -368,12 +340,6 @@ impl Board
             self.print_board(is_rooks);
         }
 
-        {
-            if is_rooks {
-                self.rooks = piece_array;
-            } else {
-                self.bishops = piece_array;
-            }
-        }
+        piece_array
     }
 }
