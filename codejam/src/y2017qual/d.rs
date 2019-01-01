@@ -238,34 +238,23 @@ impl Board
                 .min();
 
             if min_row_opt.is_none() {
-                break;
+                break; //we can't place anymore pieces
             }
 
             let min_row = min_row_opt.unwrap().1;
 
             // Find first free column (free=true/1)
-            let min_col = (board[min_row]
-                .iter()
-                .enumerate()
-                //-idx to get the first column
-                .map(|(idx, is_free)| (is_free, -(idx as i32)))
-                .max()
-                .unwrap()
-                .1
-                * -1) as usize;
+            let min_col = board[min_row].iter().position( |b| *b).unwrap();
 
-            if board[min_row][min_col] == false {
-                break;
-            }
-
-            if is_rooks {
-                piece_array.push(RowCol(min_row as BoardInt, min_col as BoardInt));
+            piece_array.push(if is_rooks {
+                (RowCol(min_row as BoardInt, min_col as BoardInt))
             } else {
-                piece_array
-                    .push(self.convert_to_board_coords(min_row as BoardInt, min_col as BoardInt));
-            }
+                self.convert_to_board_coords(min_row as BoardInt, min_col as BoardInt)
+            });
+
             self.set_row(&mut board, min_row, false);
             self.set_col(&mut board, min_col, false);
+
             debug!(
                 "After processing row {}.  Placed at {},{}",
                 index, min_row, min_col
