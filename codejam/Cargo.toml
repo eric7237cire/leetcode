@@ -7,3 +7,8 @@ edition = "2018"
 [dependencies]
 log4rs = "0.8.1"
 log = "*"
+
+[features]
+# default = ["debug_print"]
+default = []
+# debug_print = []

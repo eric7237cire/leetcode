@@ -228,10 +228,10 @@ impl Board
             self.board[row][c] = v;
         }
     }
-
-    #[cfg(feature = "debug_print")]
+ 
+    #[cfg(feature="debug_print")]
     fn print_board(&self, is_rooks: bool)
-    {
+    {        
         for (r, row) in self.board.iter().enumerate() {
             debug!(
                 "Row {}: {:?}",
@@ -329,13 +329,14 @@ impl Board
 
             // Find first free column (free=true/1)
 
-            let min_col = self.board[min_row]
+            let min_col = (self.board[min_row]
                 .iter()
                 .enumerate()
-                .map(|(x, y)| (y, x))
+                //-idx to get the first column
+                .map(|(idx, is_free) | (is_free, -(idx as i32)))
                 .max()
                 .unwrap()
-                .1;
+                .1 * -1) as usize;
 
             if self.board[min_row][min_col] == false {
                 break;
