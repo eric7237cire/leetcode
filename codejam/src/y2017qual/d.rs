@@ -22,8 +22,8 @@ pub fn solve_all_cases()
 
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
-    //let t = s.trim().parse::<u32>().unwrap();
-    let t = 1;
+    let t = s.trim().parse::<u32>().unwrap();
+    //let t = 1;
     for case in 1..=t {
         debug!("Solving case {}", case);
 
@@ -59,13 +59,13 @@ pub fn solve_all_cases()
         }
 
         children.push(thread::spawn(move || -> String {
-            solve(case + 1, n, existing_bishops, existing_rooks)
+            solve(case, n, existing_bishops, existing_rooks)
         }));
     }
 
     for child in children {
         // collect each child thread's return-value
-        println!("{}", child.join().unwrap());
+        print!("{}", child.join().unwrap());
     }
     //let ans = solve(nums[0], nums[1]);
     //println!("{} {}", ans.0, ans.1);
@@ -144,19 +144,19 @@ impl Board
 
     fn convert_to_board_coords_opt(&self, row: BoardInt, col: BoardInt) -> Option<RowCol>
     {
-        if ((row-col) + self.N) % 2 != 0 {
+        if ((row - col) + self.N) % 2 != 0 {
             return None;
         }
-        if ((row+col) - self.N) % 2 != 0 {
+        if ((row + col) - self.N) % 2 != 0 {
             return None;
         }
         // Kind of guessed this one, looks the translation needs to be spread around too
         let ret = RowCol(((row - col) + self.N) / 2, ((row + col) - self.N) / 2);
 
-        if ret.0 < 0 || ret.0 >= self.N  {
+        if ret.0 < 0 || ret.0 >= self.N {
             return None;
         }
-        if ret.1 < 0 || ret.1 >= self.N  {
+        if ret.1 < 0 || ret.1 >= self.N {
             return None;
         }
         return Some(ret);
@@ -217,37 +217,50 @@ impl Board
 
     fn set_col(&mut self, col: usize, v: bool)
     {
-        for r in 0usize..self.N as usize {
+        for r in 0usize..self.board.len() {
             self.board[r][col] = v;
         }
     }
 
     fn set_row(&mut self, row: usize, v: bool)
     {
-        for c in 0usize..self.N as usize {
+        for c in 0usize..self.board.len() {
             self.board[row][c] = v;
         }
     }
 
+    #[cfg(feature = "debug_print")]
     fn print_board(&self, is_rooks: bool)
     {
         for (r, row) in self.board.iter().enumerate() {
             debug!(
                 "Row {}: {:?}",
                 r,
-                row.iter().enumerate()
+                row.iter()
+                    .enumerate()
                     .map(|(c, b)| {
-                        let check = is_rooks || None != self.convert_to_board_coords_opt(r as BoardInt, c as BoardInt);
+                        let check = is_rooks
+                            || None
+                                != self.convert_to_board_coords_opt(r as BoardInt, c as BoardInt);
                         if !check {
                             return "#";
                         }
 
-                        if *b { "." } else { "O" }
+                        if *b {
+                            "."
+                        } else {
+                            "O"
+                        }
                     })
                     .collect::<Vec<&str>>()
                     .join("")
             );
         }
+    }
+
+    #[cfg(not(feature = "debug_print"))]
+    fn print_board(&self, is_rooks: bool)
+    {
     }
 
     fn solution(&mut self, is_rooks: bool)
@@ -273,14 +286,17 @@ impl Board
                 self.set_row(t_rc.0 as usize, false);
                 self.set_col(t_rc.1 as usize, false);
             }
-            debug!("After placing {} existing bishops", self.existing_bishops.len());
+            debug!(
+                "After placing {} existing bishops",
+                self.existing_bishops.len()
+            );
             self.print_board(is_rooks);
         }
 
         let n_rows = self.board[0].len();
         let mut piece_array: Vec<RowCol> = Vec::new();
 
-        for row_index in 0..n_rows {
+        for index in 0..n_rows {
             // Find row with smallest number of empty columns (value 0)
             let mut row_sums: Vec<usize> = self
                 .board
@@ -294,6 +310,8 @@ impl Board
                         .sum()
                 })
                 .collect();
+
+            debug!("Row sums: {:?}", row_sums);
 
             // Need to make rows with no spots unattractive
             for ri in row_sums.iter_mut().filter(|rs| **rs == 0) {
@@ -310,7 +328,7 @@ impl Board
                 .1;
 
             // Find first free column (free=true/1)
-            
+
             let min_col = self.board[min_row]
                 .iter()
                 .enumerate()
@@ -331,7 +349,10 @@ impl Board
             }
             self.set_row(min_row, false);
             self.set_col(min_col, false);
-            debug!("After processing row {}.  Placed at {},{}", row_index, min_row, min_col);
+            debug!(
+                "After processing row {}.  Placed at {},{}",
+                index, min_row, min_col
+            );
             self.print_board(is_rooks);
         }
 
