@@ -1,10 +1,7 @@
-use std::collections::HashSet;
-use std::fmt;
 use std::io::stdin;
 use std::thread;
 
 type BoardInt = i32;
-//true means spot is free, false is taken/unavailable
 type BoardVV = Vec<Vec<bool>>;
 #[derive(PartialEq, Debug, Eq, Hash, Clone)]
 struct RowCol(BoardInt, BoardInt);
@@ -18,8 +15,6 @@ pub fn solve_all_cases()
     let t = s.trim().parse::<u32>().unwrap();
 
     for case in 1..=t {
-        // debug!("Solving case {}", case);
-
         //handle input / output
         let mut s = String::new();
         stdin().read_line(&mut s).unwrap();
@@ -86,14 +81,8 @@ fn solve(
 
     let score = b.existing_bishops.len() + bishops.len() + b.existing_rooks.len() + rooks.len();
 
-    let mut added_pieces: HashSet<&RowCol> = rooks.iter().collect();
-    added_pieces.extend(bishops.iter());
-
-    let mut answer_str = format!("Case #{}: {} {}\n", case_num, score, added_pieces.len());
-
-    answer_str += &b.write_solution_lines(&rooks, &bishops);
-
-    return answer_str;
+    let (lines, added) = b.write_solution_lines(&rooks, &bishops);
+    format!("Case #{}: {} {}\n{}", case_num, score, added, lines)
 }
 
 struct Board
@@ -146,34 +135,36 @@ impl Board
         board
     }
 
-    fn write_solution_lines(&self, rooks: &Vec<RowCol>, bishops: &Vec<RowCol>) -> String
+    fn write_solution_lines(&self, rooks: &Vec<RowCol>, bishops: &Vec<RowCol>) -> (String, usize)
     {
         let mut ret_str = String::new();
+        let mut added = 0;
 
         for row in 0..self.n {
             for col in 0..self.n {
                 let coord = RowCol(row as BoardInt, col as BoardInt);
-                let rc_str = format!(" {} {}\n", row + 1, col + 1);
+                let len_before = ret_str.len();
 
                 if bishops.contains(&coord)
                     && (rooks.contains(&coord) || self.existing_rooks.contains(&coord))
                 {
                     ret_str += "o";
-                    ret_str += &rc_str;
                 } else if rooks.contains(&coord) && self.existing_bishops.contains(&coord) {
                     ret_str += "o";
-                    ret_str += &rc_str;
                 } else if rooks.contains(&coord) {
                     ret_str += "x";
-                    ret_str += &rc_str;
                 } else if bishops.contains(&coord) {
                     ret_str += "+";
-                    ret_str += &rc_str;
+                }
+
+                if ret_str.len() > len_before {
+                    ret_str += &format!(" {} {}\n", row + 1, col + 1);
+                    added += 1
                 }
             }
         }
 
-        ret_str
+        (ret_str, added)
     }
 
     fn set_col(&self, board: &mut BoardVV, col: usize, v: bool)
@@ -244,7 +235,7 @@ impl Board
             let min_row = min_row_opt.unwrap().1;
 
             // Find first free column (free=true/1)
-            let min_col = board[min_row].iter().position( |b| *b).unwrap();
+            let min_col = board[min_row].iter().position(|b| *b).unwrap();
 
             piece_array.push(if is_rooks {
                 (RowCol(min_row as BoardInt, min_col as BoardInt))
