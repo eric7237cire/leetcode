@@ -1,17 +1,16 @@
-
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
 use self::y2017qual::c::solve_case;
 mod y2017qual;
 
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate log4rs;
-
 
 use log::LevelFilter;
 use log4rs::append::file::FileAppender;
-use log4rs::encode::pattern::PatternEncoder;
 use log4rs::config::{Appender, Config, Root};
+use log4rs::encode::pattern::PatternEncoder;
 
 use std::io::stdin;
 
@@ -25,10 +24,11 @@ fn main() {
 
     let config = Config::builder()
         .appender(Appender::builder().build("logfile", Box::new(logfile)))
-        
-        .build(Root::builder()
-                   .appender("logfile")
-                   .build(LevelFilter::Debug))
+        .build(
+            Root::builder()
+                .appender("logfile")
+                .build(LevelFilter::Debug),
+        )
         .unwrap();
 
     let _handler = log4rs::init_config(config).unwrap();
@@ -38,11 +38,9 @@ fn main() {
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
-    for case in 1..=t
-    {
+    for case in 1..=t {
         debug!("Solving case {}", case);
         print!("Case #{}: ", case);
-        solve_case();        
+        solve_case();
     }
-    
 }
