@@ -37,8 +37,28 @@ impl Board {
     }
 
     #[cfg(not(feature = "debug_print"))]
-    fn print_board(_:&BoardVV, _: bool)
+    fn print_board(&self, _:&BoardVV, _: bool)
     {
         //Do nothing, compiled out
+    }
+
+    fn convert_to_board_coords_opt(&self, row: BoardInt, col: BoardInt) -> Option<RowCol>
+    {
+        if ((row - col) + self.n) % 2 != 0 {
+            return None;
+        }
+        if ((row + col) - self.n) % 2 != 0 {
+            return None;
+        }
+        // Kind of guessed this one, looks the translation needs to be spread around too
+        let ret = RowCol(((row - col) + self.n) / 2, ((row + col) - self.n) / 2);
+
+        if ret.0 < 0 || ret.0 >= self.n {
+            return None;
+        }
+        if ret.1 < 0 || ret.1 >= self.n {
+            return None;
+        }
+        return Some(ret);
     }
 }

@@ -86,8 +86,8 @@ fn solve(
 
     let score = b.existing_bishops.len() + bishops.len() + b.existing_rooks.len() + rooks.len();
 
-    let mut added_pieces: HashSet<&RowCol> = rooks.iter().map(|rc| rc.clone()).collect();
-    added_pieces.extend(bishops.iter().map(|rc| rc.clone()));
+    let mut added_pieces: HashSet<&RowCol> = rooks.iter().collect();
+    added_pieces.extend(bishops.iter());
 
     let mut answer_str = format!("Case #{}: {} {}\n", case_num, score, added_pieces.len());
 
@@ -124,27 +124,7 @@ impl Board
     {
         // Kind of guessed this one, looks the translation needs to be spread around too
         RowCol(((row - col) + self.n) / 2, ((row + col) - self.n) / 2)
-    }
-
-    fn convert_to_board_coords_opt(&self, row: BoardInt, col: BoardInt) -> Option<RowCol>
-    {
-        if ((row - col) + self.n) % 2 != 0 {
-            return None;
-        }
-        if ((row + col) - self.n) % 2 != 0 {
-            return None;
-        }
-        // Kind of guessed this one, looks the translation needs to be spread around too
-        let ret = RowCol(((row - col) + self.n) / 2, ((row + col) - self.n) / 2);
-
-        if ret.0 < 0 || ret.0 >= self.n {
-            return None;
-        }
-        if ret.1 < 0 || ret.1 >= self.n {
-            return None;
-        }
-        return Some(ret);
-    }
+    }  
 
     fn create_pivot_board(&self) -> BoardVV
     {
@@ -237,7 +217,7 @@ impl Board
 
         for index in 0..n_rows {
             // Find row with smallest number of empty columns (value 0)
-            let mut row_sums: Vec<usize> = board
+            let row_sums: Vec<usize> = board
                 .iter()
                 .map(|row| {
                     row.iter()
@@ -251,19 +231,19 @@ impl Board
 
             debug!("Row sums (len={}): {:?}", row_sums.len(), row_sums);
 
-            // Need to make rows with no spots unattractive
-            for ri in row_sums.iter_mut().filter(|rs| **rs == 0) {
-                *ri = 3 * n_rows;
-            }
-
             //find row with smallest # of free columns (free=true, taken = false)
-            let min_row = row_sums
+            let min_row_opt = row_sums
                 .iter()
                 .enumerate()
-                .map(|(x, y)| (y, x))
-                .min()
-                .unwrap()
-                .1;
+                .map(|(idx, y)| (y, idx))
+                .filter(|&(row_sum, idx) | *row_sum > 0) //must have at least one free spot                
+                .min();
+
+            if min_row_opt.is_none() {
+                break;
+            }
+
+            let min_row = min_row_opt                .unwrap()                .1;
 
             // Find first free column (free=true/1)
 

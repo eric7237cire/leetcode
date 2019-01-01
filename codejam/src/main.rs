@@ -12,8 +12,6 @@ use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 
-//use std::io::stdin;
-
 fn main()
 {
     //Init logging
@@ -35,12 +33,11 @@ fn main()
 
         let _handler = log4rs::init_config(config).unwrap();
 
-        debug!("debug print enabled");
+        debug!("debug print is enabled");
     } else {
         debug!("debug print not enabled");
     }
 
-    debug!("Solving 123...");
     solve_all_cases();
     /*
     Used in A,B,C
