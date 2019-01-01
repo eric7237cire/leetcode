@@ -14,7 +14,8 @@ use log4rs::encode::pattern::PatternEncoder;
 
 use std::io::stdin;
 
-fn main() {
+fn main()
+{
     //Init logging
     let logfile = FileAppender::builder()
         .append(false)

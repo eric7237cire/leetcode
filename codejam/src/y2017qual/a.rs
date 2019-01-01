@@ -2,7 +2,8 @@ use std::io::stdin;
 
 //use bit_vec::BitVec;
 
-pub fn solve_case() {
+pub fn solve_case()
+{
     //handle input / output
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
@@ -17,7 +18,8 @@ pub fn solve_case() {
     }
 }
 
-fn solve(pancake_row: &mut [bool], k: usize) -> Option<usize> {
+fn solve(pancake_row: &mut [bool], k: usize) -> Option<usize>
+{
     let mut moves = 0;
     //proceed left to right, flipping as we must
     for i in 0..pancake_row.len() - k + 1 {

@@ -1,6 +1,7 @@
 use std::io::stdin;
 
-pub fn solve_case() {
+pub fn solve_case()
+{
     //handle input / output
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
@@ -11,7 +12,8 @@ pub fn solve_case() {
     println!("{} {}", ans.0, ans.1);
 }
 
-fn solve(n: u64, k: u64) -> (u64, u64) {
+fn solve(n: u64, k: u64) -> (u64, u64)
+{
     if n == k {
         return (0, 0);
     }

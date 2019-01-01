@@ -1,6 +1,7 @@
 use std::io::stdin;
 
-pub fn solve_case() {
+pub fn solve_case()
+{
     //handle input / output
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
@@ -19,7 +20,8 @@ so
 
 222222[5]1 ==> 1999999
 */
-fn solve(n_str: &str) -> usize {
+fn solve(n_str: &str) -> usize
+{
     debug!("n_str={}", n_str);
     let mut number: Vec<u8> = n_str
         .chars()
