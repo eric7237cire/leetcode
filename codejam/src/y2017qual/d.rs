@@ -23,19 +23,25 @@ pub fn solve_all_cases()
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
-    //let t = 1;
+
     for case in 1..=t {
-        debug!("Solving case {}", case);
+        // debug!("Solving case {}", case);
 
         //handle input / output
         let mut s = String::new();
         stdin().read_line(&mut s).unwrap();
-        debug!("Read {}", s);
+        //debug!("Read {}", s);
         let n_and_m: Vec<u32> = s.split_whitespace().map(|n| n.parse().unwrap()).collect();
         let (n, m) = (n_and_m[0], n_and_m[1]);
 
-        // + are bishops
-        // x are rooks
+        /* + are bishops
+         * x are rooks; place as many as possible such that no row has 2
+         * It is a bit confusing to understand that from the restriction
+         * Whenever any two models share a diagonal of the grid, at least one of the two must be an x
+         *
+         * We basically place as many as possible of each indepedently, then combine them to 'o'
+         * we pivot the bishop boards to make it the same problem as rooks
+         */
         let mut existing_rooks: Vec<RowCol> = Vec::new();
         let mut existing_bishops: Vec<RowCol> = Vec::new();
 
@@ -53,9 +59,13 @@ pub fn solve_all_cases()
             if m_type == 'o' || m_type == 'x' {
                 existing_rooks.push(RowCol(row - 1, col - 1));
             }
-            if m_type == 'o' || m_type == 'x' {
+            if m_type == 'o' || m_type == '+' {
                 existing_bishops.push(RowCol(row - 1, col - 1));
             }
+        }
+
+        if cfg!(feature = "debug_print") && case != 4 {
+            continue;
         }
 
         children.push(thread::spawn(move || -> String {
@@ -78,7 +88,7 @@ fn solve(
     existing_rooks: Vec<RowCol>,
 ) -> String
 {
-    debug!("Solving case {}", case_num);
+    //debug!("Solving case {}", case_num);
 
     let mut b = Board::new(n as BoardInt);
 
@@ -228,13 +238,13 @@ impl Board
             self.board[row][c] = v;
         }
     }
- 
-    #[cfg(feature="debug_print")]
+
+    #[cfg(feature = "debug_print")]
     fn print_board(&self, is_rooks: bool)
-    {        
+    {
         for (r, row) in self.board.iter().enumerate() {
             debug!(
-                "Row {}: {:?}",
+                "Row {:2}: {:?}",
                 r,
                 row.iter()
                     .enumerate()
@@ -311,7 +321,7 @@ impl Board
                 })
                 .collect();
 
-            debug!("Row sums: {:?}", row_sums);
+            debug!("Row sums (len={}): {:?}", row_sums.len(), row_sums);
 
             // Need to make rows with no spots unattractive
             for ri in row_sums.iter_mut().filter(|rs| **rs == 0) {
@@ -333,10 +343,11 @@ impl Board
                 .iter()
                 .enumerate()
                 //-idx to get the first column
-                .map(|(idx, is_free) | (is_free, -(idx as i32)))
+                .map(|(idx, is_free)| (is_free, -(idx as i32)))
                 .max()
                 .unwrap()
-                .1 * -1) as usize;
+                .1
+                * -1) as usize;
 
             if self.board[min_row][min_col] == false {
                 break;

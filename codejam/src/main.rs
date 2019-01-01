@@ -17,25 +17,30 @@ use log4rs::encode::pattern::PatternEncoder;
 fn main()
 {
     //Init logging
-    let logfile = FileAppender::builder()
-        .append(false)
-        .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
-        .build("log/output.log")
-        .unwrap();
+    if cfg!(feature = "debug_print") {
+        let logfile = FileAppender::builder()
+            .append(false)
+            .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
+            .build("log/output.log")
+            .unwrap();
 
-    let config = Config::builder()
-        .appender(Appender::builder().build("logfile", Box::new(logfile)))
-        .build(
-            Root::builder()
-                .appender("logfile")
-                .build(LevelFilter::Debug),
-        )
-        .unwrap();
+        let config = Config::builder()
+            .appender(Appender::builder().build("logfile", Box::new(logfile)))
+            .build(
+                Root::builder()
+                    .appender("logfile")
+                    .build(LevelFilter::Debug),
+            )
+            .unwrap();
 
-    let _handler = log4rs::init_config(config).unwrap();
+        let _handler = log4rs::init_config(config).unwrap();
 
-    //println!("Hello, world!");
-    debug!("Solving...");
+        debug!("debug print enabled");
+    } else {
+         debug!("debug print not enabled");
+    }
+    
+    debug!("Solving 123...");
     solve_all_cases();
     /*
     Used in A,B,C

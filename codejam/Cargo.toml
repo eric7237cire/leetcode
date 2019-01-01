@@ -12,3 +12,6 @@ log = "*"
 # default = ["debug_print"]
 default = []
 # debug_print = []
+
+[profile.release]
+debug-assertions = false
