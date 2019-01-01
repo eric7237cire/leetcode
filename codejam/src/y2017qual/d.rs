@@ -87,6 +87,8 @@ fn solve(
     existing_rooks: Vec<RowCol>,
 ) -> String
 {
+    let b = Board::new(n as BoardInt, existing_bishops, existing_rooks);
+
     let rooks = b.add_pieces(true);
     let bishops = b.add_pieces(false);
 
@@ -111,8 +113,7 @@ struct Board
 
 impl Board
 {
-    fn new(n: BoardInt,existing_bishops: Vec<RowCol>,
-    existing_rooks: Vec<RowCol>,) -> Board
+    fn new(n: BoardInt, existing_bishops: Vec<RowCol>, existing_rooks: Vec<RowCol>) -> Board
     {
         Board {
             n,
@@ -176,7 +177,7 @@ impl Board
     fn write_solution_lines(&self, rooks: &Vec<RowCol>, bishops: &Vec<RowCol>) -> String
     {
         let mut ret_str = String::new();
-        
+
         for row in 0..self.n {
             for col in 0..self.n {
                 let coord = RowCol(row as BoardInt, col as BoardInt);
@@ -254,26 +255,23 @@ impl Board
 
     fn add_pieces(&self, is_rooks: bool) -> Vec<RowCol>
     {
-        let mut board : BoardVV;
+        let mut board: BoardVV;
         if is_rooks {
             board = vec![vec![true; self.n as usize]; self.n as usize];
             self.print_board(is_rooks);
-            
+
             for RowCol(row, col) in self.existing_rooks.iter() {
                 self.set_row(&mut board, *row as usize, false);
                 self.set_col(&mut board, *col as usize, false);
             }
-           
         } else {
             board = self.create_pivot_board();
-            for RowCol(row, col) in  self.existing_bishops.iter() {
+            for RowCol(row, col) in self.existing_bishops.iter() {
                 let t_rc = self.convert_to_tilted_board_coords(*row, *col);
 
-                self.set_row(&mut board,t_rc.0 as usize, false);
-                self.set_col(&mut board,t_rc.1 as usize, false);
+                self.set_row(&mut board, t_rc.0 as usize, false);
+                self.set_col(&mut board, t_rc.1 as usize, false);
             }
-            
-            
         }
 
         let n_rows = board[0].len();
@@ -331,8 +329,8 @@ impl Board
                 piece_array
                     .push(self.convert_to_board_coords(min_row as BoardInt, min_col as BoardInt));
             }
-            self.set_row(&mut board,min_row, false);
-            self.set_col(&mut board,min_col, false);
+            self.set_row(&mut board, min_row, false);
+            self.set_col(&mut board, min_col, false);
             debug!(
                 "After processing row {}.  Placed at {},{}",
                 index, min_row, min_col

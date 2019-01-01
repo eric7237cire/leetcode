@@ -37,9 +37,9 @@ fn main()
 
         debug!("debug print enabled");
     } else {
-         debug!("debug print not enabled");
+        debug!("debug print not enabled");
     }
-    
+
     debug!("Solving 123...");
     solve_all_cases();
     /*
