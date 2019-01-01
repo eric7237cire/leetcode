@@ -9,14 +9,6 @@ type BoardVV = Vec<Vec<bool>>;
 #[derive(PartialEq, Debug, Eq, Hash, Clone)]
 struct RowCol(BoardInt, BoardInt);
 
-impl fmt::Display for RowCol
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
-    {
-        write!(f, "({}, {})", self.0, self.1)
-    }
-}
-
 pub fn solve_all_cases()
 {
     let mut children: Vec<thread::JoinHandle<_>> = vec![];
@@ -50,7 +42,7 @@ pub fn solve_all_cases()
             s.clear();
             stdin().read_line(&mut s).unwrap();
             let chars_line: Vec<&str> = s.split_whitespace().collect();
-            //debug!("Read chars_line: {:?}", chars_line);
+
             let (m_type, row, col): (char, BoardInt, BoardInt) = (
                 chars_line[0].chars().next().unwrap(),
                 chars_line[1].parse().unwrap(),
@@ -94,7 +86,7 @@ fn solve(
 
     let score = b.existing_bishops.len() + bishops.len() + b.existing_rooks.len() + rooks.len();
 
-    let mut added_pieces: HashSet<RowCol> = rooks.iter().map(|rc| rc.clone()).collect();
+    let mut added_pieces: HashSet<&RowCol> = rooks.iter().map(|rc| rc.clone()).collect();
     added_pieces.extend(bishops.iter().map(|rc| rc.clone()));
 
     let mut answer_str = format!("Case #{}: {} {}\n", case_num, score, added_pieces.len());
@@ -218,48 +210,14 @@ impl Board
         }
     }
 
-    #[cfg(feature = "debug_print")]
-    fn print_board(&self, is_rooks: bool)
-    {
-        for (r, row) in self.board.iter().enumerate() {
-            debug!(
-                "Row {:2}: {:?}",
-                r,
-                row.iter()
-                    .enumerate()
-                    .map(|(c, b)| {
-                        let check = is_rooks
-                            || None
-                                != self.convert_to_board_coords_opt(r as BoardInt, c as BoardInt);
-                        if !check {
-                            return "#";
-                        }
-
-                        if *b {
-                            "."
-                        } else {
-                            "O"
-                        }
-                    })
-                    .collect::<Vec<&str>>()
-                    .join("")
-            );
-        }
-    }
-
-    #[cfg(not(feature = "debug_print"))]
-    fn print_board(&self, _: bool)
-    {
-        //Do nothing, compiled out
-    }
+    
 
     fn add_pieces(&self, is_rooks: bool) -> Vec<RowCol>
     {
         let mut board: BoardVV;
         if is_rooks {
             board = vec![vec![true; self.n as usize]; self.n as usize];
-            self.print_board(is_rooks);
-
+            
             for RowCol(row, col) in self.existing_rooks.iter() {
                 self.set_row(&mut board, *row as usize, false);
                 self.set_col(&mut board, *col as usize, false);
@@ -335,9 +293,11 @@ impl Board
                 "After processing row {}.  Placed at {},{}",
                 index, min_row, min_col
             );
-            self.print_board(is_rooks);
+            self.print_board(&board, is_rooks);
         }
 
         piece_array
     }
 }
+
+include!("d_debug.rs");
