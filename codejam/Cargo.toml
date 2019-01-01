@@ -10,7 +10,8 @@ log = "*"
 
 [features]
 default = []
-# ebug_print = []
+# default = ["debug_print"]
+debug_print = []
 
 [profile.release]
 debug-assertions = false

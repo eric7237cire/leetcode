@@ -124,7 +124,7 @@ impl Board
     {
         // Kind of guessed this one, looks the translation needs to be spread around too
         RowCol(((row - col) + self.n) / 2, ((row + col) - self.n) / 2)
-    }  
+    }
 
     fn create_pivot_board(&self) -> BoardVV
     {
@@ -190,14 +190,12 @@ impl Board
         }
     }
 
-    
-
     fn add_pieces(&self, is_rooks: bool) -> Vec<RowCol>
     {
         let mut board: BoardVV;
         if is_rooks {
             board = vec![vec![true; self.n as usize]; self.n as usize];
-            
+
             for RowCol(row, col) in self.existing_rooks.iter() {
                 self.set_row(&mut board, *row as usize, false);
                 self.set_col(&mut board, *col as usize, false);
@@ -236,17 +234,16 @@ impl Board
                 .iter()
                 .enumerate()
                 .map(|(idx, y)| (y, idx))
-                .filter(|&(row_sum, idx) | *row_sum > 0) //must have at least one free spot                
+                .filter(|&(row_sum, _)| *row_sum > 0) //must have at least one free spot
                 .min();
 
             if min_row_opt.is_none() {
                 break;
             }
 
-            let min_row = min_row_opt                .unwrap()                .1;
+            let min_row = min_row_opt.unwrap().1;
 
             // Find first free column (free=true/1)
-
             let min_col = (board[min_row]
                 .iter()
                 .enumerate()
