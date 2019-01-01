@@ -1,6 +1,6 @@
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
-use self::y2017qual::c::solve_case;
+use self::y2017qual::d::solve_all_cases;
 mod y2017qual;
 
 #[macro_use]
@@ -35,7 +35,10 @@ fn main()
     let _handler = log4rs::init_config(config).unwrap();
 
     //println!("Hello, world!");
-    debug!("debug");
+    debug!("Solving...");
+    solve_all_cases();
+    /*
+    Used in A,B,C
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
@@ -44,4 +47,5 @@ fn main()
         print!("Case #{}: ", case);
         solve_case();
     }
+    */
 }

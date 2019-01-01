@@ -1,21 +1,74 @@
 use std::io::stdin;
+use std::thread;
 
-pub fn solve_case() {
-    //handle input / output
+type BoardInt = i32;
+struct RowCol(BoardInt, BoardInt);
+
+pub fn solve_all_cases()
+{
+    let mut children: Vec<thread::JoinHandle<_>> = vec![];
+
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
-    debug!("Read {}", s);
-    let nums: Vec<u64> = s.split_whitespace().map(|n| n.parse().unwrap()).collect();
+    let t = s.trim().parse::<u32>().unwrap();
+    for case in 1..=t {
+        debug!("Solving case {}", case);
 
-    let ans = solve(nums[0], nums[1]);
-    println!("{} {}", ans.0, ans.1);
+        //handle input / output
+        let mut s = String::new();
+        stdin().read_line(&mut s).unwrap();
+        debug!("Read {}", s);
+        let n_and_m: Vec<u32> = s.split_whitespace().map(|n| n.parse().unwrap()).collect();
+        let (n, m) = (n_and_m[0], n_and_m[1]);
+
+        // + are bishops
+        // x are rooks
+        let mut existing_rooks: Vec<RowCol> = Vec::new();
+        let mut existing_bishops: Vec<RowCol> = Vec::new();
+
+        for _ in 0..m {
+            s.clear();
+            stdin().read_line(&mut s).unwrap();
+            let chars_line: Vec<&str> = s.split_whitespace().collect();
+            debug!("Read chars_line: {:?}", chars_line);
+            let (m_type, row, col): (char, BoardInt, BoardInt) = (
+                chars_line[0].chars().next().unwrap(),
+                chars_line[1].parse().unwrap(),
+                chars_line[2].parse().unwrap(),
+            );
+
+            if m_type == 'o' || m_type == 'x' {
+                existing_rooks.push(RowCol(row - 1, col - 1));
+            }
+            if m_type == 'o' || m_type == 'x' {
+                existing_bishops.push(RowCol(row - 1, col - 1));
+            }
+        }
+
+        children.push(thread::spawn(move || -> String {
+            solve(case + 1, n, existing_bishops, existing_rooks)
+        }));
+    }
+
+    for child in children {
+        // collect each child thread's return-value
+        println!("{}", child.join().unwrap());
+    }
+    //let ans = solve(nums[0], nums[1]);
+    //println!("{} {}", ans.0, ans.1);
 }
 
-fn solve(n: u64, k: u64) -> (u64, u64) {
-
+fn solve(
+    case_num: u32,
+    n: u32,
+    existing_bishops: Vec<RowCol>,
+    existing_rooks: Vec<RowCol>,
+) -> String
+{
+    format!("Case #{}: ", case_num)
 }
 
-
+/*
 
 class Board:
 
@@ -159,21 +212,6 @@ def main():
         results = []
         for i in range( n_cases):
 
-            n_str, m_str = input_file.readline().split(" ")
-
-            # + are bishops
-            # x are rooks
-            existing_rooks = []
-            existing_bishops = []
-
-            for m in range(0, int(m_str)):
-                m_type, row_str, col_str = input_file.readline().split(" ")
-
-                if m_type in ['o', 'x']:
-                    existing_rooks.append((int(row_str)-1, int(col_str)-1))
-                if m_type in ['o', '+']:
-                    existing_bishops.append((int(row_str)-1, int(col_str)-1))
-
             results.append(executor.submit(solve, i+1, n_str, existing_bishops, existing_rooks))
 
         for r in results:
@@ -184,3 +222,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+*/
