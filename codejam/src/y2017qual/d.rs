@@ -1,8 +1,20 @@
+use std::collections::HashSet;
+use std::fmt;
 use std::io::stdin;
-use std::thread;
+use std::mem;
+use std::{thread};
 
 type BoardInt = i32;
+#[derive(PartialEq, Debug, Eq, Hash, Clone)]
 struct RowCol(BoardInt, BoardInt);
+
+impl fmt::Display for RowCol
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+    {
+        write!(f, "({}, {})", self.0, self.1)
+    }
+}
 
 pub fn solve_all_cases()
 {
@@ -30,7 +42,7 @@ pub fn solve_all_cases()
             s.clear();
             stdin().read_line(&mut s).unwrap();
             let chars_line: Vec<&str> = s.split_whitespace().collect();
-            debug!("Read chars_line: {:?}", chars_line);
+            //debug!("Read chars_line: {:?}", chars_line);
             let (m_type, row, col): (char, BoardInt, BoardInt) = (
                 chars_line[0].chars().next().unwrap(),
                 chars_line[1].parse().unwrap(),
@@ -65,161 +77,215 @@ fn solve(
     existing_rooks: Vec<RowCol>,
 ) -> String
 {
-    format!("Case #{}: ", case_num)
+    debug!("Solving case {}", case_num);
+
+    let mut b = Board::new(n as BoardInt);
+
+    b.existing_bishops = existing_bishops;
+    b.existing_rooks = existing_rooks;
+
+    b.solution(true);
+    b.solution(false);
+
+    let score = b.existing_bishops.len() + b.bishops.len() + b.existing_rooks.len() + b.rooks.len();
+
+    let mut added_pieces: HashSet<RowCol> = b.rooks.iter().map(|rc| rc.clone()).collect();
+    added_pieces.extend(b.bishops.iter().map(|rc| rc.clone()));
+
+    let mut answer_str = format!("Case #{}: {} {}\n", case_num, score, added_pieces.len());
+
+    answer_str += &b.write_solution_lines();
+
+    return answer_str;
 }
 
-/*
+struct Board
+{
+    N: BoardInt,
+    rooks: Vec<RowCol>,
+    bishops: Vec<RowCol>,
 
-class Board:
+    existing_bishops: Vec<RowCol>,
+    existing_rooks: Vec<RowCol>,
 
-    def __init__(self, size):
-        self.N = size
-        self.rooks = []
-        self.bishops = []
+    board: Vec<Vec<bool>>,
+    pivot_board: Vec<Vec<bool>>,
+}
 
-        self.existing_bishops = []
-        self.existing_rooks = []
+impl Board
+{
+    fn new(size: BoardInt) -> Board
+    {
+        Board {
+            N: size,
+            rooks: Vec::new(),
+            bishops: Vec::new(),
 
-        self.board = np.empty(shape = (self.N, self.N))
+            existing_bishops: Vec::new(),
+            existing_rooks: Vec::new(),
 
-    def convert_to_tilted_board_coords(self, row, col):
-        # https://math.stackexchange.com/questions/383321/rotating-x-y-points-45-degrees
-        return  row+col  , col - row + self.N
+            board: vec![vec![false; size as usize]; size as usize],
+            pivot_board: Vec::new(),
+        }
+    }
 
-    def convert_to_board_coords(self, row, col):
-        # Kind of guessed this one, looks the translation needs to be spread around too
-        return int((row-col)/2 + self.N / 2), int((row+col) / 2 - self.N / 2)
+    fn convert_to_tilted_board_coords(&self, row: BoardInt, col: BoardInt) -> RowCol
+    {
+        // https://math.stackexchange.com/questions/383321/rotating-x-y-points-45-degrees
+        RowCol(row + col, col - row + self.N)
+    }
 
-    def create_pivot_board(self):
+    fn convert_to_board_coords(&self, row: BoardInt, col: BoardInt) -> RowCol
+    {
+        // Kind of guessed this one, looks the translation needs to be spread around too
+        RowCol(((row - col) + self.N) / 2, ((row + col) - self.N) / 2)
+    }
 
-        self.pivot_board = np.full( shape=(2*self.N, 2*self.N),
-                                     fill_value = False,
-                                     dtype=np.bool)
+    fn create_pivot_board(&mut self)
+    {
+        self.pivot_board = vec![vec![false; 2 * self.N as usize]; 2 * self.N as usize];
 
-        for row in range(0, self.N):
-            for col in range(0, self.N):
-                # 45 rotation, x+y, y-x
-                # and a translation up N to avoid nulls
-                coords = self.convert_to_tilted_board_coords(row, col)
-                self.pivot_board[coords[0], coords[1]] = True
+        for row in 0..self.N {
+            for col in 0..self.N {
+                // 45 rotation, x+y, y-x
+                // and a translation up N to avoid nulls
+                let coords = self.convert_to_tilted_board_coords(row, col);
+                self.pivot_board[coords.0 as usize][coords.1 as usize] = true;
 
-                check_coords = self.convert_to_board_coords(*coords)
-                assert (row,col) == check_coords
+                let check_coords = self.convert_to_board_coords(coords.0, coords.1);
+                assert_eq!(RowCol(row, col), check_coords);
+            }
+        }
 
-        self.board = self.pivot_board
+        mem::swap(&mut self.board, &mut self.pivot_board);
+        //self.board = self.pivot_board;
+    }
 
+    fn write_solution_lines(&self) -> String
+    {
+        let mut ret_str = String::new();
+        let n_rows = self.board.len();
+        let n_cols = self.board[0].len();
+        for row in 0..n_rows {
+            for col in 0..n_cols {
+                let coord = RowCol(row as BoardInt, col as BoardInt);
+                let rc_str = format!(" {} {}\n", row + 1, col + 1);
 
-    def write_solution_lines(self):
-        ret_str = ""
-        n_rows, n_cols = self.board.shape
-        for row in range(0, n_rows):
-            for col in range(0, n_cols):
-                coord = (row,col)
-                if coord in self.bishops and \
-                        (coord in self.rooks or coord in self.existing_rooks):
-                    ret_str += "o" + f" {row+1} {col+1}\n"
-                elif coord in self.rooks and coord in self.existing_bishops:
-                    ret_str += "o" + f" {row+1} {col+1}\n"
-                elif coord in self.rooks:
-                    ret_str += "x" + f" {row+1} {col+1}\n"
-                elif coord in self.bishops:
-                    ret_str += "+" + f" {row+1} {col+1}\n"
+                if self.bishops.contains(&coord)
+                    && (self.rooks.contains(&coord) || self.existing_rooks.contains(&coord))
+                {
+                    ret_str += "o";
+                    ret_str += &rc_str;
+                } else if self.rooks.contains(&coord) && self.existing_bishops.contains(&coord) {
+                    ret_str += "o";
+                    ret_str += &rc_str;
+                } else if self.rooks.contains(&coord) {
+                    ret_str += "x";
+                    ret_str += &rc_str;
+                } else if self.bishops.contains(&coord) {
+                    ret_str += "+";
+                    ret_str += &rc_str;
+                }
+            }
+        }
 
+        ret_str
+    }
 
-        return ret_str
-    def solution(self, is_rooks):
+    fn set_col(&mut self, col: usize, v: bool)
+    {
+        for r in 0usize..self.N as usize {
+            self.board[r][col] = v;
+        }
+    }
 
-        if is_rooks:
-            piece_array = self.rooks
+    fn set_row(&mut self, row: usize, v: bool)
+    {
+        for c in 0usize..self.N as usize {
+            self.board[row][c] = v;
+        }
+    }
 
-            self.board = np.full(shape = (self.N,  self.N),
-                                       fill_value = True,
-                                       dtype = np.bool)
+    fn solution(&mut self, is_rooks: bool)
+    {
+        if is_rooks {
+            self.board = vec![vec![true; self.N as usize]; self.N as usize];
+            let rooks_clone = self.existing_rooks.clone(); 
+            let rook_it = rooks_clone.iter();
+            for RowCol(row, col) in rook_it {
+                self.set_row(*row as usize, false);
+                self.set_col(*col as usize, false);
+            }
+        } else {
+            self.create_pivot_board();
 
-            for row,col in self.existing_rooks:
-                self.board[row] = False
-                self.board[:, col] = False
+            let bishops_clone = self.existing_bishops.clone();
+            for RowCol(row, col) in bishops_clone.iter() {
+                let t_rc = self.convert_to_tilted_board_coords(*row, *col);
 
-        else:
-            piece_array = self.bishops
-            self.create_pivot_board()
+                self.set_row(*row as usize, false);
+                self.set_col(*col as usize, false);
+            }
+        }
+        let n_rows = self.board[0].len();
+        let mut piece_array: Vec<RowCol> = Vec::new();
 
-            for r, c in self.existing_bishops:
+        for _ in 0..n_rows {
+            // Find row with smallest number of empty columns (value 0)
+            let mut row_sums: Vec<usize> = self
+                .board
+                .iter()
+                .map(|row| {
+                    row.iter()
+                        .map(|b| match b {
+                            true => 1,
+                            false => 0,
+                        })
+                        .sum()
+                })
+                .collect();
 
-                row,col = self.convert_to_tilted_board_coords(r,c)
-                self.board[row] = False
-                self.board[:, col] = False
+            // Need to make rows with no spots unattractive
+            for ri in row_sums.iter_mut().filter(|rs| **rs == 0) {
+                *ri = 3 * n_rows;
+            }
+            // Find first free column
+            let min_row = row_sums
+                .iter()
+                .enumerate()
+                .map(|(x, y)| (y, x))
+                .min()
+                .unwrap()
+                .1;
 
-        n_rows = self.board.shape[0]
-        piece_array.clear()
+            let min_col = self.board[min_row]
+                .iter()
+                .enumerate()
+                .map(|(x, y)| (y, x))
+                .max()
+                .unwrap()
+                .1;
 
-        for i in range(0, n_rows):
-            # Find row with smallest number of empty columns (value 0)
-            row_sums = np.sum(self.board, axis = 1)
+            if self.board[min_row][min_col] == false {
+                break;
+            }
 
-            # Need to make rows with no spots unattractive
-            row_sums[row_sums == 0] = 3 * n_rows
-            # Find first free column
-            min_row = np.argmin(row_sums)
+            if is_rooks {
+                piece_array.push(RowCol(min_row as BoardInt, min_col as BoardInt));
+            } else {
+                piece_array
+                    .push(self.convert_to_board_coords(min_row as BoardInt, min_col as BoardInt));
+            }
+            self.set_row(min_row, false);
+            self.set_col(min_col, false);
+        }
 
-            min_col = np.argmax(self.board[min_row])
-
-            if self.board[min_row, min_col] == False:
-                break
-
-            if is_rooks:
-                piece_array.append((min_row, min_col))
-            else:
-                piece_array.append(self.convert_to_board_coords(min_row, min_col))
-
-            self.board[min_row] = False
-            self.board[:,min_col] = False
-
-def solve(case_no, n_str,existing_bishops, existing_rooks):
-    print(f"Solving {case_no}")
-
-    b = Board(size = int(n_str))
-
-    b.existing_bishops = existing_bishops
-    b.existing_rooks = existing_rooks
-
-    b.solution(is_rooks = True)
-    b.solution(is_rooks = False)
-
-    score = len(b.existing_bishops) + len(b.bishops) + \
-            len(b.existing_rooks) + len(b.rooks)
-    added_pieces = len(set(b.rooks + b.bishops))
-    answer_str = f"Case #{case_no}: {score} {added_pieces}\n"
-
-    answer_str += b.write_solution_lines()
-
-    return answer_str
-
-def main():
-
-    #return
-    file_base = "small"
-    ext = ""
-    file_base = "large"
-    input_file_name = f"D-{file_base}-practice{ext}.in"
-    output_file_name = f"D-{file_base}-practice{ext}.out"
-
-    with open(output_file_name, "w") as output_file, \
-            ProcessPoolExecutor(max_workers = 7) as executor, \
-            open(input_file_name) as input_file:
-
-        n_cases = int(input_file.readline())
-        results = []
-        for i in range( n_cases):
-
-            results.append(executor.submit(solve, i+1, n_str, existing_bishops, existing_rooks))
-
-        for r in results:
-            ans = r.result()
-
-            output_file.write(ans)
-
-
-if __name__ == "__main__":
-    main()
-*/
+        {
+            if is_rooks {
+                self.rooks = piece_array;
+            } else {
+                self.bishops = piece_array;
+            }
+        }
+    }
+}
