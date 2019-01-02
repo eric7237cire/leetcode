@@ -7,3 +7,11 @@ edition = "2018"
 [dependencies]
 log4rs = "0.8.1"
 log = "*"
+
+[features]
+default = []
+# default = ["debug_print"]
+debug_print = []
+
+[profile.release]
+debug-assertions = false
