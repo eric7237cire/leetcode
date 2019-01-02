@@ -1,7 +1,9 @@
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
-use self::y2017qual::d::solve_all_cases;
-mod y2017qual;
+//use self::y2017qual::d::solve_all_cases;
+use self::y2017round1a::a::solve_all_cases;
+//mod y2017qual;
+mod y2017round1a;
 
 #[macro_use]
 extern crate log;
