@@ -17,7 +17,8 @@ use log4rs::encode::pattern::PatternEncoder;
 fn main()
 {
     //Init logging
-    if cfg!(feature = "debug_print") {
+    if cfg!(feature = "debug_print")
+    {
         let logfile = FileAppender::builder()
             .append(false)
             .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
@@ -36,7 +37,9 @@ fn main()
         let _handler = log4rs::init_config(config).unwrap();
 
         debug!("debug print is enabled");
-    } else {
+    }
+    else
+    {
         debug!("debug print not enabled");
     }
 
