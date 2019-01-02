@@ -13,5 +13,5 @@ rem cargo build && cat .\src\y2017qual\C-large-practice.in | .\target\debug\code
 rem cargo build && cat .\src\y2017qual\D-small-practice.in | .\target\debug\codejam.exe > .\src\y2017qual\D-small-practice.out 
 rem cargo build && cat .\src\y2017qual\D-large-practice.in | .\target\debug\codejam.exe > .\src\y2017qual\D-large-practice.out 
 
-cargo build && cat .\src\y2017round1A\A-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round1A\A-small-practice.out 
-cargo build && cat .\src\y2017round1A\A-large-practice.in | .\target\debug\codejam.exe > .\src\y2017round1A\A-large-practice.out 
+cargo build && cat .\src\y2017round1A\B-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round1A\B-small-practice.out 
+rem cargo build && cat .\src\y2017round1A\B-large-practice.in | .\target\debug\codejam.exe > .\src\y2017round1A\B-large-practice.out 
