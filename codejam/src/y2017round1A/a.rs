@@ -59,14 +59,14 @@ fn handle_col(r: usize, c: usize, grid: &mut Vec<Vec<char>>, last_value: &mut ch
 
 fn solve(case_no: u32, grid: &mut Vec<Vec<char>>) -> String
 {
-    let mut last_value: char = '?';
+    //let mut last_value: char = '?';
 
     let n_rows = grid.len();
     let n_cols = grid[0].len();
 
     for c in 0..n_cols
     {
-        last_value = '?';
+        let mut last_value = '?';
         for r in 0..n_rows
         {
             handle_col(r, c, grid, &mut last_value);
