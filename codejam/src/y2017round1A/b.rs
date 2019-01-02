@@ -31,9 +31,71 @@ pub fn solve_all_cases()
     }
 }
 
-fn solve(case_no: u32, n: u8, p:u8, r: &Vec<u32>, q:&Vec<Vec<u32>>) -> String
+fn solve(case_no: u32, N: u8, P:u8, r: &Vec<u32>, q:&Vec<Vec<u32>>) -> String
 {
-    
+    debug!("\nStarting solve");
+    let events : Vec<_> = [];
+    for i in 0..N {
+        let required_amount = r[i];
+
+        for p in 0..P {
+            package_size = Q[i][p];
+
+            // problem is floating point
+            //min_servings = math.ceil(package_size / (1.1 * required_amount) )
+           // max_servings = math.floor( package_size / (.9 * required_amount) )
+
+
+            let max_servings = (10 * package_size) / (9 * required_amount);
+            let min_servings = (10 * package_size + 11 * required_amount - 1) / (11 * required_amount);
+
+            debug!("For ingredient {i}, package # {p}. \
+                   Required per serving = {required_amount} \
+                  Package size = {package_size} \
+                  Min = {min_servings} Max = {max_servings}", i=i, p=p, package_size=package_size, min_servings=min_servings,max_servings=max_servings);
+
+            if min_servings == 0 {
+                min_servings = 1;
+            }
+
+            if min_servings > max_servings {
+                continue;
+            }
+
+            events.push((min_servings, false, i, package_size));
+            events.push((max_servings, true, i, package_size));
+
+    // Code based on https://www.go-hero.net/jam/17/name/Nore
+    events.sort();
+    let cnt = 0;
+    let counts = vec!( Vec::new(); N);
+    let remv = [0] * N
+    for (boundary, is_upper_bound,
+         ingredient_index, package_size) in events {
+        debug!("Saw event Boundary={} {} ingredient={} package={}",
+        boundary,is_upper_bound,ingredient_index,package_size
+        )
+        debug!("Counts={}, remv={}", counts, remv);
+        if is_upper_bound {
+            if remv[ingredient_index] > 0 {
+                remv[ingredient_index] -= 1;
+            // elif yy in counts[i]:
+            else {
+                counts[ingredient_index].remove(package_size);
+            }
+        else {
+            counts[ingredient_index].append(package_size);
+            if all(counts) {
+                cnt += 1;
+                for ii in range(N) {
+                    counts[ii].remove(min(counts[ii]));
+                    remv[ii] += 1;
+                }
+            }
+        }
+            }
+    return cnt;
+   
     let mut ans = format!("Case #{}:\n", case_no);
     ans
 }

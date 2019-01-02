@@ -19,7 +19,7 @@ use log4rs::encode::pattern::PatternEncoder;
 fn main()
 {
     //Init logging
-    if cfg!(feature = "debug_print")
+    if true // cfg!(feature = "debug_print")
     {
         let logfile = FileAppender::builder()
             .append(false)
@@ -38,11 +38,6 @@ fn main()
 
         let _handler = log4rs::init_config(config).unwrap();
 
-        debug!("debug print is enabled");
-    }
-    else
-    {
-        debug!("debug print not enabled");
     }
 
     solve_all_cases();
