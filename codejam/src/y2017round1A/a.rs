@@ -16,7 +16,7 @@ pub fn solve_all_cases()
         stdin().read_line(&mut s).unwrap();
         //debug!("Read {}", s);
         let r_and_c: Vec<u8> = s.split_whitespace().map(|n| n.parse().unwrap()).collect();
-        let (r, c) = (r_and_c[0], r_and_c[1]);
+        let (r, _) = (r_and_c[0], r_and_c[1]);
 
         let mut grid: Vec<Vec<char>> = Vec::new();
 
