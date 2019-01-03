@@ -31,15 +31,15 @@ pub fn solve_all_cases()
     }
 }
 
-fn solve(case_no: u32, N: u8, P:u8, r: &Vec<u32>, q:&Vec<Vec<u32>>) -> String
+fn solve(case_no: u32, N: u8, P:u8, R: &Vec<u32>, Q:&Vec<Vec<u32>>) -> String
 {
     debug!("\nStarting solve");
-    let events : Vec<_> = [];
+    let events : Vec<_> = Vec::new();
     for i in 0..N {
-        let required_amount = r[i];
+        let required_amount = R[i];
 
         for p in 0..P {
-            package_size = Q[i][p];
+            let package_size = Q[i][p];
 
             // problem is floating point
             //min_servings = math.ceil(package_size / (1.1 * required_amount) )
@@ -52,7 +52,7 @@ fn solve(case_no: u32, N: u8, P:u8, r: &Vec<u32>, q:&Vec<Vec<u32>>) -> String
             debug!("For ingredient {i}, package # {p}. \
                    Required per serving = {required_amount} \
                   Package size = {package_size} \
-                  Min = {min_servings} Max = {max_servings}", i=i, p=p, package_size=package_size, min_servings=min_servings,max_servings=max_servings);
+                  Min = {min_servings} Max = {max_servings}", i=i, p=p, required_amount=required_amount, package_size=package_size, min_servings=min_servings,max_servings=max_servings);
 
             if min_servings == 0 {
                 min_servings = 1;
@@ -64,25 +64,29 @@ fn solve(case_no: u32, N: u8, P:u8, r: &Vec<u32>, q:&Vec<Vec<u32>>) -> String
 
             events.push((min_servings, false, i, package_size));
             events.push((max_servings, true, i, package_size));
+        }
+    }
 
     // Code based on https://www.go-hero.net/jam/17/name/Nore
     events.sort();
     let cnt = 0;
-    let counts = vec!( Vec::new(); N);
-    let remv = [0] * N
+    let counts = vec!( Vec::new(); N.into());
+    let remv = vec!(0; N as usize);
     for (boundary, is_upper_bound,
          ingredient_index, package_size) in events {
         debug!("Saw event Boundary={} {} ingredient={} package={}",
         boundary,is_upper_bound,ingredient_index,package_size
-        )
+        );
         debug!("Counts={}, remv={}", counts, remv);
         if is_upper_bound {
             if remv[ingredient_index] > 0 {
                 remv[ingredient_index] -= 1;
+            }
             // elif yy in counts[i]:
             else {
                 counts[ingredient_index].remove(package_size);
             }
+        }            
         else {
             counts[ingredient_index].append(package_size);
             if all(counts) {
@@ -93,9 +97,9 @@ fn solve(case_no: u32, N: u8, P:u8, r: &Vec<u32>, q:&Vec<Vec<u32>>) -> String
                 }
             }
         }
-            }
-    return cnt;
+    }
+    
    
-    let mut ans = format!("Case #{}:\n", case_no);
+    let mut ans = format!("Case #{}: {}\n", case_no, cnt);
     ans
 }
