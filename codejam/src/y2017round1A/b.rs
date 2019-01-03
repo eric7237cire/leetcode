@@ -31,6 +31,7 @@ pub fn solve_all_cases()
     }
 }
 
+#[allow(non_snake_case)]
 fn solve(case_no: u32, N: u8, P:u8, R: &Vec<u32>, Q:&Vec<Vec<u32>>) -> String
 {
     debug!("\nStarting solve");
