@@ -77,6 +77,7 @@ fn solve(case_no: u32, N: u8, P:u8, R: &Vec<u32>, Q:&Vec<Vec<u32>>) -> String
         debug!("Saw event Boundary={} {} ingredient={} package={}",
         boundary,is_upper_bound,ingredient_index,package_size
         );
+        
         debug!("Counts={}, remv={}", counts, remv);
         if is_upper_bound {
             if remv[ingredient_index] > 0 {
