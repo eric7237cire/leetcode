@@ -1,11 +1,11 @@
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
 //use self::y2017qual::d::solve_all_cases;
-use self::y2017round1a::b::solve_all_cases;
+use self::y2017round1a::c::solve_all_cases;
 //mod y2017qual;
 //use self::util::input;
-mod y2017round1a;
 mod util;
+mod y2017round1a;
 
 #[macro_use]
 extern crate log;
@@ -19,7 +19,8 @@ use log4rs::encode::pattern::PatternEncoder;
 fn main()
 {
     //Init logging
-    if true // cfg!(feature = "debug_print")
+    if true
+    // cfg!(feature = "debug_print")
     {
         let logfile = FileAppender::builder()
             .append(false)
@@ -37,7 +38,6 @@ fn main()
             .unwrap();
 
         let _handler = log4rs::init_config(config).unwrap();
-
     }
 
     solve_all_cases();
