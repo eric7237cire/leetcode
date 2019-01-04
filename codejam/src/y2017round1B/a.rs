@@ -1,5 +1,4 @@
 use super::super::util::input::read_int_line;
-use std::cmp;
 use std::io::stdin;
 use std::thread;
 
@@ -36,6 +35,7 @@ pub fn solve_all_cases()
     }
 }
 
+#[derive(Debug)]
 struct HorseSegment {
     start_time: f64,
     stop_time: f64,
@@ -44,7 +44,9 @@ struct HorseSegment {
 }
 
 impl HorseSegment {
-
+    fn velocity(&self) -> f64 {
+        (self.stop_pos - self.start_pos) / (self.stop_time - self.start_time)
+    }
 }
 
 fn seg_intersect<T>( seg1: &(T, T), seg2: &(T, T) ) -> bool
@@ -71,20 +73,60 @@ fn test_seg_intersect() {
 #[allow(non_snake_case)]
 fn solve(case_no: u32, D: f64, horses: &Vec<Horse>) -> String
 {
-    let mut horse_segs = horses.iter().map( |h| HorseSegment{start_time: 0f64, start_pos: h.0 as f64,
-    stop_pos: D, stop_time: (D - h.0 as f64) / h.1 as f64});
+    let mut horse_segs : Vec<HorseSegment> = horses.iter().map( |h| HorseSegment{start_time: 0f64, start_pos: h.0 as f64,
+    stop_pos: D, stop_time: (D - h.0 as f64) / h.1 as f64}).collect();
 
-    for _ in 0..10 {
-        let mut found_intersection = false;
-        let mut new_horse_segs : Vec<HorseSegment> = Vec::new();
-        for i in 0..horse_segs.len() {
-            for j in 1..horse_segs.len() {
+    //Sort by starting position
+    horse_segs.sort_by( |h1, h2| h1.start_pos.partial_cmp(&h2.start_pos).unwrap() );
 
-            }
+    let mut cur_index = 0;
+
+    while cur_index < horse_segs.len() - 1 {
+        let cur = &horse_segs[cur_index];
+        let next = &horse_segs[cur_index + 1];
+        if next.velocity() >= cur.velocity() {
+            //anything that is faster won't affect the answer
+            horse_segs.remove(cur_index+1);
+            continue;
+        }
+
+        //Now make sure they intersect before D
+        let inter_t = (cur.start_pos-next.start_pos) / (next.velocity() - cur.velocity());
+        let inter_p = cur.start_pos + cur.velocity() * inter_t;
+        //let inter_p_check = next.start_pos + next.velocity() * inter_t;
+        //assert!( (inter_p - inter_p_check).abs() < 1e-6, format!("inter_p {} {}", inter_p, inter_p_check));
+       /* if !( (inter_p - inter_p_check).abs() < 1e-6) {
+            panic!( format!("inter_p {} {}", inter_p, inter_p_check));
+        }*/
+
+        if inter_p >= D {
+            debug!("other horse finishes before: {:?} {:?}", cur, next);
+            horse_segs.remove(cur_index+1);
+            continue;
+        }
+
+        
+        horse_segs[cur_index].stop_pos = inter_p;
+        horse_segs[cur_index].stop_time = inter_t;
+        
+        horse_segs[cur_index+1].start_pos = inter_p;
+        horse_segs[cur_index+1].start_time = inter_t;
+
+        cur_index+=1;
+    }
+
+    let mut min_v = std::f64::MAX;
+
+    for (i,hs) in horse_segs.iter().enumerate() {
+        debug!("After processing, horse {} is {:?}.  V={:3}", i, hs, hs.velocity());
+
+        let t = (D-hs.start_pos) / hs.velocity() + hs.start_time;
+        let v = D / t;
+        debug!("After processing, horse {} is {:?}.  V={:3}.  V to intersect={:3}", i, hs, hs.velocity(), v);
+        if v < min_v {
+            min_v = v;
         }
     }
 
-    let mut ans = format!("Case #{}:\n", case_no);
-    
-    ans
+    format!("Case #{}: {:6}\n", case_no, min_v)
 }

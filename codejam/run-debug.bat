@@ -2,7 +2,7 @@
 rd /s /q "D:\git\rust-algorithm-problems\codejam\log"
 rem cargo build && cat .\src\y2017qual\A-small-practice.in | .\target\debug\codejam.exe > .\src\y2017qual\A-small-practice.out 
 rem cargo build && cat .\src\y2017qual\A-large-practice.in | .\target\debug\codejam.exe > .\src\y2017qual\A-large-practice.out 
-set RUST_BACKTRACE=0
+set RUST_BACKTRACE=1
 rem cargo build && cat .\src\y2017qual\B-small-practice.in | .\target\debug\codejam.exe > .\src\y2017qual\B-small-practice.out 
 rem cargo build && cat .\src\y2017qual\B-large-practice.in | .\target\debug\codejam.exe > .\src\y2017qual\B-large-practice.out 
 
@@ -19,4 +19,6 @@ rem cargo build && cat .\src\y2017round1A\B-large-practice.in | .\target\debug\c
 rem cargo build && cat .\src\y2017round1A\C-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round1A\C-small-practice.out 
 rem cargo build && cat .\src\y2017round1A\C-large-practice.in | .\target\debug\codejam.exe > .\src\y2017round1A\C-large-practice.out 
 
+cargo build && cat .\src\y2017round1B\A-test.in | .\target\debug\codejam.exe 
 cargo build && cat .\src\y2017round1B\A-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round1B\A-small-practice.out 
+cargo build && cat .\src\y2017round1B\A-large-practice.in | .\target\debug\codejam.exe > .\src\y2017round1B\A-large-practice.out 
