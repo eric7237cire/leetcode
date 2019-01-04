@@ -73,9 +73,6 @@ fn test_seg_intersect() {
 #[allow(non_snake_case)]
 fn solve(case_no: u32, D: f64, horses: &Vec<Horse>) -> String
 {
-    /*if case_no != 21 {
-        return "".to_string();
-    }*/
     let mut horse_segs : Vec<HorseSegment> = horses.iter().map( |h| HorseSegment{start_time: 0f64, start_pos: h.0 as f64,
     stop_pos: D, stop_time: (D - h.0 as f64) / h.1 as f64}).collect();
 
@@ -96,40 +93,22 @@ fn solve(case_no: u32, D: f64, horses: &Vec<Horse>) -> String
         //Now make sure they intersect before D
         let inter_t = (cur.start_pos-next.start_pos) / (next.velocity() - cur.velocity());        
         let inter_p = cur.start_pos + cur.velocity() * inter_t;
-        //let inter_p_check = next.start_pos + next.velocity() * inter_t;
-        //assert!( (inter_p - inter_p_check).abs() < 1e-6, format!("inter_p {} {}", inter_p, inter_p_check));
-       /* if !( (inter_p - inter_p_check).abs() < 1e-6) {
-            panic!( format!("inter_p {} {}", inter_p, inter_p_check));
-        }*/
-
+        
         if inter_p >= D {
             debug!("other horse finishes before: {:?} {:?}", cur, next);
             horse_segs.remove(cur_index+1);
             continue;
-        }
-
+        }        
         
-        horse_segs[cur_index].stop_pos = inter_p;
-        horse_segs[cur_index].stop_time = inter_t;
-        
-        //horse_segs[cur_index+1].start_pos = inter_p;
-        //horse_segs[cur_index+1].start_time = inter_t;
-
         cur_index+=1;
     }
 
-    let mut min_v = std::f64::MAX;
+    let hs = horse_segs.last().unwrap();
+    debug!("After processing, horse is {:?}.  V={:3}", hs, hs.velocity());
 
-    for (i,hs) in horse_segs.iter().enumerate() {
-        debug!("After processing, horse {} is {:?}.  V={:3}", i, hs, hs.velocity());
-
-        let t = (D-hs.start_pos) / hs.velocity() + hs.start_time;
-        let v = D / t;
-        debug!("After processing, horse {} is {:?}.  V={:3}.  V to intersect={:3}", i, hs, hs.velocity(), v);
-        if v < min_v {
-            min_v = v;
-        }
-    }
-
+    let t = (D-hs.start_pos) / hs.velocity() + hs.start_time;
+    let min_v = D / t;
+    debug!("After processing, horse is {:?}.  V={:3}.  V to intersect={:3}", hs, hs.velocity(), min_v);
+    
     format!("Case #{}: {:.6}\n", case_no, min_v)
 }
