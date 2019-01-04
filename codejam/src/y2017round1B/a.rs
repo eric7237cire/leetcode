@@ -2,7 +2,11 @@ use super::super::util::input::read_int_line;
 use std::io::stdin;
 use std::thread;
 
-struct Horse(u64, u64);
+#[derive(Debug)]
+struct Horse {
+    velocity: f64,
+    start_pos: f64
+}
 
 pub fn solve_all_cases()
 {
@@ -17,14 +21,14 @@ pub fn solve_all_cases()
         //D & N
         let input: Vec<u64> = read_int_line();        
         let n = input[1];
-        let horse = (0..n).map( |_| {
+        let mut horse = (0..n).map( |_| {
             let input: Vec<u64> = read_int_line();        
-            Horse(input[0], input[1])
+            Horse{start_pos:input[0] as f64, velocity:input[1] as f64}
         }).collect::<Vec<_>>();
 
         children.push(thread::spawn(move || -> String {
             solve(
-                case, input[0] as f64, &horse
+                case, input[0] as f64, &mut horse
             )
         }));
     }
@@ -35,68 +39,32 @@ pub fn solve_all_cases()
     }
 }
 
-#[derive(Debug)]
-struct HorseSegment {
-    start_time: f64,
-    stop_time: f64,
-    start_pos: f64,
-    stop_pos: f64
-}
-
-impl HorseSegment {
-    fn velocity(&self) -> f64 {
-        (self.stop_pos - self.start_pos) / (self.stop_time - self.start_time)
-    }
-}
-
-fn seg_intersect<T>( seg1: &(T, T), seg2: &(T, T) ) -> bool
-where T : std::cmp::PartialOrd
-{
-    assert!(seg1.0 <= seg1.1);
-    assert!(seg2.0 <= seg2.1);
-    //https://stackoverflow.com/questions/3269434/whats-the-most-efficient-way-to-test-two-integer-ranges-for-overlap
-    return seg1.0 <= seg2.1 && seg2.0 <= seg1.1  ;
-} 
-
-#[test]
-fn test_seg_intersect() {
-    assert!(!seg_intersect::<u64>( &(1,2), &(3,4) ));
-    assert!(!seg_intersect::<i64>( &(-4,-3), &(-2,-1) ));
-
-    assert!(seg_intersect::<u8>( &(1,14), &(3,5) ), "seg2 fully inside seg1");
-    assert!(seg_intersect::<f64>( &(3.1,3.2), &(2.9,5.1) ), "seg1 fully inside seg2");
-
-    assert!(seg_intersect::<u8>( &(1,4), &(4,5) ), "endpoint shared");
-    assert!(seg_intersect::<i8>( &(-1,3), &(-4,-1) ), "endpoint shared");
-}
-
 #[allow(non_snake_case)]
-fn solve(case_no: u32, D: f64, horses: &Vec<Horse>) -> String
+fn solve(case_no: u32, D: f64, horses: &mut Vec<Horse>) -> String
 {
-    let mut horse_segs : Vec<HorseSegment> = horses.iter().map( |h| HorseSegment{start_time: 0f64, start_pos: h.0 as f64,
-    stop_pos: D, stop_time: (D - h.0 as f64) / h.1 as f64}).collect();
+    //let mut horses = horses.clone();
 
     //Sort by starting position
-    horse_segs.sort_by( |h1, h2| h1.start_pos.partial_cmp(&h2.start_pos).unwrap() );
+    horses.sort_by( |h1, h2| h1.start_pos.partial_cmp(&h2.start_pos).unwrap() );
 
     let mut cur_index = 0;
 
-    while cur_index < horse_segs.len() - 1 {
-        let cur = &horse_segs[cur_index];
-        let next = &horse_segs[cur_index + 1];
-        if next.velocity() >= cur.velocity() {
+    while cur_index < horses.len() - 1 {
+        let cur = &horses[cur_index];
+        let next = &horses[cur_index + 1];
+        if next.velocity >= cur.velocity {
             //anything that is faster won't affect the answer
-            horse_segs.remove(cur_index+1);
+            horses.remove(cur_index+1);
             continue;
         }
 
         //Now make sure they intersect before D
-        let inter_t = (cur.start_pos-next.start_pos) / (next.velocity() - cur.velocity());        
-        let inter_p = cur.start_pos + cur.velocity() * inter_t;
+        let inter_t = (cur.start_pos-next.start_pos) / (next.velocity - cur.velocity);        
+        let inter_p = cur.start_pos + cur.velocity * inter_t;
         
         if inter_p >= D {
             debug!("other horse finishes before: {:?} {:?}", cur, next);
-            horse_segs.remove(cur_index+1);
+            horses.remove(cur_index+1);
             continue;
         }        
         
@@ -104,12 +72,12 @@ fn solve(case_no: u32, D: f64, horses: &Vec<Horse>) -> String
     }
 
     //Only the last horse actually matters
-    let hs = horse_segs.last().unwrap();
-    debug!("After processing, horse is {:?}.  V={:3}", hs, hs.velocity());
+    let hs = horses.last().unwrap();
+    debug!("After processing, horse is {:?}.  V={:3}", hs, hs.velocity);
 
-    let t = (D-hs.start_pos) / hs.velocity() + hs.start_time;
+    let t = (D-hs.start_pos) / hs.velocity ;
     let min_v = D / t;
-    debug!("After processing, horse is {:?}.  V={:3}.  V to intersect={:3}", hs, hs.velocity(), min_v);
+    debug!("After processing, horse is {:?}.  V={:3}.  V to intersect={:3}", hs, hs.velocity, min_v);
     
     format!("Case #{}: {:.6}\n", case_no, min_v)
 }
