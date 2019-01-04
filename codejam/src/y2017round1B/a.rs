@@ -103,6 +103,7 @@ fn solve(case_no: u32, D: f64, horses: &Vec<Horse>) -> String
         cur_index+=1;
     }
 
+    //Only the last horse actually matters
     let hs = horse_segs.last().unwrap();
     debug!("After processing, horse is {:?}.  V={:3}", hs, hs.velocity());
 
