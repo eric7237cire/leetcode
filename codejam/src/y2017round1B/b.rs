@@ -18,10 +18,10 @@ pub fn solve_all_cases()
         //N, R, O(RY), Y, G(YB), B, and V(RB).
         let input: Vec<u16> = read_int_line();
 
-       //  children.push(thread::spawn(move || -> String { solve(case, &input) }));
+        //  children.push(thread::spawn(move || -> String { solve(case, &input) }));
         print!("{}", solve(case, &input));
     }
-/*
+    /*
     for child in children
     {
         print!("{}", child.join().unwrap());
@@ -140,15 +140,14 @@ impl<'a> FromIterator<&'a u16> for CountsTuple
     }
 }
 
-
-
 #[test]
-fn test_helper1() {
+fn test_helper1()
+{
     init_log();
     let mut sol: Vec<Colors> = vec![Red, Yellow, Blue, Red, Yellow];
-    let mut counts: Counts = [0;7];
+    let mut counts: Counts = [0; 7];
     counts[0] = 1;
-    counts[1+to_index(&Blue)] = 1;
+    counts[1 + to_index(&Blue)] = 1;
     let r = helper(&mut sol, &mut counts, 0);
     assert!(r);
 }
@@ -166,14 +165,15 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
                 .skip(1)
                 .max_by_key(|&(_, item)| item)
                 .unwrap()
-                .0 - 1;
+                .0
+                - 1;
             let color = &COLORS[remaining_color_index];
             //check both ends
             if is_ok(sol.first().unwrap(), color) && is_ok(sol.last().unwrap(), color)
             {
                 sol.push(*color);
                 counts[0] -= 1;
-                counts[remaining_color_index+1] -= 1;
+                counts[remaining_color_index + 1] -= 1;
                 true
             }
             else
@@ -181,38 +181,73 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
                 false
             }
         }
-        _ => {
-            
-            let mut found = false;
-            for idx in 1..7 {
-                let color_idx = idx-1;
-                if counts[idx] == 0 {
-                    continue;
-                }
-                if !sol.is_empty() && !is_ok(sol.last().unwrap(), &COLORS[color_idx]) {
-                    continue;
-                }
-                sol.push(COLORS[color_idx]);
-                counts[0]-=1;
-                counts[idx]-=1;
-                let ok = helper(sol, counts, level+1);
-                if ok {
-                    found = true;
-                    break;
-                } else {
-                    sol.remove(sol.len()-1);
-                    counts[0]+=1;
-                    counts[idx]+=1;
-                }
+        _ =>
+        {
+            if counts[1 + to_index(&Red)]
+                > counts[1 + to_index(&Yellow)] + counts[1 + to_index(&Blue)]
+            {
+                false
             }
+            else if counts[1 + to_index(&Yellow)]
+                > counts[1 + to_index(&Red)] + counts[1 + to_index(&Blue)]
+            {
+                false
+            }
+            else if counts[1 + to_index(&Blue)]
+                > counts[1 + to_index(&Yellow)] + counts[1 + to_index(&Red)]
+            {
+                false
+            }
+            else
+            {
+                let mut found = false;
+                for idx in 1..7
+                {
+                    let color_idx = idx - 1;
+                    if counts[idx] == 0
+                    {
+                        continue;
+                    }
+                    if !sol.is_empty() && !is_ok(sol.last().unwrap(), &COLORS[color_idx])
+                    {
+                        continue;
+                    }
+                    sol.push(COLORS[color_idx]);
+                    counts[0] -= 1;
+                    counts[idx] -= 1;
+                    let ok = helper(sol, counts, level + 1);
+                    if ok
+                    {
+                        found = true;
+                        break;
+                    }
+                    else
+                    {
+                        sol.remove(sol.len() - 1);
+                        counts[0] += 1;
+                        counts[idx] += 1;
+                    }
+                }
 
-            found   
-        },
+                found
+            }
+        }
     };
 
-    debug!("{} Helper sol: {:?} n: {} counts: {:?} ret={}", " ".repeat(level * 2), sol, counts[0], 
-        counts.iter().skip(1).zip(COLORS.iter()).map( |(cnt, col)| format!("{:?}: {}", col, cnt)).collect::<Vec<String>>().join("; "), 
-    r_val);
+    debug!(
+        "{} Helper sol: {:?} n: {} counts: {:?} ret={}",
+        " ".repeat(level * 2),
+        sol,
+        counts[0],
+        counts
+            .iter()
+            .skip(1)
+            .zip(COLORS.iter())
+            .map(|(cnt, col)| format!("{:?}: {}", col, cnt))
+            .collect::<Vec<String>>()
+            .join("; "),
+        r_val
+    );
 
     r_val
 }
