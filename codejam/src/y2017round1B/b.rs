@@ -1,12 +1,8 @@
 use super::super::util::input::read_int_line;
-use super::super::util::log::init_log;
 use std::fmt;
 use std::io::stdin;
 use std::iter::FromIterator;
-//use std::slice::Iter;
 use itertools::Itertools;
-
-//use std::thread;
 
 pub fn solve_all_cases()
 {
@@ -96,14 +92,6 @@ impl ::std::fmt::Display for Colors
         write!(f, "{}", self.to_char())
     }
 }
-/*
-impl Colors
-{
-    pub fn iterator() -> Iter<'static, Colors>
-    {
-        COLORS.into_iter()
-    }
-}*/
 
 struct Counts {
     total: u16,
@@ -118,11 +106,11 @@ impl Counts
     fn get_count(&self, c: Colors) -> u16 {
         self.count[c.to_index()]
     } 
-    
-    fn adj_count(&mut self, c: Colors, v: i16) {
-        
-        self.count[c.to_index()] =  (self.count[c.to_index()] as i16 + v) as u16;
-        self.total = (self.total as i16 + v) as u16;
+
+    fn remove_color(&mut self, c: Colors, v: u16) {
+
+        self.count[c.to_index()] -= v;
+        self.total -= v;
     }
     fn max_color(&self) -> Colors 
     {
@@ -169,134 +157,136 @@ impl<'a> FromIterator<&'a u16> for Counts
     }
 }
 
-#[test]
-fn test_helper1()
+const DOUBLE_COLORS : [Colors;3] = [Green, Violet, Orange];
+const DOUBLE_COLORS_PAIRS : [Colors;3] = [Red, Yellow, Blue];
+
+fn solution(counts: &mut Counts) -> Option<String>
 {
-    //init_log();
-    let mut sol: Vec<Colors> = vec![Red, Yellow, Blue, Red, Yellow];
-    let mut counts: Counts = Counts::new();
-    counts.adj_count(Blue, 1);
-    let r = primary_color_sol(&mut sol, &mut counts);
-    assert!(r, "snht");
-}
+    let mut sol = String::new();
 
-#[test]
-fn test_helper2()
-{
-    //init_log();
-    let mut sol: Vec<Colors> = vec![Red, Red];
-    let mut counts = Counts::new();
-    counts.adj_count(Blue,  1);
-    counts.adj_count(Yellow, 1);
-    let r = primary_color_sol(&mut sol, &mut counts);
-    assert!(r, "sam");
-}
-#[test]
-fn test_helper3()
-{
-    //init_log();
-    let mut sol: Vec<Colors> = vec![];
-    let mut counts = Counts::new();
-    counts.adj_count(Blue,  2);
-    counts.adj_count(Yellow, 4);
-    counts.adj_count(Red, 2);
-    let r = primary_color_sol(&mut sol, &mut counts);
-    assert!(r, "bob");
-    assert_eq!(8, sol.len());
-}
-
-
-fn primary_color_sol(sol: &mut Vec<Colors>, counts: &mut Counts) -> bool
-{
-    let N = counts.total;
-    sol.clear();
-
-    let color1 = counts.max_color();
-
-    if N == 1 {
-        sol.push(color1);
-        return true;
+    if counts.total == 1 {
+        sol.push(counts.max_color().to_char() );
+        return Some(sol);
     }
+
+
+    //Now make extended color chains
+    let mut chains : [String; 3] = [String::new(), String::new(),String::new()];
+    //ROYGBV
+    for (idx,&db) in DOUBLE_COLORS.iter().enumerate() {
+        let db_count = counts.get_count(db);
+
+        if db_count == 0 {
+            continue;
+        }
+
+        let pc = counts.max_color_ok(db, None);
+        if pc.is_none() {
+            debug!("No primary color available");
+            return None;
+        }
+        let pc = pc.unwrap();
+        let pc_count = counts.get_count(pc);
+
+
+        if pc_count < db_count + 1 {
+            debug!("Not enough PC to create a chain for double color");
+            return None;
+        }
+
+        //leave one pc around to subsitute for the chain
+        counts.remove_color(pc, db_count);
+        counts.remove_color(db, db_count);
+        chains[idx] = db.to_char().to_string() + &(pc.to_char().to_string() + &db.to_char().to_string()).repeat(db_count as usize);
+    }
+
+    let N = counts.total;
+    let color1 = counts.max_color();
 
     if counts.get_count(color1) > N / 2 //floor N/2
     {
-        return false;
+        debug!("Count of color {} too high {}.  N={}", color1, counts.get_count(color1), N);
+        return None;
     }
 
-    let color2 = counts.max_color_ok(color1, None);
-    let color3 = counts.max_color_ok(color1, color2);
+    let color2 = counts.max_color_ok(color1, None).unwrap();
+    let color3 = counts.max_color_ok(color1, Some(color2));
 
-    if N <= 2 {
-        sol.clear();
-        sol.push(color1);
-        if let Some(c2) = color2  {
-            sol.push(c2);
+    if color3.is_none() {
+        if !color1.is_ok(color2) {
+            debug!("Color1 not ok with color2");
+            return None;
         }
-        return true;
+        assert_eq!(counts.get_count(color1), counts.get_count(color2) );
+        sol.clear();
+        for _ in 0..N/2 {
+            sol.push(color1.to_char());
+            sol.push(color2.to_char());
+        }
+        return Some(sol);
     }
 
-    let color2 = color2.unwrap();
+
     let mut pass1:Vec<Colors> = Vec::new();
 
     let pass1_size = N / 2 + N % 2;
     for _ in 0..counts.get_count(color1) {
         pass1.push(color1);
-        counts.adj_count(color1, -1);
+        counts.remove_color(color1, 1);
     }
     for _ in 0..pass1_size as usize-pass1.len() {
         pass1.push(color2);
-        counts.adj_count(color2, -1);
+        counts.remove_color(color2, 1);
     }
 
     let mut pass2:Vec<Colors> = Vec::new();
-    //let pass2_size = n - pass1_size;
 
     for _ in 0..counts.get_count(color2) {
         pass2.push(color2);
-        counts.adj_count(color2, -1);
+        counts.remove_color(color2, 1);
     }
 
     if let Some(c3) = color3 {
         for _ in 0..counts.get_count(c3) {
             pass2.push(c3);
-            counts.adj_count(c3, -1);
+            counts.remove_color(c3, 1);
         }
     }
     assert_eq!(pass1.len(), pass1_size as usize);
-    assert_eq!(pass2.len(), N as usize - pass1_size as usize);
-    sol.extend( pass1.iter().interleave(pass2.iter()) );
+    assert_eq!(pass2.len(), N as usize - pass1_size as usize, "pass 2 wrong size");
+    sol.extend( pass1.iter().interleave(pass2.iter()).map( |c| c.to_char() ));
 
     assert_eq!(sol.len(), N as usize);
-    assert!(sol.first().unwrap().is_ok(*sol.last().unwrap()));
 
-    for w in sol.windows(2) {
-        assert!( w[0].is_ok(w[1]), format!("{} can't be next to {} {:?}", w[0], w[1], sol) );
+    for (idx, s) in chains.iter().enumerate() {
+        if s.len() <= 0 {
+            continue;
+        }
+
+        let pc_char = DOUBLE_COLORS_PAIRS[idx].to_char();
+
+        sol = sol.replacen(pc_char, s, 1);
     }
+    //assert!(sol.first().unwrap().is_ok(*sol.last().unwrap()));
 
+    /*for w in sol.windows(2) {
+        assert!( w[0].is_ok(w[1]), format!("{} can't be next to {} {:?}", w[0], w[1], sol) );
+    }*/
 
-
-    true
+    Some(sol)
 }
 
 
 #[allow(non_snake_case)]
 fn solve(case_no: u32, nroygbv: &Vec<u16>) -> String
 {
+    debug!("Solving case {}", case_no);
     let mut counts: Counts = nroygbv.iter().skip(1).collect();
-    let mut sol = Vec::new();
-    let is_ans = primary_color_sol(&mut sol, &mut counts);
+    let ans = solution( &mut counts);
 
-    debug!("Solution is {:?}", sol);
-    if is_ans
-    {
-        format!(
+    format!(
             "Case #{}: {}\n",
             case_no,
-            format!("{:.2}", sol.iter().format(""))
-        )
-    }
-    else
-    {
-        format!("Case #{}: IMPOSSIBLE\n", case_no)
-    }
+            match ans { Some(ans) => ans, _ => "IMPOSSIBLE".to_string()})
+
 }

@@ -1,4 +1,40 @@
 
+#[test]
+fn test_helper1()
+{
+    //init_log();
+    let mut sol: Vec<Colors> = vec![Red, Yellow, Blue, Red, Yellow];
+    let mut counts: Counts = Counts::new();
+    counts.adj_count(Blue, 1);
+    let r = primary_color_sol(&mut sol, &mut counts);
+    assert!(r, "snht");
+}
+
+#[test]
+fn test_helper2()
+{
+    //init_log();
+    let mut sol: Vec<Colors> = vec![Red, Red];
+    let mut counts = Counts::new();
+    counts.adj_count(Blue,  1);
+    counts.adj_count(Yellow, 1);
+    let r = primary_color_sol(&mut sol, &mut counts);
+    assert!(r, "sam");
+}
+#[test]
+fn test_helper3()
+{
+    //init_log();
+    let mut sol: Vec<Colors> = vec![];
+    let mut counts = Counts::new();
+    counts.adj_count(Blue,  2);
+    counts.adj_count(Yellow, 4);
+    counts.adj_count(Red, 2);
+    let r = primary_color_sol(&mut sol, &mut counts);
+    assert!(r, "bob");
+    assert_eq!(8, sol.len());
+}
+
 fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
 {
     return greedy_helper(sol, counts, level);
