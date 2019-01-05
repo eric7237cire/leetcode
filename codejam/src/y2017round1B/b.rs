@@ -94,14 +94,14 @@ impl ::std::fmt::Display for Colors
         write!(f, "{}", self.to_char())
     }
 }
-
+/*
 impl Colors
 {
     pub fn iterator() -> Iter<'static, Colors>
     {
         COLORS.into_iter()
     }
-}
+}*/
 
 struct Counts {
     total: u16,
@@ -122,15 +122,30 @@ impl Counts
         self.count[c.to_index()] =  (self.count[c.to_index()] as i16 + v) as u16;
         self.total = (self.total as i16 + v) as u16;
     }
-    fn remaining_color(&self) -> Colors 
+    fn max_color(&self) -> Colors 
     {
-        let remaining_color_index = self.count
+        let max_color_index = self.count
                 .iter()
                 .enumerate()
                 .max_by_key(|&(_, item)| item)
                 .unwrap()
                 .0;
-        COLORS[remaining_color_index]
+        COLORS[max_color_index]
+    }
+
+    fn max_color_ok(&self, c1: Colors, c2: Colors) -> Option<Colors>
+    {
+        let max_color_index = self.count
+                .iter()
+                .enumerate()
+            .filter( |&(_, count)| *count > 0)
+            .filter( |&(idx, _)| COLORS[idx].is_ok(c1) && COLORS[idx].is_ok(c2))
+                .max_by_key(|&(_, count)| count);
+
+        match max_color_index {
+            None => None,
+            Some(iv) => Some(COLORS[iv.0])
+        }
     }
 }
 
@@ -187,19 +202,46 @@ fn test_helper3()
     assert!(r);
 }
 
+
+fn greedy_helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
+{
+    let first = counts.max_color();
+    sol.push(first);
+    counts.adj_count(first, -1);
+
+    if counts.total == 0 {
+        return true;
+    }
+
+    while counts.total > 0
+    {
+        let color = counts.max_color_ok(*sol.last().unwrap(), *sol.last().unwrap());
+        if color.is_none() {
+            return false;
+        }
+        let color = color.unwrap();
+        sol.push(color);
+        counts.adj_count(color, -1);
+    }
+
+    sol.first().unwrap().is_ok(*sol.last().unwrap())
+}
+
 fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
 {
+    return greedy_helper(sol, counts, level);
+
     let r_val = match counts.total
     {
         0 => true,
         1 =>
         {
-            let remaining_color = counts.remaining_color();
+            let max_color = counts.max_color();
             //check both ends
-            if sol.first().unwrap().is_ok(remaining_color) && sol.last().unwrap().is_ok(remaining_color)
+            if sol.first().unwrap().is_ok(max_color) && sol.last().unwrap().is_ok(max_color)
             {
-                sol.push(remaining_color);
-                counts.adj_count(remaining_color, -1);
+                sol.push(max_color);
+                counts.adj_count(max_color, -1);
                 true
             }
             else
