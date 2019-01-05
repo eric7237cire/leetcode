@@ -1,20 +1,20 @@
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
 //use self::y2017qual::d::solve_all_cases;
-use self::y2017round1a::c::solve_all_cases;
+use self::y2017round1B::c::solve_all_cases;
 //mod y2017qual;
 //use self::util::input;
 mod util;
-mod y2017round1a;
+#[allow(non_snake_case)]
+mod y2017round1A;
+#[allow(non_snake_case)]
+mod y2017round1B;
 
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 
-use log::LevelFilter;
-use log4rs::append::file::FileAppender;
-use log4rs::config::{Appender, Config, Root};
-use log4rs::encode::pattern::PatternEncoder;
+use self::util::log::init_log;
 
 fn main()
 {
@@ -22,22 +22,7 @@ fn main()
     if true
     // cfg!(feature = "debug_print")
     {
-        let logfile = FileAppender::builder()
-            .append(false)
-            .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
-            .build("log/output.log")
-            .unwrap();
-
-        let config = Config::builder()
-            .appender(Appender::builder().build("logfile", Box::new(logfile)))
-            .build(
-                Root::builder()
-                    .appender("logfile")
-                    .build(LevelFilter::Debug),
-            )
-            .unwrap();
-
-        let _handler = log4rs::init_config(config).unwrap();
+        init_log();
     }
 
     solve_all_cases();

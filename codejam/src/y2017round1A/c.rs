@@ -65,7 +65,7 @@ fn solve(case_no: u32, Hd: i64, Ad: i64, Hk: i64, Ak: i64, B: i64, D: i64) -> St
     }
     let a = (Hk + b * B + Ad - 1) / (b * B + Ad);
     let ab = a + b;
-    let mut Hi = Hd;
+
     let mut minturn = MAX_TURN;
     if ab <= (Hd - 1) / Ak + 1
     {
@@ -92,7 +92,7 @@ fn solve(case_no: u32, Hd: i64, Ad: i64, Hk: i64, Ak: i64, B: i64, D: i64) -> St
     {
         let mut z = 0;
         let mut last_was_heal = false;
-        Hi = Hd;
+        let mut Hi = Hd;
         let mut lastu: i64 = -1;
         while Ak > 0
         {
