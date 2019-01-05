@@ -107,10 +107,13 @@ impl ::std::fmt::Display for Colors
     }
 }
 
+#[derive(Clone, Debug)]
 struct Counts {
     total: u16,
     count: [u16;6],
-} 
+}
+
+
 
 impl Counts 
 {
@@ -120,10 +123,12 @@ impl Counts
     fn get_count(&self, c: Colors) -> u16 {
         self.count[c.to_index()]
     } 
-fn add_color(&mut self, c: Colors, v: u16) {
-
+    fn add_color(&mut self, c: Colors, v: u16) {
         self.count[c.to_index()] += v;
         self.total += v;
+    }
+    fn num_colors(&self) -> usize {
+        self.count.iter().filter(|&cnt| *cnt > 0).count()
     }
 
     fn remove_color(&mut self, c: Colors, v: u16) {
@@ -181,6 +186,7 @@ const DOUBLE_COLORS_PAIRS : [Colors;3] = [Red, Yellow, Blue];
 
 fn solution(counts: &mut Counts) -> Option<String>
 {
+    let counts_check = counts.clone();
     let mut sol = String::new();
 
     if counts.total == 1 {
@@ -188,6 +194,30 @@ fn solution(counts: &mut Counts) -> Option<String>
         return Some(sol);
     }
 
+    //2 color check
+
+    if counts.num_colors() == 2 {
+        let color1 = counts.max_color();
+        let color2 = counts.max_color_ok(color1, None);
+        if color2.is_none() {
+            return None;
+        }
+        let color2 = color2.unwrap();
+        if !color1.is_ok(color2) {
+            debug!("Color1 not ok with color2");
+            return None;
+        }
+        let count_1 = counts.get_count(color1);
+        let count_2 = counts.get_count(color2);
+        if count_1 != count_2 {
+            return None;
+        }
+        for _ in 0..count_1 {
+            sol.push(color1.to_char());
+            sol.push(color2.to_char());
+        }
+        return Some(sol);
+    }
 
     //Now make extended color chains
     let mut chains : [String; 3] = [String::new(), String::new(),String::new()];
@@ -314,6 +344,12 @@ fn solution(counts: &mut Counts) -> Option<String>
 
     for (c1, c2) in sol.chars().map( |c| Colors::from(c) ).tuple_windows::<(_, _)>() {
         assert!( c1.is_ok(c2), format!("{} can't be next to {} {:?}", c1,c2, sol) );
+    }
+
+    for &c in COLORS.iter() {
+        let check_amt = counts_check.get_count(c);
+        let actual_amt = sol.chars().filter( |&ch| ch == c.to_char() ).count() as u16;
+        assert_eq!(check_amt, actual_amt);
     }
 
     Some(sol)
