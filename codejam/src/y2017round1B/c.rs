@@ -1,11 +1,8 @@
 use super::super::util::input::*;
-//use itertools::Itertools;
-//use std::fmt;
-//use std::io::stdin;
-//use std::iter::FromIterator;
 use std::f64;
 use std::u16;
 use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 
 struct Horse
 {
@@ -18,13 +15,11 @@ type CityIndex = usize;
 
 pub fn solve_all_cases()
 {
-    //let mut children: Vec<thread::JoinHandle<_>> = vec![];
     let mut reader = InputReader::new();
     let t = reader.read_int();
 
     for case in 1..=t
     {
-        //N, R, O(RY), Y, G(YB), B, and V(RB).
         let (N, Q) = reader.read_tuple_2::<u8, u8>();
         let horses: Vec<_> = (0..N)
             .map(|_| reader.read_tuple_2::<Distance, u16>())
@@ -47,16 +42,10 @@ pub fn solve_all_cases()
         let queries: Vec<_> = (0..Q)
             .map(|_| reader.read_tuple_2::<CityIndex, CityIndex>())
             .collect();
-        //  children.push(thread::spawn(move || -> String { solve(case, &input) }));
         print!("{}", solve(case, &horses, &city_dist, &queries));
-    } /*
-      for child in children
-      {
-          print!("{}", child.join().unwrap());
-      }*/
+    }
 }
 
-use std::collections::BinaryHeap;
 
 #[allow(non_snake_case)]
 #[derive(Copy, Clone)]
@@ -83,7 +72,6 @@ impl Node
 }
 
 impl Eq for Node {}
-
 
 impl PartialEq for Node {
     fn eq(&self, other: &Node) -> bool {
@@ -124,6 +112,7 @@ fn solve(
         solve_query(horses, city_dist, q.0 - 1, q.1 - 1)
     ).map(|f| f.to_string()).collect::<Vec<_>>().join(" "))
 }
+#[allow(non_snake_case)]
 fn solve_query(
     horses: &Vec<Horse>,
     city_dist: &Vec<Vec<Option<Distance>>>,
@@ -138,14 +127,14 @@ fn solve_query(
 
     // dist[node] = current shortest distance from `start` to `node`
     let mut shortest_time: Vec<_> = (0..NODE_COUNT).map(|_| f64::MAX).collect();
-    let mut prev: Vec<Option<CityIndex>> = vec![None; NODE_COUNT as usize];
+    let mut prev: Vec<Option<CityIndex>> = vec![None; NODE_COUNT];
 
     let mut heap = BinaryHeap::new();
 
     let start = Node::to_index(N, start_city, start_city);
 
     // We're at `start`, with a zero time
-    shortest_time[start as usize] = 0f64;
+    shortest_time[start] = 0f64;
     heap.push(Node {
         time: 0f64,
         city_horse_index: start,
@@ -234,21 +223,5 @@ fn solve_query(
         }
     }
 
-    /*
-            println!("distance from start {} to end {} is {}", start, stop, dist[stop]);
-            println!("Adj list is {:?}", adj_list);
-            for (i, item) in prev.iter().enumerate() {
-                println!("Prev for node# {} / {} is {:?}",
-                    i,
-                    word_list[i].clone(),
-                    vec_idx_to_str(&prev[i], &word_list)
-                );
-                println!("Dist for node# {} / {} is {:?}",
-                    i,
-                    word_list[i].clone(),
-                    dist[i]
-                );
-            }
-    */
     -1f64
 }
