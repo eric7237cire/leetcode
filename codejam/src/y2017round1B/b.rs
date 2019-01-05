@@ -82,6 +82,20 @@ impl Colors
     }
 }
 
+impl From<char> for Colors {
+    fn from(item: char) -> Self {
+        match item {
+'R' =>             Red,
+'O' =>             Orange,
+'Y' =>             Yellow,
+'G' =>             Green,
+'B' =>             Blue,
+'V' =>             Violet,
+            _ => panic!("Character not recognized: {}", item)
+        }
+    }
+}
+
 use self::Colors::*;
 static COLORS: [Colors; 6] = [Red, Orange, Yellow, Green, Blue, Violet];
 
@@ -106,6 +120,11 @@ impl Counts
     fn get_count(&self, c: Colors) -> u16 {
         self.count[c.to_index()]
     } 
+fn add_color(&mut self, c: Colors, v: u16) {
+
+        self.count[c.to_index()] += v;
+        self.total += v;
+    }
 
     fn remove_color(&mut self, c: Colors, v: u16) {
 
@@ -175,7 +194,7 @@ fn solution(counts: &mut Counts) -> Option<String>
     //ROYGBV
     for (idx,&db) in DOUBLE_COLORS.iter().enumerate() {
         let db_count = counts.get_count(db);
-
+        debug!("Count of double color {} is {}", db, db_count);
         if db_count == 0 {
             continue;
         }
@@ -188,18 +207,26 @@ fn solution(counts: &mut Counts) -> Option<String>
         let pc = pc.unwrap();
         let pc_count = counts.get_count(pc);
 
-
         if pc_count < db_count + 1 {
             debug!("Not enough PC to create a chain for double color");
             return None;
         }
 
-        //leave one pc around to subsitute for the chain
-        counts.remove_color(pc, db_count);
+        counts.remove_color(pc, db_count+1);
         counts.remove_color(db, db_count);
-        chains[idx] = db.to_char().to_string() + &(pc.to_char().to_string() + &db.to_char().to_string()).repeat(db_count as usize);
+        chains[idx] = pc.to_char().to_string() + &(db.to_char().to_string() + &pc.to_char().to_string()).repeat(db_count as usize);
+        debug!("Made a chain {}", chains[idx]);
     }
 
+    //now after chains are created, only after, add them back
+    for (idx, s) in chains.iter().enumerate() {
+        if s.len() <= 0 {
+            continue;
+        }
+
+        let pc = DOUBLE_COLORS_PAIRS[idx];
+        counts.add_color(pc,1);
+    }
     let N = counts.total;
     let color1 = counts.max_color();
 
@@ -258,6 +285,10 @@ fn solution(counts: &mut Counts) -> Option<String>
 
     assert_eq!(sol.len(), N as usize);
 
+    //6 2 0 1 1 2 0
+    //RR Y G BB
+    //RGR BYB
+    debug!("Before substitions: {}", sol);
     for (idx, s) in chains.iter().enumerate() {
         if s.len() <= 0 {
             continue;
@@ -265,13 +296,25 @@ fn solution(counts: &mut Counts) -> Option<String>
 
         let pc_char = DOUBLE_COLORS_PAIRS[idx].to_char();
 
-        sol = sol.replacen(pc_char, s, 1);
+        sol = sol.replacen(pc_char, &std::char::from_digit(idx as u32, 10).unwrap().to_string(), 1);
     }
-    //assert!(sol.first().unwrap().is_ok(*sol.last().unwrap()));
+    for (idx, s) in chains.iter().enumerate() {
+        if s.len() <= 0 {
+            continue;
+        }
 
-    /*for w in sol.windows(2) {
-        assert!( w[0].is_ok(w[1]), format!("{} can't be next to {} {:?}", w[0], w[1], sol) );
-    }*/
+        //let pc_char = DOUBLE_COLORS_PAIRS[idx].to_char();
+
+        sol = sol.replacen(std::char::from_digit(idx as u32, 10).unwrap(), s, 1);
+    }
+    let first_char : char = sol.chars().next().unwrap();
+    let last_char : char = sol.chars().last().unwrap();
+    assert!( Colors::from(first_char).is_ok(Colors::from(last_char)),
+             format!("beg {} not ok with end {}.  Sol: {}", first_char, last_char, sol));
+
+    for (c1, c2) in sol.chars().map( |c| Colors::from(c) ).tuple_windows::<(_, _)>() {
+        assert!( c1.is_ok(c2), format!("{} can't be next to {} {:?}", c1,c2, sol) );
+    }
 
     Some(sol)
 }
