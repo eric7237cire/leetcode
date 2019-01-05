@@ -1,7 +1,7 @@
 //use self::y2017qual::a::solve_case;
 #![allow(dead_code)]
 //use self::y2017qual::d::solve_all_cases;
-use self::y2017round1B::b::solve_all_cases;
+use self::y2017round1B::c::solve_all_cases;
 //mod y2017qual;
 //use self::util::input;
 mod util;
