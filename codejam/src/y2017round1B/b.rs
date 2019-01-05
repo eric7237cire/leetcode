@@ -4,6 +4,8 @@ use std::fmt;
 use std::io::stdin;
 use std::iter::FromIterator;
 use std::slice::Iter;
+use itertools::Itertools;
+
 //use std::thread;
 
 pub fn solve_all_cases()
@@ -133,13 +135,13 @@ impl Counts
         COLORS[max_color_index]
     }
 
-    fn max_color_ok(&self, c1: Colors, c2: Colors) -> Option<Colors>
+    fn max_color_ok(&self, c1: Colors, c2: Option<Colors>) -> Option<Colors>
     {
         let max_color_index = self.count
                 .iter()
                 .enumerate()
             .filter( |&(_, count)| *count > 0)
-            .filter( |&(idx, _)| COLORS[idx].is_ok(c1) && COLORS[idx].is_ok(c2))
+            .filter( |&(idx, _)| COLORS[idx].is_ok(c1) && (c2.is_none() || COLORS[idx].is_ok(c2.unwrap())))
                 .max_by_key(|&(_, count)| count);
 
         match max_color_index {
@@ -174,163 +176,104 @@ fn test_helper1()
     let mut sol: Vec<Colors> = vec![Red, Yellow, Blue, Red, Yellow];
     let mut counts: Counts = Counts::new();
     counts.adj_count(Blue, 1);
-    let r = helper(&mut sol, &mut counts, 0);
-    assert!(r);
+    let r = primary_color_sol(&mut sol, &mut counts);
+    assert!(r, "snht");
 }
 
 #[test]
 fn test_helper2()
 {
-    init_log();
+    //init_log();
     let mut sol: Vec<Colors> = vec![Red, Red];
     let mut counts = Counts::new();
     counts.adj_count(Blue,  1);
     counts.adj_count(Yellow, 1);
-    let r = helper(&mut sol, &mut counts, 0);
-    assert!(r);
+    let r = primary_color_sol(&mut sol, &mut counts);
+    assert!(r, "sam");
 }
 #[test]
 fn test_helper3()
 {
-    init_log();
+    //init_log();
     let mut sol: Vec<Colors> = vec![];
     let mut counts = Counts::new();
     counts.adj_count(Blue,  2);
     counts.adj_count(Yellow, 4);
     counts.adj_count(Red, 2);
-    let r = helper(&mut sol, &mut counts, 0);
-    assert!(r);
+    let r = primary_color_sol(&mut sol, &mut counts);
+    assert!(r, "bob");
+    assert_eq!(8, sol.len());
 }
 
 
-fn greedy_helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
+fn primary_color_sol(sol: &mut Vec<Colors>, counts: &mut Counts) -> bool
 {
-    let first = counts.max_color();
-    sol.push(first);
-    counts.adj_count(first, -1);
+    let N = counts.total;
+    sol.clear();
 
-    if counts.total == 0 {
+    let color1 = counts.max_color();
+
+    if N == 1 {
+        sol.push(color1);
         return true;
     }
 
-    while counts.total > 0
+    if counts.get_count(color1) > N / 2 //floor N/2
     {
-        let color = counts.max_color_ok(*sol.last().unwrap(), *sol.last().unwrap());
-        if color.is_none() {
-            return false;
-        }
-        let color = color.unwrap();
-        sol.push(color);
-        counts.adj_count(color, -1);
+        return false;
     }
 
-    sol.first().unwrap().is_ok(*sol.last().unwrap())
-}
+    let color2 = counts.max_color_ok(color1, None);
+    let color3 = counts.max_color_ok(color1, color2);
 
-fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
-{
-    return greedy_helper(sol, counts, level);
-
-    let r_val = match counts.total
-    {
-        0 => true,
-        1 =>
-        {
-            let max_color = counts.max_color();
-            //check both ends
-            if sol.first().unwrap().is_ok(max_color) && sol.last().unwrap().is_ok(max_color)
-            {
-                sol.push(max_color);
-                counts.adj_count(max_color, -1);
-                true
-            }
-            else
-            {
-                false
-            }
+    if N <= 2 {
+        sol.clear();
+        sol.push(color1);
+        if let Some(c2) = color2  {
+            sol.push(c2);
         }
-        _ =>
-        {
-            if counts.get_count(Red)
-                > 1 + counts.get_count(Yellow) + counts.get_count(Blue)
-            {
-                false
-            }
-            else if counts.get_count(Yellow)
-                > 1 + counts.get_count(Red) + counts.get_count(Blue)
-            {
-                false
-            }
-            else if counts.get_count(Blue)
-                > 1 + counts.get_count(Yellow) + counts.get_count(Red)
-            {
-                false
-            }
-            else
-            {
-                let mut found = false;
-                for idx in 0..6
-                {
-                    let color = COLORS[idx];
-                    if counts.get_count(color) == 0
-                    {
-                        continue;
-                    }
-                    if !sol.is_empty() && !sol.last().unwrap().is_ok(color)
-                    {
-                        continue;
-                    }
-                    sol.push(color);
-                    counts.adj_count(color, -1);
-                    let ok = helper(sol, counts, level + 1);
-                    if ok
-                    {
-                        found = true;
-                        break;
-                    }
-                    else
-                    {
-                        sol.remove(sol.len() - 1);
-                        counts.adj_count(color, 1);
-                    }
-                }
-
-                found
-            }
-        }
-    };
-
-    if counts.total > 0 && sol.len() > 0
-    {
-        debug!(
-            "Level {} Helper sol: {:?}-{:?} size:{} n: {} counts: {:?} ret={}",
-            //" ".repeat(level * 2),
-            level,
-            sol.first().unwrap(),
-            sol.last().unwrap(),
-            sol.len(),
-            counts.total,
-            counts.count
-                .iter()
-                .zip(COLORS.iter())
-                .map(|(cnt, col)| format!("{:?}: {}", col, cnt))
-                .collect::<Vec<String>>()
-                .join("; "),
-            r_val
-        );
+        return true;
     }
 
-    r_val
+    let color2 = color2.unwrap();
+    let mut pass1:Vec<Colors> = Vec::new();
+
+    let pass1_size = N / 2 + N % 2;
+    for _ in 0..counts.get_count(color1) {
+        pass1.push(color1);
+        counts.adj_count(color1, -1);
+    }
+    for _ in 0..pass1_size-counts.get_count(color2) {
+        pass1.push(color2);
+        counts.adj_count(color2, -1);
+    }
+
+    let mut pass2:Vec<Colors> = Vec::new();
+    //let pass2_size = n - pass1_size;
+
+    for _ in 0..counts.get_count(color2) {
+        pass2.push(color2);
+        counts.adj_count(color2, -1);
+    }
+
+    if let Some(c3) = color3 {
+        for _ in 0..counts.get_count(c3) {
+            pass2.push(c3);
+            counts.adj_count(c3, -1);
+        }
+    }
+    sol.clear();
+    sol.extend( pass1.iter().interleave(pass2.iter()) );
+    true
 }
 
-use itertools::Itertools;
 
 #[allow(non_snake_case)]
 fn solve(case_no: u32, nroygbv: &Vec<u16>) -> String
 {
     let mut counts: Counts = nroygbv.iter().skip(1).collect();
     let mut sol = Vec::new();
-    let is_ans = helper(&mut sol, &mut counts, 0);
+    let is_ans = primary_color_sol(&mut sol, &mut counts);
 
     debug!("Solution is {:?}", sol);
     if is_ans
