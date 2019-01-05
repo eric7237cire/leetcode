@@ -119,9 +119,10 @@ fn solve(
 ) -> String
 {
     debug!("Solving case {}", case_no);
+    format!("Case #{}: {}\n", case_no,
     queries.iter().map(|q|
         solve_query(horses, city_dist, q.0 - 1, q.1 - 1)
-    ).map(|f| f.to_string()).collect::<Vec<_>>().join(" ")
+    ).map(|f| f.to_string()).collect::<Vec<_>>().join(" "))
 }
 fn solve_query(
     horses: &Vec<Horse>,

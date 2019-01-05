@@ -27,4 +27,5 @@ set RUST_BACKTRACE=1
 rem cargo build && cat .\src\y2017round1B\B-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round1B\B-small-practice.out
 rem cargo build && cat .\src\y2017round1B\B-large-practice.in | .\target\debug\codejam.exe > .\src\y2017round1B\B-large-practice.out
 
-cargo build && cat .\src\y2017round1B\C-test.in | .\target\debug\codejam.exe > .\src\y2017round1B\C-small-practice.out
+rem cargo build && cat .\src\y2017round1B\C-test.in | .\target\debug\codejam.exe > .\src\y2017round1B\C-small-practice.out
+cargo build && cat .\src\y2017round1B\C-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round1B\C-small-practice.out
