@@ -107,7 +107,7 @@ impl ::std::fmt::Display for Colors
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct Counts {
     total: u16,
     count: [u16;6],
@@ -160,15 +160,6 @@ impl Counts
             None => None,
             Some(iv) => Some(COLORS[iv.0])
         }
-    }
-}
-impl Clone for Counts {
-    fn clone(&self) -> Counts {
-        let mut copy_array = [0; 6];
-        for i in 0..6 {
-            copy_array[i] = self.count[i];
-        }
-        Counts { total: self.total, count: copy_array }
     }
 }
 impl<'a> FromIterator<&'a u16> for Counts
@@ -276,21 +267,6 @@ fn solution(counts: &mut Counts) -> Option<String>
 
     let color2 = counts.max_color_ok(color1, None).unwrap();
     let color3 = counts.max_color_ok(color1, Some(color2));
-/*
-    if color3.is_none() {
-        if !color1.is_ok(color2) {
-            debug!("Color1 not ok with color2");
-            return None;
-        }
-        assert_eq!(counts.get_count(color1), counts.get_count(color2) );
-        sol.clear();
-        for _ in 0..N/2 {
-            sol.push(color1.to_char());
-            sol.push(color2.to_char());
-        }
-        return Some(sol);
-    }
-*/
 
     let mut pass1:Vec<Colors> = Vec::new();
 
@@ -335,16 +311,7 @@ fn solution(counts: &mut Counts) -> Option<String>
         let pc_char = DOUBLE_COLORS_PAIRS[idx].to_char();
         debug!("Replace {}", pc_char);
 
-        sol = sol.replacen(pc_char, &std::char::from_digit(idx as u32, 10).unwrap().to_string(), 1);
-    }
-    for (idx, s) in chains.iter().enumerate() {
-        if s.len() <= 0 {
-            continue;
-        }
-
-        //let pc_char = DOUBLE_COLORS_PAIRS[idx].to_char();
-
-        sol = sol.replacen(std::char::from_digit(idx as u32, 10).unwrap(), s, 1);
+        sol = sol.replacen(pc_char, s, 1);
     }
     let first_char : char = sol.chars().next().unwrap();
     let last_char : char = sol.chars().last().unwrap();
