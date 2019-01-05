@@ -103,23 +103,51 @@ impl Colors
     }
 }
 
-type Counts = [u16; 7];
-struct CountsTuple(Counts);
+struct Counts {
+    total: u16,
+    count: [u16;6],
+} 
 
-impl<'a> FromIterator<&'a u16> for CountsTuple
+impl Counts 
+{
+    fn new() -> Counts {
+        Counts{ total: 0, count: [0; 6]}
+    }
+    fn get_count(&self, c: Colors) -> u16 {
+        self.count[c.to_index()]
+    } 
+    
+    fn adj_count(&mut self, c: Colors, v: i16) {
+        
+        self.count[c.to_index()] =  (self.count[c.to_index()] as i16 + v) as u16;
+        self.total = (self.total as i16 + v) as u16;
+    }
+    fn remaining_color(&self) -> Colors 
+    {
+        let remaining_color_index = self.count
+                .iter()
+                .enumerate()
+                .max_by_key(|&(_, item)| item)
+                .unwrap()
+                .0;
+        COLORS[remaining_color_index]
+    }
+}
+
+impl<'a> FromIterator<&'a u16> for Counts
 {
     fn from_iter<I: IntoIterator<Item = &'a u16>>(iter: I) -> Self
     {
-        let mut c: CountsTuple = CountsTuple([0; 7]);
-        let mut i = 1;
+        let mut c: Counts = Counts::new();
+        let mut i = 0;
         let mut n = 0;
         for v in iter
         {
-            c.0[i] = *v;
+            c.count[i] = *v;
             i += 1;
             n += *v;
         }
-        c.0[0] = n;
+        c.total = n;
         c
     }
 }
@@ -129,9 +157,8 @@ fn test_helper1()
 {
     //init_log();
     let mut sol: Vec<Colors> = vec![Red, Yellow, Blue, Red, Yellow];
-    let mut counts: Counts = [0; 7];
-    counts[0] = 1;
-    counts[1 + Blue.to_index()] = 1;
+    let mut counts: Counts = Counts::new();
+    counts.adj_count(Blue, 1);
     let r = helper(&mut sol, &mut counts, 0);
     assert!(r);
 }
@@ -141,36 +168,38 @@ fn test_helper2()
 {
     init_log();
     let mut sol: Vec<Colors> = vec![Red, Red];
-    let mut counts: Counts = [0; 7];
-    counts[0] = 1;
-    counts[1 + Blue.to_index()] = 1;
-    counts[1 + Yellow.to_index()] = 1;
+    let mut counts = Counts::new();
+    counts.adj_count(Blue,  1);
+    counts.adj_count(Yellow, 1);
+    let r = helper(&mut sol, &mut counts, 0);
+    assert!(r);
+}
+#[test]
+fn test_helper3()
+{
+    init_log();
+    let mut sol: Vec<Colors> = vec![];
+    let mut counts = Counts::new();
+    counts.adj_count(Blue,  2);
+    counts.adj_count(Yellow, 4);
+    counts.adj_count(Red, 2);
     let r = helper(&mut sol, &mut counts, 0);
     assert!(r);
 }
 
 fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
 {
-    let r_val = match counts[0]
+    let r_val = match counts.total
     {
         0 => true,
         1 =>
         {
-            let remaining_color_index = counts
-                .iter()
-                .enumerate()
-                .skip(1)
-                .max_by_key(|&(_, item)| item)
-                .unwrap()
-                .0
-                - 1;
-            let color = &COLORS[remaining_color_index];
+            let remaining_color = counts.remaining_color();
             //check both ends
-            if sol.first().unwrap().is_ok(*color) && sol.last().unwrap().is_ok(*color)
+            if sol.first().unwrap().is_ok(remaining_color) && sol.last().unwrap().is_ok(remaining_color)
             {
-                sol.push(*color);
-                counts[0] -= 1;
-                counts[remaining_color_index + 1] -= 1;
+                sol.push(remaining_color);
+                counts.adj_count(remaining_color, -1);
                 true
             }
             else
@@ -180,38 +209,37 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
         }
         _ =>
         {
-            if counts[1 + Red.to_index()]
-                > 1 + counts[1 + Yellow.to_index()] + counts[1 + Blue.to_index()]
+            if counts.get_count(Red)
+                > 1 + counts.get_count(Yellow) + counts.get_count(Blue)
             {
                 false
             }
-            else if counts[1 + Yellow.to_index()]
-                > 1 + counts[1 + Red.to_index()] + counts[1 + Blue.to_index()]
+            else if counts.get_count(Yellow)
+                > 1 + counts.get_count(Red) + counts.get_count(Blue)
             {
                 false
             }
-            else if counts[1 + Blue.to_index()]
-                > 1 + counts[1 + Yellow.to_index()] + counts[1 + Red.to_index()]
+            else if counts.get_count(Blue)
+                > 1 + counts.get_count(Yellow) + counts.get_count(Red)
             {
                 false
             }
             else
             {
                 let mut found = false;
-                for idx in 1..7
+                for idx in 0..6
                 {
-                    let color_idx = idx - 1;
-                    if counts[idx] == 0
+                    let color = COLORS[idx];
+                    if counts.get_count(color) == 0
                     {
                         continue;
                     }
-                    if !sol.is_empty() && !sol.last().unwrap().is_ok(COLORS[color_idx])
+                    if !sol.is_empty() && !sol.last().unwrap().is_ok(color)
                     {
                         continue;
                     }
-                    sol.push(COLORS[color_idx]);
-                    counts[0] -= 1;
-                    counts[idx] -= 1;
+                    sol.push(color);
+                    counts.adj_count(color, -1);
                     let ok = helper(sol, counts, level + 1);
                     if ok
                     {
@@ -221,8 +249,7 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
                     else
                     {
                         sol.remove(sol.len() - 1);
-                        counts[0] += 1;
-                        counts[idx] += 1;
+                        counts.adj_count(color, 1);
                     }
                 }
 
@@ -231,7 +258,7 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
         }
     };
 
-    if counts[0] > 0 && sol.len() > 0
+    if counts.total > 0 && sol.len() > 0
     {
         debug!(
             "Level {} Helper sol: {:?}-{:?} size:{} n: {} counts: {:?} ret={}",
@@ -240,10 +267,9 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
             sol.first().unwrap(),
             sol.last().unwrap(),
             sol.len(),
-            counts[0],
-            counts
+            counts.total,
+            counts.count
                 .iter()
-                .skip(1)
                 .zip(COLORS.iter())
                 .map(|(cnt, col)| format!("{:?}: {}", col, cnt))
                 .collect::<Vec<String>>()
@@ -260,7 +286,7 @@ use itertools::Itertools;
 #[allow(non_snake_case)]
 fn solve(case_no: u32, nroygbv: &Vec<u16>) -> String
 {
-    let mut counts: Counts = nroygbv.iter().skip(1).collect::<CountsTuple>().0;
+    let mut counts: Counts = nroygbv.iter().skip(1).collect();
     let mut sol = Vec::new();
     let is_ans = helper(&mut sol, &mut counts, 0);
 
