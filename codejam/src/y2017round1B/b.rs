@@ -3,7 +3,7 @@ use super::super::util::log::init_log;
 use std::fmt;
 use std::io::stdin;
 use std::iter::FromIterator;
-use std::slice::Iter;
+//use std::slice::Iter;
 use itertools::Itertools;
 
 //use std::thread;
@@ -243,7 +243,7 @@ fn primary_color_sol(sol: &mut Vec<Colors>, counts: &mut Counts) -> bool
         pass1.push(color1);
         counts.adj_count(color1, -1);
     }
-    for _ in 0..pass1_size-counts.get_count(color2) {
+    for _ in 0..pass1_size as usize-pass1.len() {
         pass1.push(color2);
         counts.adj_count(color2, -1);
     }
@@ -262,8 +262,19 @@ fn primary_color_sol(sol: &mut Vec<Colors>, counts: &mut Counts) -> bool
             counts.adj_count(c3, -1);
         }
     }
-    sol.clear();
+    assert_eq!(pass1.len(), pass1_size as usize);
+    assert_eq!(pass2.len(), N as usize - pass1_size as usize);
     sol.extend( pass1.iter().interleave(pass2.iter()) );
+
+    assert_eq!(sol.len(), N as usize);
+    assert!(sol.first().unwrap().is_ok(*sol.last().unwrap()));
+
+    for w in sol.windows(2) {
+        assert!( w[0].is_ok(w[1]), format!("{} can't be next to {} {:?}", w[0], w[1], sol) );
+    }
+
+
+
     true
 }
 
