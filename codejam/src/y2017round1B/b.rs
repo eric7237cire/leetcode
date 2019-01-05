@@ -1,9 +1,10 @@
 use super::super::util::input::read_int_line;
 use super::super::util::log::init_log;
+use std::fmt;
 use std::io::stdin;
 use std::iter::FromIterator;
 use std::slice::Iter;
-use std::thread;
+//use std::thread;
 
 pub fn solve_all_cases()
 {
@@ -39,64 +40,60 @@ enum Colors
     Violet,
 }
 
-fn to_index(c: &Colors) -> usize
+impl Colors
 {
-    match c
+    fn to_index(self) -> usize
     {
-        Red => 0,
-        Orange => 1,
-        Yellow => 2,
-        Green => 3,
-        Blue => 4,
-        Violet => 5,
+        match self
+        {
+            Red => 0,
+            Orange => 1,
+            Yellow => 2,
+            Green => 3,
+            Blue => 4,
+            Violet => 5,
+        }
     }
-}
-// R, O(RY), Y, G(YB), B, and V(RB).
-fn is_ok(c1: &Colors, c2: &Colors) -> bool
-{
-    match c1
+    fn to_color_binary(self) -> u8
     {
-        Red => match c2
+        match self
         {
-            Yellow => true,
-            Green => true,
-            Blue => true,
-            _ => false,
-        },
-        Orange => match c2
+            Red => 0b0_001_u8,
+            Orange => 0b0_011_u8,
+            Yellow => 0b0_010_u8,
+            Green => 0b0_110_u8,
+            Blue => 0b0_100_u8,
+            Violet => 0b0_101_u8,
+        }
+    }
+    fn to_char(self) -> char
+    {
+        match self
         {
-            Blue => true,
-            _ => false,
-        },
-        Yellow => match c2
-        {
-            Red => true,
-            Violet => true,
-            Blue => true,
-            _ => false,
-        },
-        Green => match c2
-        {
-            Red => true,
-            _ => false,
-        },
-        Blue => match c2
-        {
-            Red => true,
-            Yellow => true,
-            Orange => true,
-            _ => false,
-        },
-        Violet => match c2
-        {
-            Yellow => true,
-            _ => false,
-        },
+            Red => 'R',
+            Orange => 'O',
+            Yellow => 'Y',
+            Green => 'G',
+            Blue => 'B',
+            Violet => 'V',
+        }
+    }
+    fn is_ok(self, other: Colors) -> bool
+    {
+        self.to_color_binary() & other.to_color_binary() == 0
     }
 }
 
 use self::Colors::*;
 static COLORS: [Colors; 6] = [Red, Orange, Yellow, Green, Blue, Violet];
+
+impl ::std::fmt::Display for Colors
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
+    {
+        write!(f, "{}", self.to_char())
+    }
+}
 
 impl Colors
 {
@@ -108,20 +105,7 @@ impl Colors
 
 type Counts = [u16; 7];
 struct CountsTuple(Counts);
-/*
-impl FromIterator<u16> for CountsTuple {
-    fn from_iter<I: IntoIterator<Item=u16>>(iter: I) -> Self {
-        let mut c : CountsTuple = CountsTuple( [0;7] );
-        let mut i = 1;
-        for v in iter {
-            c.0[i]=v;
-            i+=1;
-        }
 
-        c
-    }
-
-}*/
 impl<'a> FromIterator<&'a u16> for CountsTuple
 {
     fn from_iter<I: IntoIterator<Item = &'a u16>>(iter: I) -> Self
@@ -143,11 +127,24 @@ impl<'a> FromIterator<&'a u16> for CountsTuple
 #[test]
 fn test_helper1()
 {
-    init_log();
+    //init_log();
     let mut sol: Vec<Colors> = vec![Red, Yellow, Blue, Red, Yellow];
     let mut counts: Counts = [0; 7];
     counts[0] = 1;
-    counts[1 + to_index(&Blue)] = 1;
+    counts[1 + Blue.to_index()] = 1;
+    let r = helper(&mut sol, &mut counts, 0);
+    assert!(r);
+}
+
+#[test]
+fn test_helper2()
+{
+    init_log();
+    let mut sol: Vec<Colors> = vec![Red, Red];
+    let mut counts: Counts = [0; 7];
+    counts[0] = 1;
+    counts[1 + Blue.to_index()] = 1;
+    counts[1 + Yellow.to_index()] = 1;
     let r = helper(&mut sol, &mut counts, 0);
     assert!(r);
 }
@@ -169,7 +166,7 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
                 - 1;
             let color = &COLORS[remaining_color_index];
             //check both ends
-            if is_ok(sol.first().unwrap(), color) && is_ok(sol.last().unwrap(), color)
+            if sol.first().unwrap().is_ok(*color) && sol.last().unwrap().is_ok(*color)
             {
                 sol.push(*color);
                 counts[0] -= 1;
@@ -183,18 +180,18 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
         }
         _ =>
         {
-            if counts[1 + to_index(&Red)]
-                > counts[1 + to_index(&Yellow)] + counts[1 + to_index(&Blue)]
+            if counts[1 + Red.to_index()]
+                > 1 + counts[1 + Yellow.to_index()] + counts[1 + Blue.to_index()]
             {
                 false
             }
-            else if counts[1 + to_index(&Yellow)]
-                > counts[1 + to_index(&Red)] + counts[1 + to_index(&Blue)]
+            else if counts[1 + Yellow.to_index()]
+                > 1 + counts[1 + Red.to_index()] + counts[1 + Blue.to_index()]
             {
                 false
             }
-            else if counts[1 + to_index(&Blue)]
-                > counts[1 + to_index(&Yellow)] + counts[1 + to_index(&Red)]
+            else if counts[1 + Blue.to_index()]
+                > 1 + counts[1 + Yellow.to_index()] + counts[1 + Red.to_index()]
             {
                 false
             }
@@ -208,7 +205,7 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
                     {
                         continue;
                     }
-                    if !sol.is_empty() && !is_ok(sol.last().unwrap(), &COLORS[color_idx])
+                    if !sol.is_empty() && !sol.last().unwrap().is_ok(COLORS[color_idx])
                     {
                         continue;
                     }
@@ -234,31 +231,50 @@ fn helper(sol: &mut Vec<Colors>, counts: &mut Counts, level: usize) -> bool
         }
     };
 
-    debug!(
-        "{} Helper sol: {:?} n: {} counts: {:?} ret={}",
-        " ".repeat(level * 2),
-        sol,
-        counts[0],
-        counts
-            .iter()
-            .skip(1)
-            .zip(COLORS.iter())
-            .map(|(cnt, col)| format!("{:?}: {}", col, cnt))
-            .collect::<Vec<String>>()
-            .join("; "),
-        r_val
-    );
+    if counts[0] > 0 && sol.len() > 0
+    {
+        debug!(
+            "Level {} Helper sol: {:?}-{:?} size:{} n: {} counts: {:?} ret={}",
+            //" ".repeat(level * 2),
+            level,
+            sol.first().unwrap(),
+            sol.last().unwrap(),
+            sol.len(),
+            counts[0],
+            counts
+                .iter()
+                .skip(1)
+                .zip(COLORS.iter())
+                .map(|(cnt, col)| format!("{:?}: {}", col, cnt))
+                .collect::<Vec<String>>()
+                .join("; "),
+            r_val
+        );
+    }
 
     r_val
 }
+
+use itertools::Itertools;
 
 #[allow(non_snake_case)]
 fn solve(case_no: u32, nroygbv: &Vec<u16>) -> String
 {
     let mut counts: Counts = nroygbv.iter().skip(1).collect::<CountsTuple>().0;
     let mut sol = Vec::new();
-    helper(&mut sol, &mut counts, 0);
+    let is_ans = helper(&mut sol, &mut counts, 0);
 
     debug!("Solution is {:?}", sol);
-    format!("Case #{}: \n", case_no)
+    if is_ans
+    {
+        format!(
+            "Case #{}: {}\n",
+            case_no,
+            format!("{:.2}", sol.iter().format(""))
+        )
+    }
+    else
+    {
+        format!("Case #{}: IMPOSSIBLE\n", case_no)
+    }
 }
