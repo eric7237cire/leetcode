@@ -107,7 +107,7 @@ impl ::std::fmt::Display for Colors
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 struct Counts {
     total: u16,
     count: [u16;6],
@@ -162,7 +162,15 @@ impl Counts
         }
     }
 }
-
+impl Clone for Counts {
+    fn clone(&self) -> Counts {
+        let mut copy_array = [0; 6];
+        for i in 0..6 {
+            copy_array[i] = self.count[i];
+        }
+        Counts { total: self.total, count: copy_array }
+    }
+}
 impl<'a> FromIterator<&'a u16> for Counts
 {
     fn from_iter<I: IntoIterator<Item = &'a u16>>(iter: I) -> Self
@@ -268,7 +276,7 @@ fn solution(counts: &mut Counts) -> Option<String>
 
     let color2 = counts.max_color_ok(color1, None).unwrap();
     let color3 = counts.max_color_ok(color1, Some(color2));
-
+/*
     if color3.is_none() {
         if !color1.is_ok(color2) {
             debug!("Color1 not ok with color2");
@@ -282,7 +290,7 @@ fn solution(counts: &mut Counts) -> Option<String>
         }
         return Some(sol);
     }
-
+*/
 
     let mut pass1:Vec<Colors> = Vec::new();
 
@@ -325,6 +333,7 @@ fn solution(counts: &mut Counts) -> Option<String>
         }
 
         let pc_char = DOUBLE_COLORS_PAIRS[idx].to_char();
+        debug!("Replace {}", pc_char);
 
         sol = sol.replacen(pc_char, &std::char::from_digit(idx as u32, 10).unwrap().to_string(), 1);
     }
@@ -349,6 +358,7 @@ fn solution(counts: &mut Counts) -> Option<String>
     for &c in COLORS.iter() {
         let check_amt = counts_check.get_count(c);
         let actual_amt = sol.chars().filter( |&ch| ch == c.to_char() ).count() as u16;
+        debug!("Checked color {}.  {}=={}", c, check_amt, actual_amt);
         assert_eq!(check_amt, actual_amt);
     }
 
