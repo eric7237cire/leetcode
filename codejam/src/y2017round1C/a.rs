@@ -12,9 +12,6 @@ struct Pancake
     area_sides: f64,
 }
 
-type Distance = u32;
-type CityIndex = usize;
-
 pub fn solve_all_cases()
 {
     let mut reader = InputReader::new();
