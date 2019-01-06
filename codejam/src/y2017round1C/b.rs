@@ -62,12 +62,15 @@ fn solve(
     # X = 1 if Jamie does the last slot
     */
     let mut F = vec![[ [(1+day) as u16;2] ; 1+day/2]; 1+day];
-    //F = [[[day + 1, day + 1] for c in range(day/2 + 1)] for t in range(day + 1)]
+    //Stack overflow if we attempt to declare this on the stack
+    //let mut F = [[ [(1+day) as u16;2] ; 1+day/2]; 1+day];
+
     F[0][0][0] = 0;
     F[0][0][1] = 0;
     for t in 1..=day {
         for c in 0..=day / 2 {
             if fixed[t - 1] != Some(Cameron) && c>0 { // # Cameron is free for this minute
+                //so cameron does this, either we need to switch from jamie or continue
                 F[t][c][0] = min(F[t - 1][c - 1][1] + 1, F[t - 1][c - 1][0]);
             }
             if fixed[t - 1] != Some(Jamie) { // # Jamie is free for this minute
