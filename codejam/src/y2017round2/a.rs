@@ -1,5 +1,4 @@
 use super::super::util::input::*;
-use std::cmp::min;
 
 pub fn solve_all_cases()
 {
@@ -130,11 +129,7 @@ fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
                         leftover = 0;
                         continue;
                     }
-                     else if G_count[NEED_1] > 0 && G_count[NEED_INDEX[3-1]] >0 {
-                        G_count[NEED_1] -= 1;
-                        leftover = 3 - 1;
-                        continue;
-                    }
+
                      else if G_count[NEED_2] > 0 {
                         G_count[NEED_2] -= 1;
                         leftover = 3 - 2;
