@@ -31,7 +31,6 @@ pub fn solve_all_cases()
 
 const R: i64 = 100;
 
-#[allow(non_snake_case)]
 fn solve(case_no: u32, Hd: i64, Ad: i64, Hk: i64, Ak: i64, B: i64, D: i64) -> String
 {
     let MAX_TURN = 10i64.pow(15);

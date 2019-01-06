@@ -47,7 +47,6 @@ pub fn solve_all_cases()
 }
 
 
-#[allow(non_snake_case)]
 #[derive(Copy, Clone)]
 struct Node
 {
@@ -98,7 +97,6 @@ impl Ord for Node {
     }
 }
 
-#[allow(non_snake_case)]
 fn solve(
     case_no: u32,
     horses: &Vec<Horse>,
@@ -112,7 +110,7 @@ fn solve(
         solve_query(horses, city_dist, q.0 - 1, q.1 - 1)
     ).map(|f| f.to_string()).collect::<Vec<_>>().join(" "))
 }
-#[allow(non_snake_case)]
+
 fn solve_query(
     horses: &Vec<Horse>,
     city_dist: &Vec<Vec<Option<Distance>>>,

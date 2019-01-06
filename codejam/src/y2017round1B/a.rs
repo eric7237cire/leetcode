@@ -43,7 +43,6 @@ pub fn solve_all_cases()
     }
 }
 
-#[allow(non_snake_case)]
 fn solve(case_no: u32, D: f64, horses: &mut Vec<Horse>) -> String
 {
     //let mut horses = horses.clone();

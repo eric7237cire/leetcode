@@ -66,7 +66,7 @@ impl InputReader
     {
         self.s.clear();
         stdin().read_line(&mut self.s).unwrap();
-        debug!("Read line {}", self.s);
+        //debug!("Read line {}", self.s);
         let mut sw = self.s.split_whitespace();
         (
             sw.next().unwrap().parse::<T>().unwrap(),

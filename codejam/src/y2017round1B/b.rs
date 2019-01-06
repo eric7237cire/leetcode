@@ -385,7 +385,6 @@ fn solution(counts: &mut Counts) -> Option<String>
     Some(sol)
 }
 
-#[allow(non_snake_case)]
 fn solve(case_no: u32, nroygbv: &Vec<u16>) -> String
 {
     debug!("Solving case {}", case_no);
