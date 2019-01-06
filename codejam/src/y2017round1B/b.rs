@@ -12,8 +12,7 @@ pub fn solve_all_cases()
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
 
-    for case in 1..=t
-    {
+    for case in 1..=t {
         //N, R, O(RY), Y, G(YB), B, and V(RB).
         let input: Vec<u16> = read_int_line();
 
@@ -42,8 +41,7 @@ impl Colors
 {
     fn to_index(self) -> usize
     {
-        match self
-        {
+        match self {
             Red => 0,
             Orange => 1,
             Yellow => 2,
@@ -54,8 +52,7 @@ impl Colors
     }
     fn to_color_binary(self) -> u8
     {
-        match self
-        {
+        match self {
             Red => 0b0_001_u8,
             Orange => 0b0_011_u8,
             Yellow => 0b0_010_u8,
@@ -66,8 +63,7 @@ impl Colors
     }
     fn to_char(self) -> char
     {
-        match self
-        {
+        match self {
             Red => 'R',
             Orange => 'O',
             Yellow => 'Y',
@@ -86,8 +82,7 @@ impl From<char> for Colors
 {
     fn from(item: char) -> Self
     {
-        match item
-        {
+        match item {
             'R' => Red,
             'O' => Orange,
             'Y' => Yellow,
@@ -169,8 +164,7 @@ impl Counts
             })
             .max_by_key(|&(_, count)| count);
 
-        match max_color_index
-        {
+        match max_color_index {
             None => None,
             Some(iv) => Some(COLORS[iv.0]),
         }
@@ -183,8 +177,7 @@ impl<'a> FromIterator<&'a u16> for Counts
         let mut c: Counts = Counts::new();
         let mut i = 0;
         let mut n = 0;
-        for v in iter
-        {
+        for v in iter {
             c.count[i] = *v;
             i += 1;
             n += *v;
@@ -202,36 +195,30 @@ fn solution(counts: &mut Counts) -> Option<String>
     let counts_check = counts.clone();
     let mut sol = String::new();
 
-    if counts.total == 1
-    {
+    if counts.total == 1 {
         sol.push(counts.max_color().to_char());
         return Some(sol);
     }
 
     //2 color check
 
-    if counts.num_colors() == 2
-    {
+    if counts.num_colors() == 2 {
         let color1 = counts.max_color();
         let color2 = counts.max_color_ok(color1, None);
-        if color2.is_none()
-        {
+        if color2.is_none() {
             return None;
         }
         let color2 = color2.unwrap();
-        if !color1.is_ok(color2)
-        {
+        if !color1.is_ok(color2) {
             debug!("Color1 not ok with color2");
             return None;
         }
         let count_1 = counts.get_count(color1);
         let count_2 = counts.get_count(color2);
-        if count_1 != count_2
-        {
+        if count_1 != count_2 {
             return None;
         }
-        for _ in 0..count_1
-        {
+        for _ in 0..count_1 {
             sol.push(color1.to_char());
             sol.push(color2.to_char());
         }
@@ -241,26 +228,22 @@ fn solution(counts: &mut Counts) -> Option<String>
     //Now make extended color chains
     let mut chains: [String; 3] = [String::new(), String::new(), String::new()];
     //ROYGBV
-    for (idx, &db) in DOUBLE_COLORS.iter().enumerate()
-    {
+    for (idx, &db) in DOUBLE_COLORS.iter().enumerate() {
         let db_count = counts.get_count(db);
         debug!("Count of double color {} is {}", db, db_count);
-        if db_count == 0
-        {
+        if db_count == 0 {
             continue;
         }
 
         let pc = counts.max_color_ok(db, None);
-        if pc.is_none()
-        {
+        if pc.is_none() {
             debug!("No primary color available");
             return None;
         }
         let pc = pc.unwrap();
         let pc_count = counts.get_count(pc);
 
-        if pc_count < db_count + 1
-        {
+        if pc_count < db_count + 1 {
             debug!("Not enough PC to create a chain for double color");
             return None;
         }
@@ -273,10 +256,8 @@ fn solution(counts: &mut Counts) -> Option<String>
     }
 
     //now after chains are created, only after, add them back
-    for (idx, s) in chains.iter().enumerate()
-    {
-        if s.len() <= 0
-        {
+    for (idx, s) in chains.iter().enumerate() {
+        if s.len() <= 0 {
             continue;
         }
 
@@ -304,29 +285,24 @@ fn solution(counts: &mut Counts) -> Option<String>
     let mut pass1: Vec<Colors> = Vec::new();
 
     let pass1_size = N / 2 + N % 2;
-    for _ in 0..counts.get_count(color1)
-    {
+    for _ in 0..counts.get_count(color1) {
         pass1.push(color1);
         counts.remove_color(color1, 1);
     }
-    for _ in 0..pass1_size as usize - pass1.len()
-    {
+    for _ in 0..pass1_size as usize - pass1.len() {
         pass1.push(color2);
         counts.remove_color(color2, 1);
     }
 
     let mut pass2: Vec<Colors> = Vec::new();
 
-    for _ in 0..counts.get_count(color2)
-    {
+    for _ in 0..counts.get_count(color2) {
         pass2.push(color2);
         counts.remove_color(color2, 1);
     }
 
-    if let Some(c3) = color3
-    {
-        for _ in 0..counts.get_count(c3)
-        {
+    if let Some(c3) = color3 {
+        for _ in 0..counts.get_count(c3) {
             pass2.push(c3);
             counts.remove_color(c3, 1);
         }
@@ -341,10 +317,8 @@ fn solution(counts: &mut Counts) -> Option<String>
 
     assert_eq!(sol.len(), N as usize);
 
-    for (idx, s) in chains.iter().enumerate()
-    {
-        if s.len() <= 0
-        {
+    for (idx, s) in chains.iter().enumerate() {
+        if s.len() <= 0 {
             continue;
         }
 
@@ -374,8 +348,7 @@ fn solution(counts: &mut Counts) -> Option<String>
         );
     }
 
-    for &c in COLORS.iter()
-    {
+    for &c in COLORS.iter() {
         let check_amt = counts_check.get_count(c);
         let actual_amt = sol.chars().filter(|&ch| ch == c.to_char()).count() as u16;
         debug!("Checked color {}.  {}=={}", c, check_amt, actual_amt);
@@ -394,8 +367,7 @@ fn solve(case_no: u32, nroygbv: &Vec<u16>) -> String
     format!(
         "Case #{}: {}\n",
         case_no,
-        match ans
-        {
+        match ans {
             Some(ans) => ans,
             _ => "IMPOSSIBLE".to_string(),
         }

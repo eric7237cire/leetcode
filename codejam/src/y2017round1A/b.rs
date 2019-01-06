@@ -10,8 +10,7 @@ pub fn solve_all_cases()
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
 
-    for case in 1..=t
-    {
+    for case in 1..=t {
         //handle input / output
         let n_and_p: Vec<u8> = read_int_line();
         let (n, p) = (n_and_p[0], n_and_p[1]);
@@ -19,8 +18,7 @@ pub fn solve_all_cases()
         let r: Vec<u32> = read_int_line();
 
         let mut q: Vec<Vec<u32>> = Vec::new();
-        for _ in 0..n
-        {
+        for _ in 0..n {
             q.push(read_int_line());
         }
         children.push(thread::spawn(move || -> String {
@@ -28,8 +26,7 @@ pub fn solve_all_cases()
         }));
     }
 
-    for child in children
-    {
+    for child in children {
         print!("{}", child.join().unwrap());
     }
 }
@@ -38,12 +35,10 @@ fn solve(case_no: u32, N: u8, P: u8, R: &Vec<u32>, Q: &Vec<Vec<u32>>) -> String
 {
     debug!("\nStarting solve");
     let mut events: Vec<_> = Vec::new();
-    for i in 0..N as usize
-    {
+    for i in 0..N as usize {
         let required_amount = R[i];
 
-        for p in 0..P as usize
-        {
+        for p in 0..P as usize {
             let package_size = Q[i][p];
 
             // problem is floating point
@@ -67,13 +62,11 @@ fn solve(case_no: u32, N: u8, P: u8, R: &Vec<u32>, Q: &Vec<Vec<u32>>) -> String
                 max_servings = max_servings
             );
 
-            if min_servings == 0
-            {
+            if min_servings == 0 {
                 min_servings = 1;
             }
 
-            if min_servings > max_servings
-            {
+            if min_servings > max_servings {
                 continue;
             }
 
@@ -87,39 +80,31 @@ fn solve(case_no: u32, N: u8, P: u8, R: &Vec<u32>, Q: &Vec<Vec<u32>>) -> String
     let mut cnt = 0;
     let mut counts = vec![Vec::new(); N.into()];
     let mut remv = vec![0; N as usize];
-    for (boundary, is_upper_bound, ingredient_index, package_size) in events
-    {
+    for (boundary, is_upper_bound, ingredient_index, package_size) in events {
         debug!(
             "Saw event Boundary={} {} ingredient={} package={}",
             boundary, is_upper_bound, ingredient_index, package_size
         );
 
         debug!("Counts={:?}, remv={:?}", counts, remv);
-        if is_upper_bound
-        {
-            if remv[ingredient_index] > 0
-            {
+        if is_upper_bound {
+            if remv[ingredient_index] > 0 {
                 remv[ingredient_index] -= 1;
             }
             // elif yy in counts[i]:
-            else
-            {
+            else {
                 let index = counts[ingredient_index]
                     .iter()
                     .position(|x| *x == package_size)
                     .unwrap();
                 counts[ingredient_index].remove(index);
             }
-        }
-        else
-        {
+        } else {
             counts[ingredient_index].push(package_size);
             let min_count_len = counts.iter().map(|c| c.len()).min().unwrap();
-            if min_count_len > 0
-            {
+            if min_count_len > 0 {
                 cnt += 1;
-                for ii in 0..N as usize
-                {
+                for ii in 0..N as usize {
                     let min_index = counts[ii]
                         .iter()
                         .enumerate()

@@ -17,8 +17,7 @@ pub fn solve_all_cases()
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
 
-    for case in 1..=t
-    {
+    for case in 1..=t {
         //D & N
         let input: Vec<u64> = read_int_line();
         let n = input[1];
@@ -37,8 +36,7 @@ pub fn solve_all_cases()
         }));
     }
 
-    for child in children
-    {
+    for child in children {
         print!("{}", child.join().unwrap());
     }
 }
@@ -52,12 +50,10 @@ fn solve(case_no: u32, D: f64, horses: &mut Vec<Horse>) -> String
 
     let mut cur_index = 0;
 
-    while cur_index < horses.len() - 1
-    {
+    while cur_index < horses.len() - 1 {
         let cur = &horses[cur_index];
         let next = &horses[cur_index + 1];
-        if next.velocity >= cur.velocity
-        {
+        if next.velocity >= cur.velocity {
             //anything that is faster won't affect the answer
             horses.remove(cur_index + 1);
             continue;
@@ -67,8 +63,7 @@ fn solve(case_no: u32, D: f64, horses: &mut Vec<Horse>) -> String
         let inter_t = (cur.start_pos - next.start_pos) / (next.velocity - cur.velocity);
         let inter_p = cur.start_pos + cur.velocity * inter_t;
 
-        if inter_p >= D
-        {
+        if inter_p >= D {
             debug!("other horse finishes before: {:?} {:?}", cur, next);
             horses.remove(cur_index + 1);
             continue;

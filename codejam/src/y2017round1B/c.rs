@@ -18,8 +18,7 @@ pub fn solve_all_cases()
     let mut reader = InputReader::new();
     let t = reader.read_int();
 
-    for case in 1..=t
-    {
+    for case in 1..=t {
         let (N, Q) = reader.read_tuple_2::<u8, u8>();
         let horses: Vec<_> = (0..N)
             .map(|_| reader.read_tuple_2::<Distance, u16>())
@@ -30,16 +29,7 @@ pub fn solve_all_cases()
                 reader
                     .read_int_line::<i32>()
                     .iter()
-                    .map(|&d| {
-                        if d < 0
-                        {
-                            None
-                        }
-                        else
-                        {
-                            Some(d as Distance)
-                        }
-                    })
+                    .map(|&d| if d < 0 { None } else { Some(d as Distance) })
                     .collect()
             })
             .collect();
@@ -155,22 +145,19 @@ fn solve_query(
     });
 
     // Examine the frontier with lower cost nodes first (min-heap)
-    while let Some(current_node) = heap.pop()
-    {
+    while let Some(current_node) = heap.pop() {
         let Node {
             time,
             city_horse_index,
         } = current_node;
         let (city_index, horse_index) = Node::split_index(N, city_horse_index);
 
-        if city_index == stop_city
-        {
+        if city_index == stop_city {
             return time;
         }
 
         // Important as we may have already found a better way
-        if time > shortest_time[city_horse_index]
-        {
+        if time > shortest_time[city_horse_index] {
             continue;
         }
 
@@ -179,8 +166,7 @@ fn solve_query(
         //follow prev nodes to find how long we have gone
         let mut dist_travelled_with_current_horse = 0;
         let mut p = city_horse_index;
-        while Node::split_index(N, p).0 != horse_index
-        {
+        while Node::split_index(N, p).0 != horse_index {
             let (p_city_index, _p_horse_index) = Node::split_index(N, p);
             let pp = prev[p].unwrap();
             let (pp_city_index, _pp_horse_index) = Node::split_index(N, pp);
@@ -193,30 +179,23 @@ fn solve_query(
 
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
-        for (next_city_index, dist) in city_dist[city_index].iter().enumerate()
-        {
-            if dist.is_none()
-            {
+        for (next_city_index, dist) in city_dist[city_index].iter().enumerate() {
+            if dist.is_none() {
                 continue;
             }
 
             let dist = dist.unwrap();
 
-            if dist > dis_remaining_with_current_horse
-            {
+            if dist > dis_remaining_with_current_horse {
                 continue;
             }
 
             let time_taken = time + dist as f64 / horses[horse_index].S as f64;
 
-            for change_horses in 0..2
-            {
-                let next_horse_index = if change_horses == 0
-                {
+            for change_horses in 0..2 {
+                let next_horse_index = if change_horses == 0 {
                     horse_index
-                }
-                else
-                {
+                } else {
                     next_city_index
                 };
 
@@ -227,8 +206,7 @@ fn solve_query(
 
                 // If so, add it to the frontier and continue
                 // We want all paths, so == cost is OK
-                if next.time <= shortest_time[next.city_horse_index]
-                {
+                if next.time <= shortest_time[next.city_horse_index] {
                     heap.push(next);
                     // Relaxation, we have now found a better way
                     shortest_time[next.city_horse_index] = next.time;

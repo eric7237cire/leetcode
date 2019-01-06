@@ -31,24 +31,20 @@ fn solve(n_str: &str) -> usize
 
     // Keep track of first instance of max digit
     let mut max_digit_pos: Option<usize> = None;
-    for pos in 0..number.len()
-    {
+    for pos in 0..number.len() {
         let digit = number[pos];
-        match max_digit_pos
-        {
+        match max_digit_pos {
             Some(max_d_pos) if digit > number[max_d_pos] => max_digit_pos = Some(pos),
             None => max_digit_pos = Some(pos),
             _ => (),
         }
         let max_digit_pos = max_digit_pos.unwrap();
-        if digit >= number[max_digit_pos]
-        {
+        if digit >= number[max_digit_pos] {
             continue;
         }
 
         number[max_digit_pos] -= 1;
-        for n in number.iter_mut().skip(max_digit_pos + 1)
-        {
+        for n in number.iter_mut().skip(max_digit_pos + 1) {
             *n = 9;
         }
     }

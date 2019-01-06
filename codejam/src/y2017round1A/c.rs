@@ -11,8 +11,7 @@ pub fn solve_all_cases()
     stdin().read_line(&mut s).unwrap();
     let t = s.trim().parse::<u32>().unwrap();
 
-    for case in 1..=t
-    {
+    for case in 1..=t {
         //Hd, Ad, Hk, Ak, B, and D;
         let input: Vec<i64> = read_int_line();
 
@@ -23,8 +22,7 @@ pub fn solve_all_cases()
         }));
     }
 
-    for child in children
-    {
+    for child in children {
         print!("{}", child.join().unwrap());
     }
 }
@@ -36,28 +34,20 @@ fn solve(case_no: u32, Hd: i64, Ad: i64, Hk: i64, Ak: i64, B: i64, D: i64) -> St
     let MAX_TURN = 10i64.pow(15);
     let mut Ak = Ak;
     let b;
-    if B == 0
-    {
+    if B == 0 {
         b = 0;
-    }
-    else
-    {
+    } else {
         let z: f64 = (((B * Hk) as f64).sqrt() - Ad as f64) / B as f64;
-        if z < 0f64
-        {
+        if z < 0f64 {
             b = 0;
-        }
-        else
-        {
+        } else {
             let b1 = z as i64;
             let b2 = b1 + 1;
             if (Hk + b1 * B + Ad - 1) / (b1 * B + Ad) + b1
                 <= (Hk + b2 * B + Ad - 1) / (b2 * B + Ad) + b2
             {
                 b = b1;
-            }
-            else
-            {
+            } else {
                 b = b2;
             }
         }
@@ -66,64 +56,45 @@ fn solve(case_no: u32, Hd: i64, Ad: i64, Hk: i64, Ak: i64, B: i64, D: i64) -> St
     let ab = a + b;
 
     let mut minturn = MAX_TURN;
-    if ab <= (Hd - 1) / Ak + 1
-    {
+    if ab <= (Hd - 1) / Ak + 1 {
         minturn = ab;
-    }
-    else if D == 0
-    {
+    } else if D == 0 {
         let u = (Hd - Ak - 1) / Ak;
-        if u <= 0 && Hk > Ad
-        {
+        if u <= 0 && Hk > Ad {
             minturn = MAX_TURN;
-        }
-        else
-        {
+        } else {
             let w = ab - (Hd - 1) / Ak;
             minturn = (Hd - 1) / Ak + w + (w + u - 2) / u;
         }
-    }
-    else if Hk > Ad && Ak - D >= Hd
-    {
+    } else if Hk > Ad && Ak - D >= Hd {
         minturn = MAX_TURN;
-    }
-    else
-    {
+    } else {
         let mut z = 0;
         let mut last_was_heal = false;
         let mut Hi = Hd;
         let mut lastu: i64 = -1;
-        while Ak > 0
-        {
+        while Ak > 0 {
             let u = (Hd - Ak - 1) / Ak;
-            if ab <= (Hi - 1) / Ak + 1
-            {
+            if ab <= (Hi - 1) / Ak + 1 {
                 minturn = cmp::min(minturn, z + ab);
-            }
-            else if u > 0 && !last_was_heal && u as i64 != lastu
-            {
+            } else if u > 0 && !last_was_heal && u as i64 != lastu {
                 let w = ab - (Hi - 1) / Ak;
                 minturn = cmp::min(minturn, z + (Hi - 1) / Ak + w + (w + u - 2) / u);
             }
-            if Hi <= Ak - D
-            {
-                if last_was_heal
-                {
+            if Hi <= Ak - D {
+                if last_was_heal {
                     break;
                 }
                 z += 1;
                 last_was_heal = true;
                 Hi = Hd - Ak;
-                if Ak >= R * D && u == (Hd - (Ak - R * D) - 1) / (Ak - R * D)
-                {
+                if Ak >= R * D && u == (Hd - (Ak - R * D) - 1) / (Ak - R * D) {
                     let tt = R / u;
                     z += tt * (u + 1);
                     Ak -= tt * u * D;
                     Hi = Hd - Ak;
                 }
-            }
-            else
-            {
+            } else {
                 last_was_heal = false;
                 z += 1;
                 Ak -= D;
@@ -131,18 +102,14 @@ fn solve(case_no: u32, Hd: i64, Ad: i64, Hk: i64, Ak: i64, B: i64, D: i64) -> St
             }
             lastu = u as i64;
         }
-        if Ak <= 0
-        {
+        if Ak <= 0 {
             minturn = cmp::min(minturn, z + ab);
         }
     }
 
-    if minturn == MAX_TURN
-    {
+    if minturn == MAX_TURN {
         format!("Case #{}: {}\n", case_no, "IMPOSSIBLE")
-    }
-    else
-    {
+    } else {
         format!("Case #{}: {}\n", case_no, minturn)
     }
 }
