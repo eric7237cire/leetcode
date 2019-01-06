@@ -42,3 +42,4 @@ rem cargo build && cat .\src\y2017round1C\C-small-practice-1.in | .\target\debug
 rem cargo build && cat .\src\y2017round1C\C-small-practice-2.in | .\target\debug\codejam.exe > .\src\y2017round1C\C-small-practice-2.out
 
 cargo build && cat .\src\y2017round2\A-small-practice.in | .\target\debug\codejam.exe > .\src\y2017round2\A-small-practice.out
+cargo build && cat .\src\y2017round2\A-large-practice.in | .\target\debug\codejam.exe > .\src\y2017round2\A-large-practice.out

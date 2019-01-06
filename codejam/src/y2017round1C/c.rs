@@ -106,12 +106,10 @@ fn solve(case_no: u32, prob: &mut Vec<f64>, U: f64, K: u8) -> String
 
         //now distribute to i-1 if we have any left
         if i > 0 {
-            let possible_improvement_to_i_minus_1 =
-                fmin(u_remaining, 1f64 - p_improved[i - 1]);
+            let possible_improvement_to_i_minus_1 = fmin(u_remaining, 1f64 - p_improved[i - 1]);
 
             p_improved[i - 1] += possible_improvement_to_i_minus_1;
             u_remaining -= possible_improvement_to_i_minus_1;
-
 
             //we should have found the optimal answer
             if u_remaining > 0f64 {
