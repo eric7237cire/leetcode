@@ -97,26 +97,27 @@ fn solve(case_no: u32, prob: &mut Vec<f64>, U: f64, K: u8) -> String
             if u_remaining < 0f64 {
                 break;
             }
+            /*
             debug!(
                 "After j={}, P={:?}, U={}, U remaning={}",
                 j, p_improved, U, u_remaining
-            );
+            );*/
         }
 
         //now distribute to i-1 if we have any left
-        let possible_improvement_to_i_minus_1 = if i > 0 {
-            1f64 - p_improved[i - 1]
-        } else {
-            0f64
-        };
+        if i > 0 {
+            let possible_improvement_to_i_minus_1 =
+                fmin(u_remaining, 1f64 - p_improved[i - 1]);
 
-        //we should have found the optimal answer
-        if u_remaining > possible_improvement_to_i_minus_1 {
-            break;
-        }
+            p_improved[i - 1] += possible_improvement_to_i_minus_1;
+            u_remaining -= possible_improvement_to_i_minus_1;
 
-        if possible_improvement_to_i_minus_1 > 0f64 {
-            p_improved[i - 1] += u_remaining;
+
+            //we should have found the optimal answer
+            if u_remaining > 0f64 {
+                debug!("U remaning {}, breaking", u_remaining);
+                break;
+            }
         }
 
         let at_least_k = prob_at_least_k(&p_improved, K.into());
@@ -131,5 +132,5 @@ fn solve(case_no: u32, prob: &mut Vec<f64>, U: f64, K: u8) -> String
         }
     }
 
-    format!("Case #{}: {}\n", case_no, best_ans)
+    format!("Case #{}: {:.9}\n", case_no, best_ans)
 }
