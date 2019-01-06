@@ -1,8 +1,8 @@
 use super::super::util::input::*;
-use std::f64;
-use std::u16;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
+use std::f64;
+use std::u16;
 
 struct Horse
 {
@@ -27,16 +27,20 @@ pub fn solve_all_cases()
             .collect();
         let city_dist: Vec<_> = (0..N)
             .map(|_| {
-                reader.read_int_line::<i32>().iter().map(|&d| {
-                    if d < 0
-                    {
-                        None
-                    }
-                    else
-                    {
-                        Some(d as Distance)
-                    }
-                }).collect()
+                reader
+                    .read_int_line::<i32>()
+                    .iter()
+                    .map(|&d| {
+                        if d < 0
+                        {
+                            None
+                        }
+                        else
+                        {
+                            Some(d as Distance)
+                        }
+                    })
+                    .collect()
             })
             .collect();
         let queries: Vec<_> = (0..Q)
@@ -45,7 +49,6 @@ pub fn solve_all_cases()
         print!("{}", solve(case, &horses, &city_dist, &queries));
     }
 }
-
 
 #[derive(Copy, Clone)]
 struct Node
@@ -72,27 +75,34 @@ impl Node
 
 impl Eq for Node {}
 
-impl PartialEq for Node {
-    fn eq(&self, other: &Node) -> bool {
-        self.city_horse_index == other.city_horse_index &&
-            self.time.partial_cmp(&other.time).unwrap() == Ordering::Equal
+impl PartialEq for Node
+{
+    fn eq(&self, other: &Node) -> bool
+    {
+        self.city_horse_index == other.city_horse_index
+            && self.time.partial_cmp(&other.time).unwrap() == Ordering::Equal
     }
 }
 
-impl PartialOrd for Node {
-    fn partial_cmp(&self, other: &Node) -> Option<Ordering> {
+impl PartialOrd for Node
+{
+    fn partial_cmp(&self, other: &Node) -> Option<Ordering>
+    {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for Node {
-    fn cmp(&self, other: &Node) -> Ordering {
+impl Ord for Node
+{
+    fn cmp(&self, other: &Node) -> Ordering
+    {
         // Notice that the we flip the ordering on costs.
         // In case of a tie we compare positions - this step is necessary
         // to make implementations of `PartialEq` and `Ord` consistent.
         other
             .time
-            .partial_cmp(&self.time).unwrap()
+            .partial_cmp(&self.time)
+            .unwrap()
             .then_with(|| self.city_horse_index.cmp(&other.city_horse_index))
     }
 }
@@ -105,10 +115,16 @@ fn solve(
 ) -> String
 {
     debug!("Solving case {}", case_no);
-    format!("Case #{}: {}\n", case_no,
-    queries.iter().map(|q|
-        solve_query(horses, city_dist, q.0 - 1, q.1 - 1)
-    ).map(|f| f.to_string()).collect::<Vec<_>>().join(" "))
+    format!(
+        "Case #{}: {}\n",
+        case_no,
+        queries
+            .iter()
+            .map(|q| solve_query(horses, city_dist, q.0 - 1, q.1 - 1))
+            .map(|f| f.to_string())
+            .collect::<Vec<_>>()
+            .join(" ")
+    )
 }
 
 fn solve_query(
@@ -118,7 +134,7 @@ fn solve_query(
     stop_city: CityIndex,
 ) -> f64
 {
-    debug!("Solving query from {} to {}", start_city+1, stop_city+1);
+    debug!("Solving query from {} to {}", start_city + 1, stop_city + 1);
 
     let N = horses.len() as CityIndex;
     let NODE_COUNT = N * N;
@@ -141,7 +157,10 @@ fn solve_query(
     // Examine the frontier with lower cost nodes first (min-heap)
     while let Some(current_node) = heap.pop()
     {
-        let Node{time, city_horse_index} = current_node;
+        let Node {
+            time,
+            city_horse_index,
+        } = current_node;
         let (city_index, horse_index) = Node::split_index(N, city_horse_index);
 
         if city_index == stop_city
@@ -169,7 +188,8 @@ fn solve_query(
             p = pp;
         }
 
-        let dis_remaining_with_current_horse = horses[horse_index].E - dist_travelled_with_current_horse;
+        let dis_remaining_with_current_horse =
+            horses[horse_index].E - dist_travelled_with_current_horse;
 
         // For each node we can reach, see if we can find a way with
         // a lower cost going through this node
@@ -215,7 +235,6 @@ fn solve_query(
 
                     // Update prev
                     prev[next.city_horse_index] = Some(city_horse_index);
-
                 }
             }
         }

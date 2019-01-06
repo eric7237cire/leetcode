@@ -14,7 +14,8 @@ pub fn solve_case()
 
 fn solve(n: u64, k: u64) -> (u64, u64)
 {
-    if n == k {
+    if n == k
+    {
         return (0, 0);
     }
 
@@ -24,8 +25,10 @@ fn solve(n: u64, k: u64) -> (u64, u64)
     // Tree of height 1 has 1 node
     // h=2 = 3 nodes
     // h=3 = 7 nodes == 2^3 - 1
-    for s in 1..=k + 1 {
-        if 2u64.pow(s as u32) - 1 >= k {
+    for s in 1..=k + 1
+    {
+        if 2u64.pow(s as u32) - 1 >= k
+        {
             tree_height = s;
             break;
         }
@@ -47,9 +50,12 @@ fn solve(n: u64, k: u64) -> (u64, u64)
     // If there is a remainder, add 1
     let an_extra = holes_left % width_tree > 0;
 
-    let hole_size = if an_extra {
+    let hole_size = if an_extra
+    {
         min_hole_size + 1
-    } else {
+    }
+    else
+    {
         min_hole_size
     };
 
@@ -57,9 +63,12 @@ fn solve(n: u64, k: u64) -> (u64, u64)
     let min_dist = (hole_size - 1) / 2;
 
     // If its odd, we have an even min/max distance
-    if hole_size % 2 == 1 {
+    if hole_size % 2 == 1
+    {
         return (min_dist, min_dist);
-    } else {
+    }
+    else
+    {
         // Otherwise max is 1 more
         return (min_dist + 1, min_dist);
     }
