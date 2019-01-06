@@ -128,7 +128,10 @@ mod moves_in_squared_strings {
         s.split('\n').rev().collect::<Vec<_>>().join("\n")
     }
     fn vert_mirror(s: String) -> String {
-        s.split("\n").map(|s| s.chars().rev().collect::<String>()).collect::<Vec<_>>().join("\n")
+        s.split("\n")
+            .map(|s| s.chars().rev().collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
     // first parameter: dots have to be replaced by function of one variable
     fn oper(f: fn(String) -> String, s: String) -> String {
@@ -157,5 +160,56 @@ mod moves_in_squared_strings {
             "EWTOzI\nMCebkk\nMxZzuW\nwJddDv\nFHyJij\nxSfHVP",
         );
         testing2("cuQW\nxOuD\nfZwp\neqFx", "WQuc\nDuOx\npwZf\nxFqe");
+    }
+}
+mod moves_in_squared_strings_2 {
+    fn repeat(s: &str, n: usize) -> String {
+        ::std::iter::repeat(s).take(n).collect()
+    }
+    fn rot(s: &str) -> String {
+        s.chars().rev().collect()
+    }
+    fn selfie_and_rot(s: &str) -> String {
+        s.split('\n')
+            .map(|s| s.to_string() + &repeat(".", s.chars().count()))
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n"
+            + &rot(s)
+                .split('\n')
+                .map(|s| repeat(".", s.chars().count()) + &s)
+                .collect::<Vec<_>>()
+                .join("\n")
+    }
+
+    // first parameter: dots have to be replaced by function of one variable
+    fn oper(f: fn(&str) -> String, s: &str) -> String {
+        f(s)
+    }
+
+    fn testing1(s: &str, exp: &str) -> () {
+        assert_eq!(oper(rot, s), exp.to_string())
+    }
+
+    fn testing2(s: &str, exp: &str) -> () {
+        assert_eq!(oper(selfie_and_rot, s), exp.to_string())
+    }
+
+    #[test]
+    fn basics_oper() {
+        testing1(
+            "fijuoo\nCqYVct\nDrPmMJ\nerfpBA\nkWjFUG\nCVUfyL",
+            "LyfUVC\nGUFjWk\nABpfre\nJMmPrD\ntcVYqC\nooujif",
+        );
+        testing1("rkKv\ncofM\nzXkh\nflCB", "BClf\nhkXz\nMfoc\nvKkr");
+
+        testing2(
+            "xZBV\njsbS\nJcpN\nfVnP",
+            "xZBV....\njsbS....\nJcpN....\nfVnP....\n....PnVf\n....NpcJ\n....Sbsj\n....VBZx",
+        );
+        testing2(
+            "uLcq\nJkuL\nYirX\nnwMB",
+            "uLcq....\nJkuL....\nYirX....\nnwMB....\n....BMwn\n....XriY\n....LukJ\n....qcLu",
+        );
     }
 }
