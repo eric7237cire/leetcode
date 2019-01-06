@@ -42,13 +42,14 @@ fn solve(
     debug!("Solving case {}", case_no);
 
     pancakes.sort_unstable_by(|a,b| b.R.cmp(&a.R).then(b.H.cmp(&a.H)));
-    debug!("Pancakes: {:?}", pancakes);
 
+    //Precompute cylindar side surface area & top area
     for p in pancakes.iter_mut() {
         p.area_top=(p.R as u64).pow(2) as f64 * f64::consts::PI;
         p.area_sides=2f64 * f64::consts::PI * p.R as f64 * p.H as f64;
     }
 
+    //try all bottom pancakes, this uniquely determines the top area
     let max_syrup:f64 =(0..pancakes.len() as u16 - K + 1).map(|bottom_pancake_index | {
 
         //get max K-1 sides
@@ -56,30 +57,10 @@ fn solve(
 
         side_areas.sort_unstable_by(|a, b| b.partial_cmp(a).unwrap());
 
-        //return area
+        //return area which is the heighest K-1 pancakes
         side_areas.iter().take(K as usize - 1).sum::<f64>() + pancakes[bottom_pancake_index as usize].area_sides +
             pancakes[bottom_pancake_index as usize].area_top
     }).fold(0f64, |acc,x| if x > acc {x} else {acc});
-
-    /*for i in (1..pancakes.len()).rev() {
-        if pancakes[i-1].R == pancakes[i].R {
-            pancakes.remove(i);
-        }
-    }*/
-
-    /*for i in K as usize..pancakes.len() {
-            pancakes.pop();
-    }*/
-
-    /*let max_syrup:f64 =    pancakes.windows(K as usize).map( |pancakes|
-        {
-            let area = (pancakes[0].R as u64).pow(2) as f64 * f64::consts::PI;
-            let sides: f64 = pancakes.iter().map(|p| 2f64 * f64::consts::PI * p.R as f64 * p.H as f64).sum();
-            area + sides
-        }
-    ).fold(0f64, |acc,x| if x > acc {x} else {acc});*/
-
-    debug!("Pancakes: {:?}", pancakes);
 
     format!("Case #{}: {}\n", case_no, max_syrup)
 }
