@@ -1,7 +1,5 @@
 use super::super::util::input::*;
-//use std::f64;
 use std::cmp::min;
-
 
 const DAY: usize = 24 * 60;
 
@@ -10,7 +8,6 @@ enum Parent {
     Cameron,
     Jamie
 }
-
 use self::Parent::*;
 
 pub fn solve_all_cases()
@@ -27,13 +24,12 @@ pub fn solve_all_cases()
             let (start,stop) = reader.read_tuple_2::<u16, u16>();
             //intervals are open on right
             for t in start..stop {
-                fixed[t as usize] = if i < Ac then {Some(Cameron)} else {Some(Jamie)};
+                fixed[t as usize] = if i < Ac {Some(Cameron)} else {Some(Jamie)};
             }
         }
         print!("{}", solve(case, &fixed));
     }
 }
-
 
 fn solve(
     case_no: u32,
