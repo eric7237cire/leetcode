@@ -48,17 +48,17 @@ fn solve(
         }
     }*/
 
-    for i in K as usize..pancakes.len() {
+    /*for i in K as usize..pancakes.len() {
             pancakes.pop();
-    }
+    }*/
 
-    let max_syrup:f64 =    //pancakes.windows(K as usize).map( |pancakes|
+    let max_syrup:f64 =    pancakes.windows(K as usize).map( |pancakes|
         {
             let area = (pancakes[0].R as u64).pow(2) as f64 * f64::consts::PI;
             let sides: f64 = pancakes.iter().map(|p| 2f64 * f64::consts::PI * p.R as f64 * p.H as f64).sum();
             area + sides
-        };
-    //).fold(0f64, |acc,x| acc+x);
+        }
+    ).fold(0f64, |acc,x| if x > acc {x} else {acc});
 
     debug!("Pancakes: {:?}", pancakes);
 
