@@ -47,6 +47,8 @@ fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
                         G_count[0] -= 1;
                         continue;
                     }
+                    //maintaining 0 state is important, so we need to short circuit any cases
+                    //where we have the group than can consume 100% of the leftovers
                     else if G_count[NEED_3] > 0 && G_count[NEED_INDEX[P as usize -3]]> 0 {
                         G_count[NEED_3] -= 1;
                         leftover = P - 3;
@@ -81,12 +83,6 @@ fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
                         leftover = 0;
                         continue;
                     }
-                    //short circuit if we can have a nice leftover of 0
-                    else if G_count[NEED_3] > 0 && G_count[NEED_INDEX[P as usize+1-3]] > 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = P + 1 - 3;
-                        continue;
-                    }
                     else if G_count[NEED_2] > 0 {
                         G_count[NEED_2] -= 1;
                         leftover = P + 1 - 2;
@@ -103,12 +99,6 @@ fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
                     if G_count[NEED_2] > 0 {
                         G_count[NEED_2] -= 1;
                         leftover = 0;
-                        continue;
-                    }
-                    //short circuit if we can have a nice leftover of 0
-                    else if G_count[NEED_3] > 0 && G_count[NEED_INDEX[P as usize+2-3]] > 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = P + 2 - 3;
                         continue;
                     }
                     else if G_count[NEED_1] > 0 {
@@ -129,7 +119,6 @@ fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
                         leftover = 0;
                         continue;
                     }
-
                      else if G_count[NEED_2] > 0 {
                         G_count[NEED_2] -= 1;
                         leftover = 3 - 2;
