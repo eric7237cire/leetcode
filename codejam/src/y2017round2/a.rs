@@ -6,14 +6,14 @@ pub fn solve_all_cases()
     let t = reader.read_int();
 
     for case in 1..=t {
-        let (_, P) = reader.read_tuple_2::<u8, u8>();
-        let mut G: Vec<_> = reader.read_int_line::<u8>();
+        let (_, P) = reader.read_tuple_2::<u8, usize>();
+        let mut G: Vec<_> = reader.read_int_line::<usize>();
 
         print!("{}", solve(case, &mut G, P));
     }
 }
 
-fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
+fn solve(case_no: u32, G: &mut Vec<usize>, P: usize) -> String
 {
     debug!("Solving case {}", case_no);
 
@@ -25,119 +25,44 @@ fn solve(case_no: u32, G: &mut Vec<u8>, P: u8) -> String
         .map(|i| G.iter().filter(|&&g| g == i).count())
         .collect::<Vec<_>>();
 
-    G_count.push(0);
-
     debug!("P={} G_count={:?}", P, G_count);
 
-    let ans = {
-        // state machine
-        let NEED_1 = P as usize - 1usize;
-        //if group size % 3 == 1, then they need 2 leftovers
-        let NEED_2: usize = if P >= 3 {P as usize - 2usize} else {P as usize};
-        let NEED_3: usize = if P >= 4 {P as usize - 3usize} else {P as usize};
-        let NEED_INDEX = [0,NEED_1,NEED_2,NEED_3];
-        let mut leftover = 0u8;
-        let mut groups_happy = 0;
-        for _ in 0..G.len() {
-            //state machine
-            match leftover {
-                0 => {
-                    groups_happy += 1;
-                    if G_count[0] > 0 {
-                        G_count[0] -= 1;
-                        continue;
-                    }
-                    //maintaining 0 state is important, so we need to short circuit any cases
-                    //where we have the group than can consume 100% of the leftovers
-                    else if G_count[NEED_3] > 0 && G_count[NEED_INDEX[P as usize -3]]> 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = P - 3;
-                        continue;
-                    }
-                    else if G_count[NEED_2] > 0 && G_count[NEED_INDEX[P as usize -2]]> 0 {
-                        G_count[NEED_2] -= 1;
-                        leftover = P - 2;
-                        continue;
-                    }
-                    else if G_count[NEED_1] > 0 {
-                        G_count[NEED_1] -= 1;
-                        leftover = P - 1;
-                        continue;
-                    } else if G_count[NEED_2] > 0 {
-                        G_count[NEED_2] -= 1;
-                        leftover = P - 2;
-                        continue;
-                    }
-                    else if G_count[NEED_3] > 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = P - 3;
-                        continue;
-                    }
-                    else {
-                        return "Problem0\n".to_string();
-                    }
+    //groups are listed by their mod, but we need a 2nd index with how many leftovers they can consume
+    let NEED_INDEX = (0..P).map(|g| (P - g) % P).collect::<Vec<_>>();
+    let mut leftover = 0usize;
+    let mut groups_happy = 0;
+    'outer: for _ in 0..G.len() {
+        //state machine
+        if leftover == 0 {
+            groups_happy += 1;
+
+            //maintaining 0 state is important, so we need to short circuit any cases
+            //where we have the group than can consume 100% of the leftovers
+            for (need_idx, &g_idx) in NEED_INDEX.iter().enumerate() {
+                if G_count[g_idx] > 0 && G_count[NEED_INDEX[(P - need_idx) % P]] > 0 {
+                    G_count[g_idx] -= 1;
+                    leftover = (P - need_idx) % P;
+                    continue 'outer;
                 }
-                1 => {
-                    if G_count[NEED_1] > 0 {
-                        G_count[NEED_1] -= 1;
-                        leftover = 0;
-                        continue;
-                    }
-                    else if G_count[NEED_2] > 0 {
-                        G_count[NEED_2] -= 1;
-                        leftover = P + 1 - 2;
-                        continue;
-                    } else if G_count[NEED_3] > 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = P + 1 - 3;
-                        continue;
-                    } else {
-                        return "Problem1".to_string();
-                    }
-                }
-                2 => {
-                    if G_count[NEED_2] > 0 {
-                        G_count[NEED_2] -= 1;
-                        leftover = 0;
-                        continue;
-                    }
-                    else if G_count[NEED_1] > 0 {
-                        G_count[NEED_1] -= 1;
-                        leftover = 2 - 1;
-                        continue;
-                    } else if G_count[NEED_3] > 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = P + 2 - 3;
-                        continue;
-                    } else {
-                        return "Problem2".to_string();
-                    }
-                },
-                3 => {
-                    if G_count[NEED_3] > 0 {
-                        G_count[NEED_3] -= 1;
-                        leftover = 0;
-                        continue;
-                    }
-                     else if G_count[NEED_2] > 0 {
-                        G_count[NEED_2] -= 1;
-                        leftover = 3 - 2;
-                        continue;
-                    }
-                    else if G_count[NEED_1] > 0 {
-                        G_count[NEED_1] -= 1;
-                        leftover = 3 - 1;
-                        continue;
-                    } else {
-                        return "Problem3".to_string();
-                    }
-                }
-                _ => {}
             }
         }
 
-        groups_happy
-    };
+        //if we can make leftovers 0, then do it
+        if G_count[NEED_INDEX[leftover]] > 0 {
+            G_count[NEED_INDEX[leftover]] -= 1;
+            leftover = 0;
+            continue;
+        }
 
-    format!("Case #{}: {}\n", case_no, ans)
+        //fall through case, just take anything
+        for (need_idx, &g_idx) in NEED_INDEX.iter().enumerate() {
+            if G_count[g_idx] > 0 {
+                G_count[g_idx] -= 1;
+                leftover = (leftover + P - need_idx) % P;
+                break;
+            }
+        }
+    }
+
+    format!("Case #{}: {}\n", case_no, groups_happy)
 }
