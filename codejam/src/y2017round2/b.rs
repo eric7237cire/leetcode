@@ -23,7 +23,7 @@ fn solve(case_no: u32, N: u16, C: u16, tickets: &Vec<(u16, u16)>) -> String
     //first determine if a customer has multiple tickeets
     let max_tickets_per_customer: u16 = *tickets
         .iter()
-        .fold::<&mut Vec<u16>, _>(&mut vec![0; N as usize], |acc, &(_P, B)| {
+        .fold::<&mut Vec<u16>, _>(&mut vec![0; C as usize], |acc, &(_P, B)| {
             {
                 acc[B as usize - 1] += 1;
             }
@@ -49,7 +49,7 @@ fn solve(case_no: u32, N: u16, C: u16, tickets: &Vec<(u16, u16)>) -> String
     let ticket_pos_list: Vec<(u16, u16)> = tickets_per_position
         .iter()
         .enumerate()
-        .filter(|(P, Count)| **Count > 0)
+        .filter(|(_P, Count)| **Count > 0)
         .map(|(a, b)| (a as u16, *b))
         .collect();
 
@@ -73,7 +73,7 @@ fn solve(case_no: u32, N: u16, C: u16, tickets: &Vec<(u16, u16)>) -> String
 
     let mut promotions_needed = 0;
 
-    for (pos, count) in ticket_pos_list {
+    for (_pos, count) in ticket_pos_list {
         promotions_needed += max(0i16, int_sub(count,rides_needed));
     }
 
