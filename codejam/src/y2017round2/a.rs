@@ -7,7 +7,7 @@ pub fn solve_all_cases()
 
     for case in 1..=t {
         let (_, P) = reader.read_tuple_2::<u8, usize>();
-        let mut G: Vec<_> = reader.read_int_line::<usize>();
+        let mut G: Vec<_> = reader.read_num_line::<usize>();
 
         print!("{}", solve(case, &mut G, P));
     }

@@ -27,7 +27,7 @@ pub fn solve_all_cases()
         let city_dist: Vec<_> = (0..N)
             .map(|_| {
                 reader
-                    .read_int_line::<i32>()
+                    .read_num_line::<i32>()
                     .iter()
                     .map(|&d| if d < 0 { None } else { Some(d as Distance) })
                     .collect()

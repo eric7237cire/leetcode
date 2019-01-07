@@ -10,7 +10,7 @@ pub fn solve_all_cases()
     for case in 1..=t {
         let (_, K) = reader.read_tuple_2::<u8, u8>();
         let U = reader.read_int::<f64>();
-        let mut P = reader.read_int_line::<f64>();
+        let mut P = reader.read_num_line::<f64>();
 
         debug!("P: {:?}", P);
 

@@ -22,7 +22,7 @@ impl InputReader
         InputReader { s: String::new() }
     }
 
-    pub fn read_int_line<T>(&mut self) -> Vec<T>
+    pub fn read_num_line<T>(&mut self) -> Vec<T>
     where
         T: std::str::FromStr,
         <T as std::str::FromStr>::Err: std::fmt::Debug,
@@ -71,6 +71,26 @@ impl InputReader
         (
             sw.next().unwrap().parse::<T>().unwrap(),
             sw.next().unwrap().parse::<U>().unwrap(),
+        )
+    }
+
+    pub fn read_tuple_3<T, U, V>(&mut self) -> (T, U, V)
+    where
+        T: std::str::FromStr,
+        <T as std::str::FromStr>::Err: std::fmt::Debug,
+        U: std::str::FromStr,
+        <U as std::str::FromStr>::Err: std::fmt::Debug,
+        V: std::str::FromStr,
+        <V as std::str::FromStr>::Err: std::fmt::Debug,
+    {
+        self.s.clear();
+        stdin().read_line(&mut self.s).unwrap();
+        //debug!("Read line {}", self.s);
+        let mut sw = self.s.split_whitespace();
+        (
+            sw.next().unwrap().parse::<T>().unwrap(),
+            sw.next().unwrap().parse::<U>().unwrap(),
+            sw.next().unwrap().parse::<V>().unwrap(),
         )
     }
 }
