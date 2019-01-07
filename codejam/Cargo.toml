@@ -8,6 +8,7 @@ edition = "2018"
 log4rs = "0.8.1"
 log = "*"
 itertools = "*"
+num = "*"
 
 [features]
 default = []
