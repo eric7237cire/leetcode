@@ -58,10 +58,25 @@ fn solve(case_no: u32, N: u16, C: u16, tickets: &Vec<(u16, u16)>) -> String
     let mut promote_space = 0;
     let mut last_pos: i16 = -1;
     let mut min_rides_needed = 1;
-    for (pos, count) in ticket_pos_list {
+    let mut count_cumul  = 0;
+    //promote those closest to front, keeping track of how many spaces we didn't use
+    for &(pos, count) in ticket_pos_list.iter() {
         promote_space += int_sub_us(pos, last_pos);
-        min_rides_needed = max(min_rides_needed, int_div_ceil(count, promote_space));
+        count_cumul += count;
+        min_rides_needed = max(min_rides_needed,
+                               int_div_ceil(count_cumul, promote_space));
+
+        last_pos = pos as i16;
     }
 
-    format!("Case #{}: {}\n", case_no, max_tickets_per_customer)
+    let rides_needed =max(min_rides_needed, max_tickets_per_customer);
+
+    let mut promotions_needed = 0;
+
+    for (pos, count) in ticket_pos_list {
+        promotions_needed += max(0i16, int_sub(count,rides_needed));
+    }
+
+
+    format!("Case #{}: {} {}\n", case_no, rides_needed, promotions_needed)
 }

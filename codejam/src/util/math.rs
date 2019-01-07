@@ -1,7 +1,7 @@
 use num::*;
 
 pub fn int_div_ceil<T>( n1: T, n2:T ) -> T
-where T : std::cmp::PartialOrd + std::ops::Sub + Integer
+where T : Integer
 {
     debug_assert!(n1 > T::zero());
     debug_assert!(n2 > T::zero());
@@ -13,6 +13,14 @@ where T : NumCast, U : NumCast
 {
 
     cast::<U,T>(cast::<T,U>(n1).unwrap()-n2).unwrap()
+}
+
+pub fn int_sub<T,U,V>( n1: T, n2:U ) -> V
+where T : NumCast, U : NumCast, V: NumCast + std::ops::Sub<Output=V>
+
+{
+
+    cast::<T,V>(n1).unwrap() - cast::<U,V>(n2).unwrap()
 }
 
 
