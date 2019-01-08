@@ -63,7 +63,6 @@ fn prob1()
     let P = [0.5; 18];
     let p = prob_at_least_k(&P, 12);
     println!("Prob 12 heads of 18 coins: {:.5}", p);
-
 }
 
 fn solve(case_no: u32, prob: &mut Vec<f64>, U: f64, K: u8) -> String

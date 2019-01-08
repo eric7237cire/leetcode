@@ -3,11 +3,13 @@ Round 3 2008
 
 Round Qual 2012, hall of mirrors
 */
+use super::super::util::grid::{Grid, GridConsts, GridRowCol, GridRowColVec};
 use super::super::util::input::*;
 //use super::super::util::math::*;
-use std::ops::{Index,IndexMut};
+//use std::ops::{Index,IndexMut};
 use std::default::Default;
 use std::fmt::{Display,Formatter,Result};
+//use std::iter;
 //use std::cmp::max;
 
 pub fn solve_all_cases()
@@ -17,11 +19,11 @@ pub fn solve_all_cases()
 
     for case in 1..=t {
         let (R, C) = reader.read_tuple_2::<usize, usize>();
-        let mut grid:Grid<char> = Grid::new(R,C);
+        let mut grid: Grid<Tile> = Grid::new(R, C);
         for r in 0..R {
-            let row = reader.read_chars(C );
-            for (c,t) in row.iter().enumerate() {
-                grid[(r,c)] = *t;
+            let row = reader.read_chars(C);
+            for (c, t) in row.iter().enumerate() {
+                grid[(r, c)] = Tile::from(*t);
             }
         }
 
@@ -29,8 +31,7 @@ pub fn solve_all_cases()
     }
 }
 
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 enum Tile
 {
     Empty,
@@ -45,16 +46,15 @@ use self::Tile::*;
 
 impl Tile
 {
-
     fn to_char(self) -> char
     {
         match self {
             Empty => '.',
-    Wall => '#',
-    ForwardMirror => '/',
-    BackwardMirror => '\\',
-    VerticalBeam => '|',
-    HorizonalBeam => '-',
+            Wall => '#',
+            ForwardMirror => '/',
+            BackwardMirror => '\\',
+            VerticalBeam => '|',
+            HorizonalBeam => '-',
         }
     }
 }
@@ -65,75 +65,81 @@ impl From<char> for Tile
     {
         match item {
             '.' => Empty,
-'#' =>     Wall,
-'/' =>     ForwardMirror,
-'\\' =>     BackwardMirror,
-'|' =>     VerticalBeam,
-'-' =>     HorizonalBeam,
+            '#' => Wall,
+            '/' => ForwardMirror,
+            '\\' => BackwardMirror,
+            '|' => VerticalBeam,
+            '-' => HorizonalBeam,
             _ => panic!("Character not recognized: {}", item),
         }
     }
 }
-
-struct Grid<T>
+impl Display for Tile
 {
-    data : Vec<T> ,
-    pub R: usize,
-    pub C: usize
-}
-
-impl <T> Grid<T> {
-    pub fn new(r: usize, c: usize) -> Grid<T> where T: Default {
-        let mut g = Grid {R:r, C:c, data:Vec::new()};
-        for _ in 0..r*c {
-            g.data.push(Default::default());
-        }
-        g
-    }
-}
-
-//get a row
-impl <T> Index<usize> for Grid<T>  {
-    type Output = [T];
-
-    fn index<'a>(&'a self, row_index: usize) -> &'a [T] {
-        &self.data[row_index*self.C..(row_index+1*self.C)]
-    }
-}
-//get a cell
-impl <T> Index<(usize,usize)> for Grid<T> {
-    type Output = T;
-
-    fn index<'a>(&'a self, row_col_index: (usize, usize)) -> &'a T {
-        &self.data[row_col_index.0*self.C+row_col_index.1]
-    }
-}
-//set a cell
-impl <T> IndexMut<(usize,usize)> for Grid<T> {
-    fn index_mut<'a>(&'a mut self, row_col_index: (usize,usize)) -> &'a mut T {
-        & mut self.data[row_col_index.0*self.C+row_col_index.1]
-    }
-}
-impl <T> Display for Grid<T> where T: Display {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        for r in 0..self.R {
-            for c in 0..self.C {
-                if let Err(err) = write!(f, "{}", self[(r, c)]) {
-                    return Err(err);
-                }
-            }
-            if let Err(err) = writeln!(f, "") {
-                return Err(err);
-            }
-        }
-        write!(f, "")
+        write!(f, "{}", self.to_char())
     }
 }
 
+impl Default for Tile
+{
+    fn default() -> Tile {Empty}
+}
 
-fn solve(case_no: u32, grid: &mut Grid<char>) -> String
+//problem specific code
+fn trace_ray(grid: &Grid<Tile>, location: GridRowCol, direction: GridRowColVec) -> Vec<GridRowCol>
+{
+    let mut location = location + direction;
+    let mut direction = direction;
+    let mut r: Vec<GridRowCol> = Vec::new();
+
+    for _ in 0..grid.R * grid.C {
+        if let Some(tile) = grid.get_value(location) {
+            match *tile {
+                Wall => {
+                    break;
+                }
+                Empty => {
+
+                },
+                //  /
+                ForwardMirror  | BackwardMirror => {
+                    let mul = if *tile == ForwardMirror { 1 } else {-1};
+                    direction = match direction {
+                        GridConsts::NORTH  => GridConsts::EAST *mul,
+                        GridConsts::EAST => GridConsts::NORTH * mul,
+                        GridConsts::SOUTH => GridConsts::WEST * mul,
+                        GridConsts::WEST => GridConsts::SOUTH * mul,
+                        _ => direction
+                    };
+                },
+                VerticalBeam | HorizonalBeam => {
+                    break;
+                }
+                //   \\\\
+               /*  => {
+                    direction = match direction {
+
+                        GridConsts::SOUTH => GridConsts::EAST,
+                        GridConsts::EAST => GridConsts::SOUTH,
+                        GridConsts::NORTH => GridConsts::WEST,
+                        GridConsts::WEST => GridConsts::NORTH,
+                    };
+                }*/
+            };
+            location += direction;
+            r.push(location);
+        } else {
+            break;
+        }
+    }
+
+    return r;
+}
+
+fn solve(case_no: u32, grid: &mut Grid<Tile>) -> String
 {
     debug!("Solving case {}", case_no);
 
-    format!("Case #{}:\n{}\n", case_no, grid)
+    format!("Case #{}:\n{}", case_no, grid)
 }
