@@ -23,7 +23,7 @@ fn solve(case_no: u32, N: u16, C: u16, tickets: &Vec<(u16, u16)>) -> String
     //first determine if a customer has multiple tickeets
     let max_tickets_per_customer: u16 = *tickets
         .iter()
-        .fold::<&mut Vec<u16>, _>(&mut vec![0; C as usize], |acc, &(_P, B)| {
+        .fold(&mut vec![0; C as usize], |acc, &(_P, B)| {
             {
                 acc[B as usize - 1] += 1;
             }

@@ -93,4 +93,11 @@ impl InputReader
             sw.next().unwrap().parse::<V>().unwrap(),
         )
     }
+
+    pub fn read_chars(&mut self, amt: usize) -> Vec<char>
+    {
+        self.s.clear();
+        stdin().read_line(&mut self.s).unwrap();
+        self.s.chars().take(amt).collect::<Vec<_>>()
+    }
 }
