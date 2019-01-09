@@ -1,9 +1,10 @@
 use num::{cast, Integer, NumCast};
 use std::cmp::PartialEq;
 use std::default::Default;
-use std::fmt::{Debug, Display, Formatter, Result};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Mul};
 use std::ops::{Index, IndexMut};
+use std::fmt;
 
 pub struct Grid<T>
 {
@@ -100,7 +101,7 @@ impl<T> Grid<T>
         Some(&self.data[row_col_index.0 * self.C + row_col_index.1])
     }
 
-    pub fn filter_byval<'a>(&'a self, val: &'a T) -> impl Iterator<Item = GridCoord> + 'a
+    pub fn filter_by_val<'a>(&'a self, val: &'a T) -> impl Iterator<Item = GridCoord> + 'a
     where
         //I: 'a,
         T: PartialEq,
@@ -187,7 +188,7 @@ impl<T> Display for Grid<T>
 where
     T: Display,
 {
-    fn fmt(&self, f: &mut Formatter) -> Result
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result
     {
         for r in 0..self.R {
             for c in 0..self.C {
@@ -272,7 +273,7 @@ impl<N> Debug for IntCoord2d<N>
 where
     N: Display,
 {
-    fn fmt(&self, f: &mut Formatter) -> Result
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result
     {
         write!(f, "(R{}, C{})", self.0, self.1)
     }

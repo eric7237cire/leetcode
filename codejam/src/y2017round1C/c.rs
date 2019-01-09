@@ -3,7 +3,7 @@ use super::super::util::input::*;
 use std::cmp::Ordering::*;
 
 /*
-hard problem understanding / proof
+hard custom algorithm / proof
 dynamic programming
 probability of success of at least K independent events
 */

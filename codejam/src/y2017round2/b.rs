@@ -3,7 +3,7 @@ use super::super::util::math::*;
 use std::cmp::max;
 
 /*
-problem understanding / proof
+custom algorithm / proof
 minimization / optimization
 */
 

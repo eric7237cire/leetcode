@@ -2,7 +2,7 @@ use super::super::util::input::*;
 
 /*
 state machine
-problem understanding
+custom algorithm / proof
 optimization
 */
 pub fn solve_all_cases()
