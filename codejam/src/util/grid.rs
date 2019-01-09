@@ -181,6 +181,7 @@ impl<T> IndexMut<(usize, usize)> for Grid<T>
         &mut self.data[row_col_index.0 * self.C + row_col_index.1]
     }
 }
+/*
 impl<T> Display for Grid<T>
 where
     T: Display,
@@ -199,7 +200,7 @@ where
         }
         write!(f, "")
     }
-}
+}*/
 
 #[cfg(test)]
 mod tests

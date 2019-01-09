@@ -23,7 +23,7 @@ use self::util::log::init_log;
 fn main()
 {
     //Init logging
-    if false
+    if true
     // cfg!(feature = "debug_print")
     {
         init_log();

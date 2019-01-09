@@ -27,7 +27,7 @@ pub fn solve_all_cases()
             }
         }
 
-        if case != 9994 {
+        if case != 11132 {
             print!("{}", solve(case, &mut grid));
         }
     }
@@ -102,9 +102,12 @@ fn trace_ray(
     let mut location: IntCoord2d<i16> = location.convert();
     let mut direction = direction;
     let mut r: Vec<_> = Vec::new();
+    //debug!("\nTracing {} starting at {}", location, direction);
 
-    for i in 0..grid.R * grid.C {
+    for i in 0..=grid.R * grid.C * grid.R * grid.C {
+        // debug!("getting loc #{} {}", i, location);
         if let Some(tile) = grid.get_value(location) {
+            //debug!("Tile is {} at {}", tile, location);
             match *tile {
                 Wall => {
                     break;
@@ -125,6 +128,7 @@ fn trace_ray(
                 }
                 VerticalBeam | HorizonalBeam if i > 0 => {
                     r.push(location);
+                    debug!("Err beam");
                     return Err(r);
                 } //   \\\\
                 /*  => {
@@ -139,12 +143,14 @@ fn trace_ray(
                 _ => {}
             };
 
+            //debug!("Advancing {} by {}", location, direction);
             location += direction;
         } else {
             break;
         }
     }
 
+    //debug!("OK");
     return Ok(r);
 }
 
@@ -233,7 +239,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         square_choices.push(sc);
     }
 
-    /*
+
     for (idx, sc) in square_choices.iter().enumerate() {
         debug!("For square {} choices are {:?}", empty_squares[idx], sc);
     }
@@ -250,7 +256,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         "Empties {:?} for \n{}",
         grid.filter_by_val(&Empty).take(2).collect::<Vec<_>>(),
         grid
-    );*/
+    );
 
     let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
 
@@ -338,4 +344,22 @@ fn helper(
     }
 
     return false;
+}
+
+impl Display for Grid<Tile>
+{
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result
+    {
+        for r in 0..self.R {
+            for c in 0..self.C {
+                if let Err(err) = write!(f, "{}", self[(r, c)]) {
+                    return Err(err);
+                }
+            }
+            if let Err(err) = writeln!(f, "") {
+                return Err(err);
+            }
+        }
+        write!(f, "")
+    }
 }

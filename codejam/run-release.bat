@@ -6,3 +6,4 @@ rem cat .\src\y2017qual\D-large-practice.in | .\target\release\codejam.exe   > .
 rem cargo build --release && cat .\src\y2017round1C\B-large-practice.in | .\target\release\codejam.exe > .\src\y2017round1C\B-large-practice.out
 
 cargo build --release && cat .\src\y2017round2\C-small-practice.in | .\target\release\codejam.exe > .\src\y2017round2\C-small-practice.out
+cargo build --release && cat .\src\y2017round2\C-large-practice.in | .\target\release\codejam.exe > .\src\y2017round2\C-large-practice.out
