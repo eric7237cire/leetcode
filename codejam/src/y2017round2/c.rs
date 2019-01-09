@@ -8,7 +8,7 @@ use super::super::util::input::*;
 //use super::super::util::math::*;
 //use std::ops::{Index,IndexMut};
 use std::default::Default;
-use std::fmt::{Display,Formatter,Result};
+use std::fmt::{Display, Formatter, Result};
 //use std::iter;
 //use std::cmp::max;
 
@@ -76,14 +76,18 @@ impl From<char> for Tile
 }
 impl Display for Tile
 {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> Result
+    {
         write!(f, "{}", self.to_char())
     }
 }
 
 impl Default for Tile
 {
-    fn default() -> Tile {Empty}
+    fn default() -> Tile
+    {
+        Empty
+    }
 }
 
 //problem specific code
@@ -99,33 +103,30 @@ fn trace_ray(grid: &Grid<Tile>, location: GridRowCol, direction: GridRowColVec) 
                 Wall => {
                     break;
                 }
-                Empty => {
-
-                },
+                Empty => {}
                 //  /
-                ForwardMirror  | BackwardMirror => {
-                    let mul = if *tile == ForwardMirror { 1 } else {-1};
+                ForwardMirror | BackwardMirror => {
+                    let mul = if *tile == ForwardMirror { 1 } else { -1 };
                     direction = match direction {
-                        GridConsts::NORTH  => GridConsts::EAST *mul,
+                        GridConsts::NORTH => GridConsts::EAST * mul,
                         GridConsts::EAST => GridConsts::NORTH * mul,
                         GridConsts::SOUTH => GridConsts::WEST * mul,
                         GridConsts::WEST => GridConsts::SOUTH * mul,
-                        _ => direction
+                        _ => direction,
                     };
-                },
+                }
                 VerticalBeam | HorizonalBeam => {
                     break;
-                }
-                //   \\\\
-               /*  => {
-                    direction = match direction {
+                } //   \\\\
+                  /*  => {
+                      direction = match direction {
 
-                        GridConsts::SOUTH => GridConsts::EAST,
-                        GridConsts::EAST => GridConsts::SOUTH,
-                        GridConsts::NORTH => GridConsts::WEST,
-                        GridConsts::WEST => GridConsts::NORTH,
-                    };
-                }*/
+                          GridConsts::SOUTH => GridConsts::EAST,
+                          GridConsts::EAST => GridConsts::SOUTH,
+                          GridConsts::NORTH => GridConsts::WEST,
+                          GridConsts::WEST => GridConsts::NORTH,
+                      };
+                  }*/
             };
             location += direction;
             r.push(location);
@@ -140,6 +141,10 @@ fn trace_ray(grid: &Grid<Tile>, location: GridRowCol, direction: GridRowColVec) 
 fn solve(case_no: u32, grid: &mut Grid<Tile>) -> String
 {
     debug!("Solving case {}", case_no);
-
+    debug!(
+        "Empties {:?} for \n{}",
+        grid.filter_byval(&Empty).collect::<Vec<_>>(),
+        grid
+    );
     format!("Case #{}:\n{}", case_no, grid)
 }

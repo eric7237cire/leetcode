@@ -1,6 +1,7 @@
+use std::cmp::PartialEq;
 use std::default::Default;
 use std::fmt::{Display, Formatter, Result};
-use std::ops::{AddAssign,Add,Mul};
+use std::ops::{Add, AddAssign, Mul};
 use std::ops::{Index, IndexMut};
 //use num::{Integer,cast,NumCast};
 
@@ -14,7 +15,7 @@ pub struct Grid<T>
 #[derive(Debug, Copy, Clone)]
 pub struct GridRowCol(usize, usize);
 
-#[derive(Debug, Copy, Clone,PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GridRowColVec(i64, i64);
 
 pub struct GridConsts {}
@@ -53,14 +54,23 @@ impl<T> Grid<T>
 
     pub fn get_value<'a>(&'a self, row_col_index: GridRowCol) -> Option<&'a T>
     {
-        if  row_col_index.0 >= self.R
-            || row_col_index.1 >= self.C
-        {
+        if row_col_index.0 >= self.R || row_col_index.1 >= self.C {
             None
         } else {
             Some(&self.data[row_col_index.0 * self.C + row_col_index.1])
         }
+    }
 
+    pub fn filter_byval<'a>(&'a self, val: &'a T) -> impl Iterator<Item = GridRowCol> + 'a
+    where
+        //I: 'a,
+        T: PartialEq,
+    {
+         self.data
+            .iter()
+            .enumerate()
+             .filter(move |(_index, value)| *value == val)
+            .map(move|(index, _value)| GridRowCol(index / self.C, index % self.C))
     }
 }
 
@@ -81,14 +91,14 @@ impl<T> Index<GridRowCol> for Grid<T>
 
     fn index<'a>(&'a self, row_col_index: GridRowCol) -> &'a T
     {
-        if row_col_index.0 >= self.R
-            || row_col_index.1 >= self.C
-        {
-            panic!("RowCol {:?} invalid for grid {}, {}",row_col_index, self.R,self.C);
+        if row_col_index.0 >= self.R || row_col_index.1 >= self.C {
+            panic!(
+                "RowCol {:?} invalid for grid {}, {}",
+                row_col_index, self.R, self.C
+            );
         }
 
         &self.data[row_col_index.0 * self.C + row_col_index.1]
-
     }
 }
 //set a cell
@@ -158,17 +168,20 @@ impl Add<GridRowCol> for GridRowCol
         GridRowCol(self.0 + other.0, self.1 + other.1)
     }
 }
-impl AddAssign<GridRowColVec> for GridRowCol {
-    fn add_assign(&mut self, other: GridRowColVec) {
+impl AddAssign<GridRowColVec> for GridRowCol
+{
+    fn add_assign(&mut self, other: GridRowColVec)
+    {
         *self = *self + other
     }
 }
 
-impl Mul<i32> for GridRowColVec  {
-
+impl Mul<i32> for GridRowColVec
+{
     type Output = Self;
 
-    fn mul(self, rhs: i32) -> Self {
+    fn mul(self, rhs: i32) -> Self
+    {
         GridRowColVec(self.0 * rhs as i64, self.1 * rhs as i64)
     }
 }
