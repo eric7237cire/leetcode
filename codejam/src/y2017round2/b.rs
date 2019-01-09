@@ -2,6 +2,11 @@ use super::super::util::input::*;
 use super::super::util::math::*;
 use std::cmp::max;
 
+/*
+problem understanding / proof
+minimization / optimization
+*/
+
 pub fn solve_all_cases()
 {
     let mut reader = InputReader::new();

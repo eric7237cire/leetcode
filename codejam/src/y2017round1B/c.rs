@@ -4,6 +4,9 @@ use std::collections::BinaryHeap;
 use std::f64;
 use std::u16;
 
+/*
+dijkstras ; creating nodes based on other state
+*/
 struct Horse
 {
     E: u32, //the maximum total distance, in kilometers, the horse in the i-th city can go and

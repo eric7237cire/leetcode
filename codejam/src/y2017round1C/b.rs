@@ -3,6 +3,9 @@ use std::cmp::min;
 
 const DAY: usize = 24 * 60;
 
+/*
+dynamic programming
+*/
 #[derive(Clone, PartialEq)]
 enum Parent
 {

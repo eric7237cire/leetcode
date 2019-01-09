@@ -2,6 +2,8 @@ use std::io::stdin;
 
 //use bit_vec::BitVec;
 
+//Greedy algorithm
+
 pub fn solve_case()
 {
     //handle input / output

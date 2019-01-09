@@ -2,6 +2,14 @@ use super::super::util::input::read_int_line;
 use std::io::stdin;
 use std::thread;
 
+/*
+scan line
+constraints
+greedy
+floating point issues
+
+code not mine, just translation
+*/
 pub fn solve_all_cases()
 {
     let mut children: Vec<thread::JoinHandle<_>> = vec![];

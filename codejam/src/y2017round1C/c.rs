@@ -2,6 +2,11 @@ use super::super::util::input::*;
 //use std::cmp::min;
 use std::cmp::Ordering::*;
 
+/*
+hard problem understanding / proof
+dynamic programming
+probability of success of at least K independent events
+*/
 pub fn solve_all_cases()
 {
     let mut reader = InputReader::new();

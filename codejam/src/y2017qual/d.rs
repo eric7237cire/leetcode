@@ -6,6 +6,14 @@ type BoardVV = Vec<Vec<bool>>;
 #[derive(PartialEq, Debug, Eq, Hash, Clone)]
 struct RowCol(BoardInt, BoardInt);
 
+/*
+grid
+converting diagonal space to horizontal/vertical space
+coordinates
+greedy
+problem modeling/understanding
+*/
+
 pub fn solve_all_cases()
 {
     let mut children: Vec<thread::JoinHandle<_>> = vec![];

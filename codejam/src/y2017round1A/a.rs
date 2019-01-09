@@ -1,6 +1,12 @@
 use std::io::stdin;
 use std::thread;
 
+/*
+grid
+handle constraints
+
+TODO use grid class
+*/
 pub fn solve_all_cases()
 {
     let mut children: Vec<thread::JoinHandle<_>> = vec![];

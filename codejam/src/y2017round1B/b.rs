@@ -4,6 +4,12 @@ use std::fmt;
 use std::io::stdin;
 use std::iter::FromIterator;
 
+/*
+
+problem modeling/understanding
+
+was close, used the official explanation to implement
+*/
 pub fn solve_all_cases()
 {
     //let mut children: Vec<thread::JoinHandle<_>> = vec![];

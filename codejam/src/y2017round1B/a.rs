@@ -2,6 +2,12 @@ use super::super::util::input::read_int_line;
 use std::io::stdin;
 use std::thread;
 
+/*
+velocity
+intersection
+problem modeling/understanding
+proof
+*/
 #[derive(Debug)]
 struct Horse
 {

@@ -3,6 +3,9 @@ use std::cmp;
 use std::io::stdin;
 use std::thread;
 
+/*
+very hard ad hoc (code not mine, just translation)
+*/
 pub fn solve_all_cases()
 {
     let mut children: Vec<thread::JoinHandle<_>> = vec![];

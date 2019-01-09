@@ -3,6 +3,11 @@ use super::super::util::input::*;
 use std::f64;
 //use std::cmp::max;
 
+/*
+geometry,
+brute force search
+*/
+
 #[derive(Debug)] //,PartialEq,Eq,PartialOrd,Ord)]
 struct Pancake
 {

@@ -1,5 +1,5 @@
 use std::io::stdin;
-
+//Adhoc / digits / integers
 pub fn solve_case()
 {
     //handle input / output
