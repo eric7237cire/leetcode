@@ -4,11 +4,13 @@ version = "0.1.0"
 authors = ["eric7237cire <eric7237cire@hotmail.fr>"]
 edition = "2018"
 
+# See https://github.com/alexcrichton/cargo-vendor if overrides are wanted
 [dependencies]
 log4rs = "0.8.1"
 log = "*"
 itertools = "*"
 num = "*"
+bimap = "0.1"
 
 [features]
 default = []

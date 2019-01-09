@@ -7,9 +7,10 @@ use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
 
 use super::super::util::input::*;
+use bimap::BiMap;
 use std::default::Default;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
 pub fn solve_all_cases()
 {
@@ -26,7 +27,9 @@ pub fn solve_all_cases()
             }
         }
 
-        print!("{}", solve(case, &mut grid));
+        if case == 4 {
+            print!("{}", solve(case, &mut grid));
+        }
     }
 }
 
@@ -145,24 +148,26 @@ fn trace_ray(
     return Ok(r);
 }
 
+#[derive(Debug)]
 struct LaserChoice
 {
     laser_index: usize,
+    empty_square_index: usize,
     orientation: Tile,
 }
 
 type Trace = Vec<IntCoord2d<i16>>;
-type OptionTrace = Option<Trace> ;
+type OptionTrace = Option<Trace>;
 
 fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
 {
     debug!("Solving case {}", case_no);
 
-    let lasers = grid
+    let laser_coords = grid
         .filter_by_pred(|v| *v == VerticalBeam || *v == HorizonalBeam)
         .collect::<Vec<_>>();
 
-    let laser_traces: Vec<[OptionTrace; 2]> = lasers
+    let laser_traces: Vec<[OptionTrace; 2]> = laser_coords
         .iter()
         .map(|loc| {
             let mut combined_traces: [OptionTrace; 2] = [None, None];
@@ -180,7 +185,6 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
                 } else {
                     combined_traces[idx % 2] = None
                 }
-
             }
 
             combined_traces
@@ -189,15 +193,51 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
 
     let empty_squares = grid.filter_by_val(&Empty).collect::<Vec<_>>();
 
-    let square_choices: Vec<Vec<LaserChoice>> = Vec::new();
+    let mut square_choices: Vec<Vec<LaserChoice>> = Vec::new();
+    let mut square_coords: BiMap<usize, IntCoord2d<usize>> = BiMap::new();
 
-    for (idx, es) in empty_squares.iter().enumerate() {
-        for laser_data in laser_traces.iter() {
+    for (empty_square_index, es) in empty_squares.iter().enumerate() {
+        square_coords.insert(empty_square_index, *es);
 
+        let mut sc = Vec::new();
+
+        for (laser_index, laser_data) in laser_traces.iter().enumerate() {
+            if laser_data[0] == None && laser_data[1] == None {
+                return format!("Case #{}:\nIMPOSSIBLE\n", case_no);
+            }
+            if let Some(ns) = &laser_data[0] {
+                if ns.contains(&es.convert()) {
+                    sc.push(LaserChoice {
+                        laser_index,
+                        empty_square_index,
+                        orientation: VerticalBeam,
+                    });
+                }
+            }
+            if let Some(ew) = &laser_data[1] {
+                if ew.contains(&es.convert()) {
+                    sc.push(LaserChoice {
+                        laser_index,
+                        empty_square_index,
+                        orientation: HorizonalBeam,
+                    });
+                }
+            }
         }
+
+        //if a square can't get hit with any laser, we have no solution
+        if sc.is_empty() {
+            return format!("Case #{}:\nIMPOSSIBLE\n", case_no);
+        }
+
+        square_choices.push(sc);
     }
 
-    for (laser_index, laser_loc) in lasers.iter().enumerate() {
+    for (idx, sc) in square_choices.iter().enumerate() {
+        debug!("For square {} choices are {:?}", empty_squares[idx], sc);
+    }
+
+    for (laser_index, laser_loc) in laser_coords.iter().enumerate() {
         let traces = &laser_traces[laser_index];
         debug!(
             " Laser: {:?}\ntrace north/south {:?}\ntrace east/west {:?}\n",
@@ -210,5 +250,63 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         grid.filter_by_val(&Empty).take(2).collect::<Vec<_>>(),
         grid
     );
-    format!("Case #{}:\n{}", case_no, grid)
+
+    let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
+
+    if !helper(grid, &laser_traces, &laser_coords, &square_coords,
+    &square_choices, 0, &mut is_covered, 0) {
+        return format!("Case #{}:\nIMPOSSIBLE\n", case_no);
+    }
+
+    format!("Case #{}: POSSIBLE\n{}", case_no, grid)
+}
+
+fn helper(
+    grid: &mut Grid<Tile>,
+    laser_traces: &Vec<[OptionTrace; 2]>,
+    laser_coords: &Vec<IntCoord2d<usize>>,
+    square_coords: &BiMap<usize, IntCoord2d<usize>>,
+    square_choices: &Vec<Vec<LaserChoice>>,
+    current_laser_index: usize,
+    is_covered: &mut Vec<i16>,
+    level: usize,
+) -> bool
+{
+    //base case
+    if current_laser_index == laser_traces.len() && *is_covered.iter().min().unwrap() > 0 {
+        return true;
+    }
+
+    let laser_data = &laser_traces[current_laser_index];
+    //try vertical
+    for ld_idx in 0..2 {
+        if let Some(ns) = &laser_data[ld_idx] {
+            grid[laser_coords[current_laser_index]] = if ld_idx==0 {VerticalBeam} else {HorizonalBeam};
+
+            for coord in ns {
+                is_covered[*square_coords.get_by_right(&coord.convert()).unwrap()] += 1;
+            }
+
+            let ok = helper(
+                grid,
+                laser_traces,
+                laser_coords,
+                square_coords,
+                square_choices,
+                current_laser_index + 1,
+                is_covered,
+                level + 1,
+            );
+
+            if ok {
+                return true;
+            } else {
+                for coord in ns {
+                    is_covered[*square_coords.get_by_right(&coord.convert()).unwrap()] -= 1;
+                }
+            }
+        }
+    }
+
+    return false;
 }
