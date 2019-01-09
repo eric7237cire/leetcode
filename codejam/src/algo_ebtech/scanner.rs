@@ -3,13 +3,16 @@
 use std::io;
 
 /// Reads white-space separated tokens one at a time.
-pub struct Scanner<B> {
+pub struct Scanner<B>
+{
     reader: B,
     buffer: Vec<String>,
 }
 
-impl<B: io::BufRead> Scanner<B> {
-    pub fn new(reader: B) -> Self {
+impl<B: io::BufRead> Scanner<B>
+{
+    pub fn new(reader: B) -> Self
+    {
         Self {
             reader,
             buffer: Vec::new(),
@@ -37,11 +40,13 @@ impl<B: io::BufRead> Scanner<B> {
 }
 
 #[cfg(test)]
-mod test {
+mod test
+{
     use super::*;
 
     #[test]
-    fn test_fake_input() {
+    fn test_fake_input()
+    {
         let cursor = io::Cursor::new("44 2");
         let mut scan = Scanner::new(cursor);
         let x = scan.read::<i32>();
@@ -50,7 +55,8 @@ mod test {
     }
 
     #[test]
-    fn test_stdin() {
+    fn test_stdin()
+    {
         let stdin = io::stdin();
         let mut scan = Scanner::new(stdin.lock());
         if false {
@@ -60,7 +66,8 @@ mod test {
 
     #[test]
     #[should_panic(expected = "File not found")]
-    fn test_file() {
+    fn test_file()
+    {
         let file = ::std::fs::File::open("asdf.txt").expect("File not found");
         let mut scan = Scanner::new(io::BufReader::new(file));
         let _ = scan.read::<i32>();

@@ -5,7 +5,8 @@
 /// # Panics
 ///
 /// Panics if m == 0. May panic on overflow if m * m > 2^63.
-pub fn mod_pow(mut base: u64, mut exp: u64, m: u64) -> u64 {
+pub fn mod_pow(mut base: u64, mut exp: u64, m: u64) -> u64
+{
     let mut result = 1 % m;
     while exp > 0 {
         if exp % 2 == 1 {
@@ -18,7 +19,8 @@ pub fn mod_pow(mut base: u64, mut exp: u64, m: u64) -> u64 {
 }
 
 /// Finds (d, x, y) such that d = gcd(a, b) = ax + by.
-pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
+pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64)
+{
     if b == 0 {
         (a.abs(), a.signum(), 0)
     } else {
@@ -32,7 +34,8 @@ pub fn extended_gcd(a: i64, b: i64) -> (i64, i64, i64) {
 /// # Panics
 ///
 /// Panics if a == 0.
-pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
+pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)>
+{
     let (d, _, yy) = extended_gcd(a, b);
     if c % d == 0 {
         let z = (a / d).abs();
@@ -45,11 +48,13 @@ pub fn canon_egcd(a: i64, b: i64, c: i64) -> Option<(i64, i64, i64)> {
 }
 
 #[cfg(test)]
-mod test {
+mod test
+{
     use super::*;
 
     #[test]
-    fn test_mod_inverse() {
+    fn test_mod_inverse()
+    {
         let p = 1_000_000_007;
         let base = 31;
 
@@ -60,7 +65,8 @@ mod test {
     }
 
     #[test]
-    fn test_egcd() {
+    fn test_egcd()
+    {
         let (a, b) = (14, 35);
 
         let (d, x, y) = extended_gcd(a, b);

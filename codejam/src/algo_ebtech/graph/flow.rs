@@ -2,7 +2,8 @@
 use super::{AdjListIterator, Graph};
 
 /// Representation of a network flow problem with (optional) costs.
-pub struct FlowGraph {
+pub struct FlowGraph
+{
     /// Owned graph, managed by this FlowGraph object.
     pub graph: Graph,
     /// Edge capacities.
@@ -11,12 +12,14 @@ pub struct FlowGraph {
     pub cost: Vec<i64>,
 }
 
-impl FlowGraph {
+impl FlowGraph
+{
     /// An upper limit to the flow.
     const INF: i64 = 0x3f3f_3f3f_3f3f_3f3f;
 
     /// Initializes an flow network with vmax vertices and no edges.
-    pub fn new(vmax: usize, emax_hint: usize) -> Self {
+    pub fn new(vmax: usize, emax_hint: usize) -> Self
+    {
         Self {
             graph: Graph::new(vmax, 2 * emax_hint),
             cap: Vec::with_capacity(2 * emax_hint),
@@ -26,7 +29,8 @@ impl FlowGraph {
 
     /// Adds an edge with specified capacity and cost. The reverse edge is also
     /// added for residual graph computation, but has zero capacity.
-    pub fn add_edge(&mut self, u: usize, v: usize, cap: i64, cost: i64) {
+    pub fn add_edge(&mut self, u: usize, v: usize, cap: i64, cost: i64)
+    {
         self.cap.push(cap);
         self.cap.push(0);
         self.cost.push(cost);
@@ -42,7 +46,8 @@ impl FlowGraph {
     /// # Panics
     ///
     /// Panics if the maximum flow is 2^63 or larger.
-    pub fn dinic(&self, s: usize, t: usize) -> i64 {
+    pub fn dinic(&self, s: usize, t: usize) -> i64
+    {
         let mut flow = vec![0; self.graph.num_e()];
         let mut max_flow = 0;
         loop {
@@ -60,7 +65,8 @@ impl FlowGraph {
     }
 
     // Compute BFS distances to restrict attention to shortest path edges.
-    fn dinic_search(&self, s: usize, flow: &[i64]) -> Vec<i64> {
+    fn dinic_search(&self, s: usize, flow: &[i64]) -> Vec<i64>
+    {
         let mut dist = vec![Self::INF; self.graph.num_v()];
         let mut q = ::std::collections::VecDeque::new();
         dist[s] = 0;
@@ -85,7 +91,8 @@ impl FlowGraph {
         dist: &[i64],
         adj: &mut [::std::iter::Peekable<AdjListIterator>],
         flow: &mut [i64],
-    ) -> i64 {
+    ) -> i64
+    {
         if u == t {
             return f;
         }
@@ -109,13 +116,15 @@ impl FlowGraph {
     }
 
     /// After running maximum flow, use this to recover the dual minimum cut.
-    pub fn min_cut(&self, dist: &[i64]) -> Vec<usize> {
+    pub fn min_cut(&self, dist: &[i64]) -> Vec<usize>
+    {
         (0..self.graph.num_e())
             .filter(|&e| {
                 let u = self.graph.endp[e ^ 1];
                 let v = self.graph.endp[e];
                 dist[u] < Self::INF && dist[v] == Self::INF
-            }).collect()
+            })
+            .collect()
     }
 
     /// Among all s-t maximum flows, finds one with minimum cost, assuming
@@ -124,7 +133,8 @@ impl FlowGraph {
     /// # Panics
     ///
     /// Panics if the flow or cost overflow a 64-bit signed integer.
-    pub fn mcf(&self, s: usize, t: usize) -> (i64, i64) {
+    pub fn mcf(&self, s: usize, t: usize) -> (i64, i64)
+    {
         let mut pot = vec![0; self.graph.num_v()];
 
         // Bellman-Ford deals with negative-cost edges at initialization.
@@ -154,7 +164,8 @@ impl FlowGraph {
 
     // Maintains Johnson's potentials to prevent negative-cost residual edges.
     // This allows running Dijkstra instead of the slower Bellman-Ford.
-    fn mcf_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>> {
+    fn mcf_search(&self, s: usize, flow: &[i64], pot: &mut [i64]) -> Vec<Option<usize>>
+    {
         let mut vis = vec![false; self.graph.num_v()];
         let mut dist = vec![Self::INF; self.graph.num_v()];
         let mut par = vec![None; self.graph.num_v()];
@@ -177,7 +188,8 @@ impl FlowGraph {
     }
 
     // Pushes flow along an augmenting path of minimum cost.
-    fn mcf_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64) {
+    fn mcf_augment(&self, t: usize, par: &[Option<usize>], flow: &mut [i64]) -> (i64, i64)
+    {
         let (mut dc, mut df) = (0, Self::INF);
         let mut u = t;
         while let Some(e) = par[u] {
@@ -196,11 +208,13 @@ impl FlowGraph {
 }
 
 #[cfg(test)]
-mod test {
+mod test
+{
     use super::*;
 
     #[test]
-    fn test_basic_flow() {
+    fn test_basic_flow()
+    {
         let mut graph = FlowGraph::new(3, 2);
         graph.add_edge(0, 1, 4, 1);
         graph.add_edge(1, 2, 3, 1);
@@ -210,7 +224,8 @@ mod test {
     }
 
     #[test]
-    fn test_min_cost_flow() {
+    fn test_min_cost_flow()
+    {
         let mut graph = FlowGraph::new(4, 4);
         graph.add_edge(0, 1, 10, -10);
         graph.add_edge(1, 2, 7, 8);

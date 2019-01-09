@@ -8,8 +8,8 @@ Simulation, grid, backtracking
 2-satisfiability / 2SAT
 
 */
-use super::super::algo_ebtech::graph::{Graph};
-use super::super::algo_ebtech::graph::connectivity::{ConnectivityGraph};
+use super::super::algo_ebtech::graph::connectivity::ConnectivityGraph;
+use super::super::algo_ebtech::graph::Graph;
 use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
 use super::super::util::input::*;
@@ -156,14 +156,8 @@ struct LaserChoice
 //to use algo, Vertical is even, Horizonal is odd, so scheme is 2*laser_index + 1 if horiz.
 fn get_graph_vertex_index(lc: &LaserChoice) -> usize
 {
-    2 * lc.laser_index
-        + if lc.orientation == VerticalBeam {
-            0
-        } else {
-            1
-        }
+    2 * lc.laser_index + if lc.orientation == VerticalBeam { 0 } else { 1 }
 }
-
 
 type Trace = Vec<IntCoord2d<i16>>;
 type OptionTrace = Option<Trace>;
@@ -247,11 +241,11 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
     for (idx, sc) in square_choices.iter().enumerate() {
         if sc.len() == 1 {
             let vi = get_graph_vertex_index(&sc[0]);
-            graph.add_two_sat_clause(vi,vi);
+            graph.add_two_sat_clause(vi, vi);
         } else {
             let v1 = get_graph_vertex_index(&sc[0]);
             let v2 = get_graph_vertex_index(&sc[1]);
-            graph.add_two_sat_clause(v1,v2);
+            graph.add_two_sat_clause(v1, v2);
         }
         debug!("For square {} choices are {:?}", empty_squares[idx], sc);
     }
@@ -259,53 +253,47 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         for i in 0..2 {
             //invalid so we need  to tell the 2sat graph that
             if lt[i] == None {
-                let v1=get_graph_vertex_index(&LaserChoice{laser_index, orientation: if i == 0 { VerticalBeam } else { HorizonalBeam }});
-                graph.add_two_sat_clause(v1^1, v1^1);
+                let v1 = get_graph_vertex_index(&LaserChoice {
+                    laser_index,
+                    orientation: if i == 0 { VerticalBeam } else { HorizonalBeam },
+                });
+                graph.add_two_sat_clause(v1 ^ 1, v1 ^ 1);
             }
         }
     }
 
-    let tsa = ConnectivityGraph::new(&graph, true).two_sat_assign();
+    if true {
+        let tsa = ConnectivityGraph::new(&graph, true).two_sat_assign();
 
-    if tsa.is_none() {
-        return format!("Case #{}: IMPOSSIBLE\n", case_no);
-    } else {
-        let tsa = tsa.unwrap();
-        debug!("2SAT results {:?}.   laser_coords: {:?}", tsa, laser_coords);
-        for (idx, &b) in tsa.iter().enumerate() {
-            grid[laser_coords[idx]] = if b {VerticalBeam} else {HorizonalBeam};
+        if tsa.is_none() {
+            return format!("Case #{}: IMPOSSIBLE\n", case_no);
+        } else {
+            let tsa = tsa.unwrap();
+            debug!("2SAT results {:?}.   laser_coords: {:?}", tsa, laser_coords);
+            for (idx, &b) in tsa.iter().enumerate() {
+                grid[laser_coords[idx]] = if b { VerticalBeam } else { HorizonalBeam };
+            }
+            format!("Case #{}: POSSIBLE\n{}", case_no, grid)
         }
+
+    } else {
+        //what I did, backtracking.  must be release mode
+
+        let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
+        if !helper(
+            grid,
+            &laser_traces,
+            &laser_coords,
+            &square_coords,
+            &square_choices,
+            0,
+            &mut is_covered,
+        ) {
+            return format!("Case #{}: IMPOSSIBLE\n", case_no);
+        }
+
         format!("Case #{}: POSSIBLE\n{}", case_no, grid)
     }
-
-    /*
-        for (laser_index, laser_loc) in laser_coords.iter().enumerate() {
-            let traces = &laser_traces[laser_index];
-            debug!(
-                " Laser: {:?}\ntrace north/south {:?}\ntrace east/west {:?}\n",
-                laser_loc, traces[0], traces[1],
-            );
-        }
-    */
-
-    /*
-    what I did, backtracking
-    let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
-
-    if !helper(
-        grid,
-        &laser_traces,
-        &laser_coords,
-        &square_coords,
-        &square_choices,
-        0,
-        &mut is_covered,
-    ) {
-        return format!("Case #{}: IMPOSSIBLE\n", case_no);
-    }
-
-    format!("Case #{}: POSSIBLE\n{}", case_no, grid)
-    */
 }
 
 fn helper(

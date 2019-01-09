@@ -7,7 +7,8 @@
 ///
 /// - modify(l, r, f) replaces a_i (l <= i <= r) by f(a_i) for an endomorphism f
 /// - query(l, r) returns the aggregate a_l + a_{l+1} + ... + a_r
-pub struct ArqTree<T: ArqSpec> {
+pub struct ArqTree<T: ArqSpec>
+{
     d: Vec<Option<T::F>>,
     t: Vec<T::M>,
 }
@@ -17,7 +18,8 @@ where
     T::F: Clone,
 {
     /// Initializes a static balanced tree on top of the given sequence.
-    pub fn new(mut init: Vec<T::M>) -> Self {
+    pub fn new(mut init: Vec<T::M>) -> Self
+    {
         let size = init.len();
         let mut t = (0..size).map(|_| T::identity()).collect::<Vec<_>>();
         t.append(&mut init);
@@ -30,7 +32,8 @@ where
         }
     }
 
-    fn apply(&mut self, p: usize, f: &T::F) {
+    fn apply(&mut self, p: usize, f: &T::F)
+    {
         self.t[p] = T::apply(f, &self.t[p]);
         if p < self.d.len() {
             let h = match self.d[p] {
@@ -41,7 +44,8 @@ where
         }
     }
 
-    fn push(&mut self, p: usize) {
+    fn push(&mut self, p: usize)
+    {
         for s in (1..32).rev() {
             let i = p >> s;
             if let Some(ref f) = self.d[i].take() {
@@ -51,7 +55,8 @@ where
         }
     }
 
-    fn pull(&mut self, mut p: usize) {
+    fn pull(&mut self, mut p: usize)
+    {
         while p > 1 {
             p >>= 1;
             if self.d[p].is_none() {
@@ -65,7 +70,8 @@ where
     /// # Panics
     ///
     /// Panics if l or r is out of range.
-    pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F) {
+    pub fn modify(&mut self, mut l: usize, mut r: usize, f: &T::F)
+    {
         l += self.d.len();
         r += self.d.len();
         let (l0, r0) = (l, r);
@@ -92,7 +98,8 @@ where
     /// # Panics
     ///
     /// Panics if l or r is out of range.
-    pub fn query(&mut self, mut l: usize, mut r: usize) -> T::M {
+    pub fn query(&mut self, mut l: usize, mut r: usize) -> T::M
+    {
         l += self.d.len();
         r += self.d.len();
         self.push(l);
@@ -114,7 +121,8 @@ where
     }
 }
 
-pub trait ArqSpec {
+pub trait ArqSpec
+{
     /// Type of data representing an endomorphism.
     // Note that while a Fn(M) -> M may seem like a more natural representation
     // for an endomorphism, compositions would then have to delegate to each of
@@ -139,19 +147,24 @@ pub trait ArqSpec {
 // incrementing each element in a range by a given offset!
 pub struct AssignMin;
 
-impl ArqSpec for AssignMin {
+impl ArqSpec for AssignMin
+{
     type F = i64;
     type M = i64;
-    fn compose(f: &Self::F, _: &Self::F) -> Self::F {
+    fn compose(f: &Self::F, _: &Self::F) -> Self::F
+    {
         *f
     }
-    fn apply(f: &Self::F, _: &Self::M) -> Self::M {
+    fn apply(f: &Self::F, _: &Self::M) -> Self::M
+    {
         *f
     }
-    fn op(a: &Self::M, b: &Self::M) -> Self::M {
+    fn op(a: &Self::M, b: &Self::M) -> Self::M
+    {
         (*a).min(*b)
     }
-    fn identity() -> Self::M {
+    fn identity() -> Self::M
+    {
         Self::M::max_value()
     }
 }
@@ -172,29 +185,36 @@ impl ArqSpec for AssignMin {
 /// Associated functions will panic on overflow.
 pub struct AssignSum;
 
-impl ArqSpec for AssignSum {
+impl ArqSpec for AssignSum
+{
     type F = i64;
     type M = (i64, i64);
-    fn compose(f: &Self::F, _: &Self::F) -> Self::F {
+    fn compose(f: &Self::F, _: &Self::F) -> Self::F
+    {
         *f
     }
-    fn apply(f: &Self::F, a: &Self::M) -> Self::M {
+    fn apply(f: &Self::F, a: &Self::M) -> Self::M
+    {
         (f * a.1, a.1)
     }
-    fn op(a: &Self::M, b: &Self::M) -> Self::M {
+    fn op(a: &Self::M, b: &Self::M) -> Self::M
+    {
         (a.0 + b.0, a.1 + b.1)
     }
-    fn identity() -> Self::M {
+    fn identity() -> Self::M
+    {
         (0, 0)
     }
 }
 
 #[cfg(test)]
-mod test {
+mod test
+{
     use super::*;
 
     #[test]
-    fn test_range_sum() {
+    fn test_range_sum()
+    {
         let mut arq = ArqTree::<AssignSum>::new(vec![(0, 1); 10]);
 
         assert_eq!(arq.query(0, 9), (0, 10));
@@ -206,7 +226,8 @@ mod test {
     }
 
     #[test]
-    fn test_rmq() {
+    fn test_rmq()
+    {
         let mut arq = ArqTree::<AssignMin>::new(vec![0; 10]);
 
         assert_eq!(arq.query(0, 9), 0);
