@@ -3,7 +3,9 @@ Round 3 2008
 
 Round Qual 2012, hall of mirrors
 */
-use super::super::util::grid::{Grid, GridConsts, GridRowCol, GridRowColVec};
+use super::super::util::grid::constants::*;
+use super::super::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
+
 use super::super::util::input::*;
 //use super::super::util::math::*;
 //use std::ops::{Index,IndexMut};
@@ -91,45 +93,52 @@ impl Default for Tile
 }
 
 //problem specific code
-fn trace_ray(grid: &Grid<Tile>, location: GridRowCol, direction: GridRowColVec) -> Vec<GridRowCol>
+fn trace_ray(grid: &Grid<Tile>, location: GridCoord, direction: GridRowColVec) -> Vec<IntCoord2d<i16>>
 {
-    let mut location = location + direction;
+    let mut location: IntCoord2d<i16> = location.convert();
     let mut direction = direction;
-    let mut r: Vec<GridRowCol> = Vec::new();
+    let mut r: Vec<_> = Vec::new();
 
-    for _ in 0..grid.R * grid.C {
+    for i in 0..grid.R * grid.C {
+
+
         if let Some(tile) = grid.get_value(location) {
             match *tile {
                 Wall => {
                     break;
+                },
+                Empty => {
+                    r.push(location);
                 }
-                Empty => {}
-                //  /
+
                 ForwardMirror | BackwardMirror => {
                     let mul = if *tile == ForwardMirror { 1 } else { -1 };
                     direction = match direction {
-                        GridConsts::NORTH => GridConsts::EAST * mul,
-                        GridConsts::EAST => GridConsts::NORTH * mul,
-                        GridConsts::SOUTH => GridConsts::WEST * mul,
-                        GridConsts::WEST => GridConsts::SOUTH * mul,
+                        NORTH => EAST * mul,
+                        EAST => NORTH * mul,
+                        SOUTH => WEST * mul,
+                        WEST => SOUTH * mul,
                         _ => direction,
                     };
                 }
-                VerticalBeam | HorizonalBeam => {
+                VerticalBeam | HorizonalBeam if i > 0 => {
+                    r.push(location);
                     break;
-                } //   \\\\
+                }, //   \\\\
                   /*  => {
                       direction = match direction {
 
-                          GridConsts::SOUTH => GridConsts::EAST,
-                          GridConsts::EAST => GridConsts::SOUTH,
-                          GridConsts::NORTH => GridConsts::WEST,
-                          GridConsts::WEST => GridConsts::NORTH,
+                          SOUTH => EAST,
+                          EAST => SOUTH,
+                          NORTH => WEST,
+                          WEST => NORTH,
                       };
                   }*/
+                _ => {}
             };
+
             location += direction;
-            r.push(location);
+
         } else {
             break;
         }
@@ -141,9 +150,21 @@ fn trace_ray(grid: &Grid<Tile>, location: GridRowCol, direction: GridRowColVec) 
 fn solve(case_no: u32, grid: &mut Grid<Tile>) -> String
 {
     debug!("Solving case {}", case_no);
+
+    let lasers = grid
+        .filter_by_pred(|v| *v == VerticalBeam || *v == HorizonalBeam)
+        .collect::<Vec<_>>();
+
+    debug!(
+        " Lasers: {:?}\ntrace west {:?}\ntrace south {:?}\n",
+        lasers,
+        trace_ray(grid, lasers[0], WEST),
+        trace_ray(grid, lasers[0], SOUTH)
+    );
+
     debug!(
         "Empties {:?} for \n{}",
-        grid.filter_byval(&Empty).collect::<Vec<_>>(),
+        grid.filter_byval(&Empty).take(2).collect::<Vec<_>>(),
         grid
     );
     format!("Case #{}:\n{}", case_no, grid)

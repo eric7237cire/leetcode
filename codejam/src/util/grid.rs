@@ -1,9 +1,9 @@
+use num::{cast, Integer, NumCast};
 use std::cmp::PartialEq;
 use std::default::Default;
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::{Add, AddAssign, Mul};
 use std::ops::{Index, IndexMut};
-//use num::{Integer,cast,NumCast};
 
 pub struct Grid<T>
 {
@@ -12,27 +12,59 @@ pub struct Grid<T>
     pub C: usize,
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct GridRowCol(usize, usize);
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct IntCoord2d<T>(T, T);
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct GridRowColVec(i64, i64);
+pub type GridCoord = IntCoord2d<usize>;
 
-pub struct GridConsts {}
+/*
+impl <F> From<IntCoord2d<F>> for GridCoord {
+    fn from(coord: IntCoord2d<F>) -> Self {
+        IntCoord2d::<usize>(cast::<F,_>(coord.0).unwrap(),
+                            cast::<F,_>(coord.1).unwrap())
+    }
+}*/
 
-impl GridConsts
+impl From<IntCoord2d<i64>> for GridCoord
 {
-    pub const NORTH: GridRowColVec = GridRowColVec(-1, 0);
-    pub const EAST: GridRowColVec = GridRowColVec(0, 1);
-    pub const SOUTH: GridRowColVec = GridRowColVec(1, 0);
-    pub const WEST: GridRowColVec = GridRowColVec(0, -1);
+    fn from(coord: IntCoord2d<i64>) -> Self
+    {
+        IntCoord2d::<usize>(coord.0 as usize, coord.1 as usize)
+    }
+}
+/*
+impl From<IntCoord2d<usize>> for GridCoord {
+    fn from(coord: IntCoord2d<usize>) -> Self {
+        coord
+    }
+}*/
 
-    pub const DIRECTIONS: [GridRowColVec; 4] = [
-        GridConsts::NORTH,
-        GridConsts::EAST,
-        GridConsts::SOUTH,
-        GridConsts::WEST,
-    ];
+impl<N> IntCoord2d<N>
+where
+    N: NumCast + Integer + Copy,
+{
+    pub fn convert<M>(&self) -> IntCoord2d<M>
+    where
+        M: NumCast + Integer,
+    {
+        IntCoord2d::<M>(cast::<N, M>(self.0).unwrap(), cast::<N, M>(self.1).unwrap())
+    }
+}
+
+pub type GridRowColVec = IntCoord2d<i64>;
+
+//pub struct GridConsts {}
+
+pub mod constants
+{
+    use super::*;
+
+    pub const NORTH: GridRowColVec = IntCoord2d(-1, 0);
+    pub const EAST: GridRowColVec = IntCoord2d(0, 1);
+    pub const SOUTH: GridRowColVec = IntCoord2d(1, 0);
+    pub const WEST: GridRowColVec = IntCoord2d::<i64>(0, -1);
+
+    pub const DIRECTIONS: [IntCoord2d<i64>; 4] = [NORTH, EAST, SOUTH, WEST];
 }
 
 impl<T> Grid<T>
@@ -52,25 +84,48 @@ impl<T> Grid<T>
         g
     }
 
-    pub fn get_value<'a>(&'a self, row_col_index: GridRowCol) -> Option<&'a T>
+    pub fn get_value<'a, N>(&'a self, row_col_index: IntCoord2d<N>) -> Option<&'a T>
+    where
+        N: NumCast + Integer + Copy,
     {
-        if row_col_index.0 >= self.R || row_col_index.1 >= self.C {
-            None
-        } else {
-            Some(&self.data[row_col_index.0 * self.C + row_col_index.1])
+        if  row_col_index.0 < N::zero()
+            || row_col_index.1 < N::zero()
+        {
+            return None;
         }
+        let row_col_index: IntCoord2d<usize> = row_col_index.convert();
+
+        if row_col_index.0 >= self.R
+            || row_col_index.1 >= self.C
+        {
+            return None;
+        }
+
+        Some(&self.data[row_col_index.0 * self.C + row_col_index.1])
     }
 
-    pub fn filter_byval<'a>(&'a self, val: &'a T) -> impl Iterator<Item = GridRowCol> + 'a
+    pub fn filter_byval<'a>(&'a self, val: &'a T) -> impl Iterator<Item = GridCoord> + 'a
     where
         //I: 'a,
         T: PartialEq,
     {
-         self.data
+        self.data
             .iter()
             .enumerate()
-             .filter(move |(_index, value)| *value == val)
-            .map(move|(index, _value)| GridRowCol(index / self.C, index % self.C))
+            .filter(move |(_index, value)| *value == val)
+            .map(move |(index, _value)| IntCoord2d(index / self.C, index % self.C))
+    }
+
+    pub fn filter_by_pred<'a, P>(&'a self, predicate: P) -> impl Iterator<Item = GridCoord> + 'a
+    where
+        P: Fn(&T) -> bool + 'a,
+        T: PartialEq,
+    {
+        self.data
+            .iter()
+            .enumerate()
+            .filter(move |(_index, value)| predicate(*value))
+            .map(move |(index, _value)| IntCoord2d(index / self.C, index % self.C))
     }
 }
 
@@ -85,12 +140,15 @@ impl<T> Index<usize> for Grid<T>
     }
 }
 //get a cell
-impl<T> Index<GridRowCol> for Grid<T>
+impl<T, N> Index<IntCoord2d<N>> for Grid<T>
+where
+    N: NumCast + Integer + Copy,
 {
     type Output = T;
 
-    fn index<'a>(&'a self, row_col_index: GridRowCol) -> &'a T
+    fn index<'a>(&'a self, row_col_index: IntCoord2d<N>) -> &'a T
     {
+        let row_col_index: IntCoord2d<usize> = row_col_index.convert();
         if row_col_index.0 >= self.R || row_col_index.1 >= self.C {
             panic!(
                 "RowCol {:?} invalid for grid {}, {}",
@@ -102,10 +160,13 @@ impl<T> Index<GridRowCol> for Grid<T>
     }
 }
 //set a cell
-impl<T> IndexMut<GridRowCol> for Grid<T>
+impl<T, N> IndexMut<IntCoord2d<N>> for Grid<T>
+where
+    N: NumCast + Integer + Copy,
 {
-    fn index_mut<'a>(&'a mut self, row_col_index: GridRowCol) -> &'a mut T
+    fn index_mut<'a>(&'a mut self, row_col_index: IntCoord2d<N>) -> &'a mut T
     {
+        let row_col_index: IntCoord2d<usize> = row_col_index.convert();
         &mut self.data[row_col_index.0 * self.C + row_col_index.1]
     }
 }
@@ -146,29 +207,50 @@ where
     }
 }
 
-impl Add<GridRowColVec> for GridRowCol
+#[cfg(test)]
+mod tests
 {
-    type Output = GridRowCol;
+    use self::super::constants::*;
+    use self::super::*;
 
-    fn add(self, other: GridRowColVec) -> GridRowCol
+    #[test]
+    fn test_add()
     {
-        GridRowCol(
-            ((self.0 as i64) + other.0) as usize,
-            ((self.1 as i64) + other.1) as usize,
-        )
+        assert_eq!(IntCoord2d::<u8>(0, 2), IntCoord2d::<u8>(0, 3) + WEST);
+    }
+
+    #[test]
+    fn test_get_value()
+    {
+        let mut grid: Grid<char> = Grid::new(2, 2);
+        grid[(0, 0)] = 'a';
+        grid[(1, 0)] = 'b';
+        grid[(1, 1)] = 'd';
+
+        assert_eq!(Some(&'d'), grid.get_value(IntCoord2d::<i16>(1, 1)));
     }
 }
 
-impl Add<GridRowCol> for GridRowCol
+impl<N, M> Add<IntCoord2d<M>> for IntCoord2d<N>
+where
+    N: NumCast + Integer + Copy,
+    M: NumCast + Integer,
 {
     type Output = Self;
 
-    fn add(self, other: Self) -> Self
+    fn add(self, rhs: IntCoord2d<M>) -> Self
     {
-        GridRowCol(self.0 + other.0, self.1 + other.1)
+        let lhs: IntCoord2d<M> = self.convert();
+
+        IntCoord2d(
+            cast::<M, N>(lhs.0 + rhs.0).unwrap(),
+            cast::<M, N>(lhs.1 + rhs.1).unwrap(),
+        )
     }
 }
-impl AddAssign<GridRowColVec> for GridRowCol
+impl<N> AddAssign<GridRowColVec> for IntCoord2d<N>
+where
+    N: NumCast + Integer + Copy,
 {
     fn add_assign(&mut self, other: GridRowColVec)
     {
@@ -176,12 +258,26 @@ impl AddAssign<GridRowColVec> for GridRowCol
     }
 }
 
-impl Mul<i32> for GridRowColVec
+impl<N, M> Mul<M> for IntCoord2d<N>
+where
+    N: Mul + Integer + NumCast + Copy,
+    M: Integer + NumCast + Copy,
 {
     type Output = Self;
 
-    fn mul(self, rhs: i32) -> Self
+    fn mul(self, rhs: M) -> Self
     {
-        GridRowColVec(self.0 * rhs as i64, self.1 * rhs as i64)
+        let rhs: N = cast::<M, N>(rhs).unwrap();
+        IntCoord2d::<N>(self.0 * rhs, self.1 * rhs)
+    }
+}
+
+impl<N> Debug for IntCoord2d<N>
+where
+    N: Display,
+{
+    fn fmt(&self, f: &mut Formatter) -> Result
+    {
+        write!(f, "(R{}, C{})", self.0, self.1)
     }
 }
