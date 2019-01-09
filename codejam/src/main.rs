@@ -18,6 +18,8 @@ mod y2017round2;
 extern crate log;
 extern crate log4rs;
 
+mod algo_ebtech;
+
 use self::util::log::init_log;
 
 fn main()

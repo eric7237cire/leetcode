@@ -1,11 +1,17 @@
 /*
 Round 3 2008
 
-Round Qual 2012, hall of mirrors
+like Round Qual 2012, hall of mirrors
+
+Simulation, grid, backtracking
+
+2-satisfiability / 2SAT
+
 */
+use super::super::algo_ebtech::graph::{Graph};
+use super::super::algo_ebtech::graph::connectivity::{ConnectivityGraph};
 use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
-
 use super::super::util::input::*;
 use bimap::BiMap;
 use std::default::Default;
@@ -27,6 +33,7 @@ pub fn solve_all_cases()
             }
         }
 
+        //if case != 31 {continue;}
         print!("{}", solve(case, &mut grid));
     }
 }
@@ -146,6 +153,18 @@ struct LaserChoice
     orientation: Tile,
 }
 
+//to use algo, Vertical is even, Horizonal is odd, so scheme is 2*laser_index + 1 if horiz.
+fn get_graph_vertex_index(lc: &LaserChoice) -> usize
+{
+    2 * lc.laser_index
+        + if lc.orientation == VerticalBeam {
+            0
+        } else {
+            1
+        }
+}
+
+
 type Trace = Vec<IntCoord2d<i16>>;
 type OptionTrace = Option<Trace>;
 
@@ -214,14 +233,52 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
             return format!("Case #{}: IMPOSSIBLE\n", case_no);
         }
 
+        //more than 2 implies lasers should be hitting each other
+        assert!(sc.len() <= 2);
+
         square_choices.push(sc);
     }
 
-    /*
-        for (idx, sc) in square_choices.iter().enumerate() {
-            debug!("For square {} choices are {:?}", empty_squares[idx], sc);
-        }
+    //to use algo, must have even numbers, so vertex scheme is 2*laser_index if vertical
+    //2*len + 2*laser_index if horizonal
 
+    let mut graph = Graph::new(2 * laser_coords.len(), 8 * laser_coords.len());
+
+    for (idx, sc) in square_choices.iter().enumerate() {
+        if sc.len() == 1 {
+            let vi = get_graph_vertex_index(&sc[0]);
+            graph.add_two_sat_clause(vi,vi);
+        } else {
+            let v1 = get_graph_vertex_index(&sc[0]);
+            let v2 = get_graph_vertex_index(&sc[1]);
+            graph.add_two_sat_clause(v1,v2);
+        }
+        debug!("For square {} choices are {:?}", empty_squares[idx], sc);
+    }
+    for (laser_index, lt) in laser_traces.iter().enumerate() {
+        for i in 0..2 {
+            //invalid so we need  to tell the 2sat graph that
+            if lt[i] == None {
+                let v1=get_graph_vertex_index(&LaserChoice{laser_index, orientation: if i == 0 { VerticalBeam } else { HorizonalBeam }});
+                graph.add_two_sat_clause(v1^1, v1^1);
+            }
+        }
+    }
+
+    let tsa = ConnectivityGraph::new(&graph, true).two_sat_assign();
+
+    if tsa.is_none() {
+        return format!("Case #{}: IMPOSSIBLE\n", case_no);
+    } else {
+        let tsa = tsa.unwrap();
+        debug!("2SAT results {:?}.   laser_coords: {:?}", tsa, laser_coords);
+        for (idx, &b) in tsa.iter().enumerate() {
+            grid[laser_coords[idx]] = if b {VerticalBeam} else {HorizonalBeam};
+        }
+        format!("Case #{}: POSSIBLE\n{}", case_no, grid)
+    }
+
+    /*
         for (laser_index, laser_loc) in laser_coords.iter().enumerate() {
             let traces = &laser_traces[laser_index];
             debug!(
@@ -229,13 +286,10 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
                 laser_loc, traces[0], traces[1],
             );
         }
-
-        debug!(
-            "Empties {:?} for \n{}",
-            grid.filter_by_val(&Empty).take(2).collect::<Vec<_>>(),
-            grid
-        );
     */
+
+    /*
+    what I did, backtracking
     let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
 
     if !helper(
@@ -251,6 +305,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
     }
 
     format!("Case #{}: POSSIBLE\n{}", case_no, grid)
+    */
 }
 
 fn helper(
