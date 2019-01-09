@@ -88,16 +88,12 @@ impl<T> Grid<T>
     where
         N: NumCast + Integer + Copy,
     {
-        if  row_col_index.0 < N::zero()
-            || row_col_index.1 < N::zero()
-        {
+        if row_col_index.0 < N::zero() || row_col_index.1 < N::zero() {
             return None;
         }
         let row_col_index: IntCoord2d<usize> = row_col_index.convert();
 
-        if row_col_index.0 >= self.R
-            || row_col_index.1 >= self.C
-        {
+        if row_col_index.0 >= self.R || row_col_index.1 >= self.C {
             return None;
         }
 

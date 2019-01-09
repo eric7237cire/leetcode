@@ -93,20 +93,23 @@ impl Default for Tile
 }
 
 //problem specific code
-fn trace_ray(grid: &Grid<Tile>, location: GridCoord, direction: GridRowColVec) -> Vec<IntCoord2d<i16>>
+fn trace_ray(
+    grid: &Grid<Tile>,
+    location: GridCoord,
+    direction: GridRowColVec,
+) -> (Vec<IntCoord2d<i16>>, bool)
 {
     let mut location: IntCoord2d<i16> = location.convert();
     let mut direction = direction;
     let mut r: Vec<_> = Vec::new();
+    let mut ok = true;
 
     for i in 0..grid.R * grid.C {
-
-
         if let Some(tile) = grid.get_value(location) {
             match *tile {
                 Wall => {
                     break;
-                },
+                }
                 Empty => {
                     r.push(location);
                 }
@@ -123,28 +126,28 @@ fn trace_ray(grid: &Grid<Tile>, location: GridCoord, direction: GridRowColVec) -
                 }
                 VerticalBeam | HorizonalBeam if i > 0 => {
                     r.push(location);
+                    ok = false;
                     break;
-                }, //   \\\\
-                  /*  => {
-                      direction = match direction {
+                } //   \\\\
+                /*  => {
+                    direction = match direction {
 
-                          SOUTH => EAST,
-                          EAST => SOUTH,
-                          NORTH => WEST,
-                          WEST => NORTH,
-                      };
-                  }*/
+                        SOUTH => EAST,
+                        EAST => SOUTH,
+                        NORTH => WEST,
+                        WEST => NORTH,
+                    };
+                }*/
                 _ => {}
             };
 
             location += direction;
-
         } else {
             break;
         }
     }
 
-    return r;
+    return (r, ok);
 }
 
 fn solve(case_no: u32, grid: &mut Grid<Tile>) -> String
@@ -155,12 +158,25 @@ fn solve(case_no: u32, grid: &mut Grid<Tile>) -> String
         .filter_by_pred(|v| *v == VerticalBeam || *v == HorizonalBeam)
         .collect::<Vec<_>>();
 
-    debug!(
-        " Lasers: {:?}\ntrace west {:?}\ntrace south {:?}\n",
-        lasers,
-        trace_ray(grid, lasers[0], WEST),
-        trace_ray(grid, lasers[0], SOUTH)
-    );
+    let laser_traces: Vec<Vec<Option<Vec<IntCoord2d<i16>>>>> = lasers
+        .iter()
+        .map(|loc| {
+            let mut traces = Vec::new();
+            for &dir in DIRECTIONS.iter() {
+                let trace_ok = trace_ray(grid, *loc, dir);
+                traces.push(if trace_ok.1 { Some(trace_ok.0) } else { None });
+            }
+            traces
+        })
+        .collect();
+
+    for (laser_index, laser_loc) in lasers.iter().enumerate() {
+        let traces = &laser_traces[laser_index];
+        debug!(
+            " Laser: {:?}\ntrace north {:?}\ntrace east {:?}\ntrace south {:?}\ntrace west {:?}\n",
+            laser_loc, traces[0], traces[1], traces[2], traces[3],
+        );
+    }
 
     debug!(
         "Empties {:?} for \n{}",
