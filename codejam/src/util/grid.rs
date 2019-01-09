@@ -3,9 +3,9 @@ use std::cmp::PartialEq;
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
+use std::hash::Hash;
 use std::ops::{Add, AddAssign, Mul};
 use std::ops::{Index, IndexMut};
-use std::hash::Hash;
 
 pub struct Grid<T>
 {
@@ -14,14 +14,16 @@ pub struct Grid<T>
     pub C: usize,
 }
 
-pub trait GridCoordTrait: Hash + Integer + Display + NumCast + Copy + Mul + Add {}
+pub trait GridCoordTrait: Hash + Integer + Display + NumCast + Copy + Mul + Add
+{
+}
 
-impl<N> GridCoordTrait for N where N: Hash + Integer + Display + NumCast + Copy + Mul + Add{}
+impl<N> GridCoordTrait for N where N: Hash + Integer + Display + NumCast + Copy + Mul + Add {}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct IntCoord2d<T>(T, T)
-where T: GridCoordTrait
-;
+where
+    T: GridCoordTrait;
 
 pub type GridCoord = IntCoord2d<usize>;
 
@@ -47,9 +49,9 @@ impl From<IntCoord2d<usize>> for GridCoord {
     }
 }*/
 
-impl<N:GridCoordTrait> IntCoord2d<N>
+impl<N: GridCoordTrait> IntCoord2d<N>
 {
-    pub fn convert<M:GridCoordTrait>(&self) -> IntCoord2d<M>
+    pub fn convert<M: GridCoordTrait>(&self) -> IntCoord2d<M>
     {
         IntCoord2d::<M>(cast::<N, M>(self.0).unwrap(), cast::<N, M>(self.1).unwrap())
     }
@@ -88,7 +90,8 @@ impl<T> Grid<T>
         g
     }
 
-    pub fn get_value<'a, N:GridCoordTrait>(&'a self, row_col_index: IntCoord2d<N>) -> Option<&'a T>
+    pub fn get_value<'a, N: GridCoordTrait>(&'a self, row_col_index: IntCoord2d<N>)
+        -> Option<&'a T>
     {
         if row_col_index.0 < N::zero() || row_col_index.1 < N::zero() {
             return None;
@@ -138,7 +141,7 @@ impl<T> Index<usize> for Grid<T>
     }
 }
 //get a cell
-impl<T, N:GridCoordTrait> Index<IntCoord2d<N>> for Grid<T>
+impl<T, N: GridCoordTrait> Index<IntCoord2d<N>> for Grid<T>
 {
     type Output = T;
 
@@ -156,7 +159,7 @@ impl<T, N:GridCoordTrait> Index<IntCoord2d<N>> for Grid<T>
     }
 }
 //set a cell
-impl<T, N:GridCoordTrait> IndexMut<IntCoord2d<N>> for Grid<T>
+impl<T, N: GridCoordTrait> IndexMut<IntCoord2d<N>> for Grid<T>
 {
     fn index_mut<'a>(&'a mut self, row_col_index: IntCoord2d<N>) -> &'a mut T
     {
@@ -181,8 +184,8 @@ impl<T> IndexMut<(usize, usize)> for Grid<T>
         &mut self.data[row_col_index.0 * self.C + row_col_index.1]
     }
 }
-/*
-impl<T> Display for Grid<T>
+
+impl<T> Debug for Grid<T>
 where
     T: Display,
 {
@@ -200,7 +203,7 @@ where
         }
         write!(f, "")
     }
-}*/
+}
 
 #[cfg(test)]
 mod tests
@@ -226,7 +229,7 @@ mod tests
     }
 }
 
-impl<N:GridCoordTrait, M:GridCoordTrait> Add<IntCoord2d<M>> for IntCoord2d<N>
+impl<N: GridCoordTrait, M: GridCoordTrait> Add<IntCoord2d<M>> for IntCoord2d<N>
 {
     type Output = Self;
 
@@ -240,7 +243,7 @@ impl<N:GridCoordTrait, M:GridCoordTrait> Add<IntCoord2d<M>> for IntCoord2d<N>
         )
     }
 }
-impl<N:GridCoordTrait> AddAssign<GridRowColVec> for IntCoord2d<N>
+impl<N: GridCoordTrait> AddAssign<GridRowColVec> for IntCoord2d<N>
 {
     fn add_assign(&mut self, other: GridRowColVec)
     {
@@ -248,7 +251,7 @@ impl<N:GridCoordTrait> AddAssign<GridRowColVec> for IntCoord2d<N>
     }
 }
 
-impl<N:GridCoordTrait, M:GridCoordTrait> Mul<M> for IntCoord2d<N>
+impl<N: GridCoordTrait, M: GridCoordTrait> Mul<M> for IntCoord2d<N>
 {
     type Output = Self;
 
@@ -259,14 +262,14 @@ impl<N:GridCoordTrait, M:GridCoordTrait> Mul<M> for IntCoord2d<N>
     }
 }
 
-impl<N:GridCoordTrait> Debug for IntCoord2d<N>
+impl<N: GridCoordTrait> Debug for IntCoord2d<N>
 {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result
     {
         write!(f, "(R{}, C{})", self.0, self.1)
     }
 }
-impl<N :GridCoordTrait> Display for IntCoord2d<N>
+impl<N: GridCoordTrait> Display for IntCoord2d<N>
 {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result
     {

@@ -27,9 +27,7 @@ pub fn solve_all_cases()
             }
         }
 
-        if case != 11132 {
-            print!("{}", solve(case, &mut grid));
-        }
+        print!("{}", solve(case, &mut grid));
     }
 }
 
@@ -105,9 +103,7 @@ fn trace_ray(
     //debug!("\nTracing {} starting at {}", location, direction);
 
     for i in 0..=grid.R * grid.C * grid.R * grid.C {
-        // debug!("getting loc #{} {}", i, location);
         if let Some(tile) = grid.get_value(location) {
-            //debug!("Tile is {} at {}", tile, location);
             match *tile {
                 Wall => {
                     break;
@@ -130,27 +126,16 @@ fn trace_ray(
                     r.push(location);
                     debug!("Err beam");
                     return Err(r);
-                } //   \\\\
-                /*  => {
-                    direction = match direction {
-
-                        SOUTH => EAST,
-                        EAST => SOUTH,
-                        NORTH => WEST,
-                        WEST => NORTH,
-                    };
-                }*/
+                }
                 _ => {}
             };
 
-            //debug!("Advancing {} by {}", location, direction);
             location += direction;
         } else {
             break;
         }
     }
 
-    //debug!("OK");
     return Ok(r);
 }
 
@@ -158,7 +143,6 @@ fn trace_ray(
 struct LaserChoice
 {
     laser_index: usize,
-    empty_square_index: usize,
     orientation: Tile,
 }
 
@@ -173,6 +157,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         .filter_by_pred(|v| *v == VerticalBeam || *v == HorizonalBeam)
         .collect::<Vec<_>>();
 
+    //build up the list of coords a laser hits vert and horizontally
     let laser_traces: Vec<[OptionTrace; 2]> = laser_coords
         .iter()
         .map(|loc| {
@@ -197,6 +182,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         })
         .collect();
 
+    //list of coords of empty squares
     let empty_squares = grid.filter_by_val(&Empty).collect::<Vec<_>>();
 
     let mut square_choices: Vec<Vec<LaserChoice>> = Vec::new();
@@ -211,22 +197,14 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
             if laser_data[0] == None && laser_data[1] == None {
                 return format!("Case #{}: IMPOSSIBLE\n", case_no);
             }
-            if let Some(ns) = &laser_data[0] {
-                if ns.contains(&es.convert()) {
-                    sc.push(LaserChoice {
-                        laser_index,
-                        empty_square_index,
-                        orientation: VerticalBeam,
-                    });
-                }
-            }
-            if let Some(ew) = &laser_data[1] {
-                if ew.contains(&es.convert()) {
-                    sc.push(LaserChoice {
-                        laser_index,
-                        empty_square_index,
-                        orientation: HorizonalBeam,
-                    });
+            for i in 0..2 {
+                if let Some(ns) = &laser_data[i] {
+                    if ns.contains(&es.convert()) {
+                        sc.push(LaserChoice {
+                            laser_index,
+                            orientation: if i == 0 { VerticalBeam } else { HorizonalBeam },
+                        });
+                    }
                 }
             }
         }
@@ -239,42 +217,36 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         square_choices.push(sc);
     }
 
+    /*
+        for (idx, sc) in square_choices.iter().enumerate() {
+            debug!("For square {} choices are {:?}", empty_squares[idx], sc);
+        }
 
-    for (idx, sc) in square_choices.iter().enumerate() {
-        debug!("For square {} choices are {:?}", empty_squares[idx], sc);
-    }
+        for (laser_index, laser_loc) in laser_coords.iter().enumerate() {
+            let traces = &laser_traces[laser_index];
+            debug!(
+                " Laser: {:?}\ntrace north/south {:?}\ntrace east/west {:?}\n",
+                laser_loc, traces[0], traces[1],
+            );
+        }
 
-    for (laser_index, laser_loc) in laser_coords.iter().enumerate() {
-        let traces = &laser_traces[laser_index];
         debug!(
-            " Laser: {:?}\ntrace north/south {:?}\ntrace east/west {:?}\n",
-            laser_loc, traces[0], traces[1],
+            "Empties {:?} for \n{}",
+            grid.filter_by_val(&Empty).take(2).collect::<Vec<_>>(),
+            grid
         );
-    }
-
-    debug!(
-        "Empties {:?} for \n{}",
-        grid.filter_by_val(&Empty).take(2).collect::<Vec<_>>(),
-        grid
-    );
-
+    */
     let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
 
-    //let mut is_fixed: Vec<bool> = vec![0; laser_coords.len()];
-
-    //Make all single choices
-    /*for (idx, sc) in square_choices.iter().enumerate() {
-        assert!(!sc.is_empty());
-
-        if sc.len() == 1 {
-
-        }
-    }*/
-
-
-    if !helper(grid, &laser_traces, &laser_coords, &square_coords,
-
-    &square_choices, 0, &mut is_covered, 0) {
+    if !helper(
+        grid,
+        &laser_traces,
+        &laser_coords,
+        &square_coords,
+        &square_choices,
+        0,
+        &mut is_covered,
+    ) {
         return format!("Case #{}: IMPOSSIBLE\n", case_no);
     }
 
@@ -289,25 +261,24 @@ fn helper(
     square_choices: &Vec<Vec<LaserChoice>>,
     current_laser_index: usize,
     is_covered: &mut Vec<i16>,
-    level: usize,
 ) -> bool
 {
     //base case
-    if current_laser_index == laser_traces.len()  {
+    if current_laser_index == laser_traces.len() {
         return *is_covered.iter().min().unwrap() > 0;
     }
 
-    /*
-    debug!(
-            "Level {} Helper current_laser_index={}",
-            " ".repeat(level * 2),
-            current_laser_index);
-            */
-
     //short circuit; check lasers less than index
     for lc in square_choices {
-        if lc.iter().filter( |&c| c.laser_index >= current_laser_index
-        || c.orientation == grid[laser_coords[c.laser_index]]).count() <= 0 {
+        if lc
+            .iter()
+            .filter(|&c| {
+                c.laser_index >= current_laser_index
+                    || c.orientation == grid[laser_coords[c.laser_index]]
+            })
+            .count()
+            <= 0
+        {
             return false;
         }
     }
@@ -316,7 +287,11 @@ fn helper(
     //try vertical
     for ld_idx in 0..2 {
         if let Some(ns) = &laser_data[ld_idx] {
-            grid[laser_coords[current_laser_index]] = if ld_idx==0 {VerticalBeam} else {HorizonalBeam};
+            grid[laser_coords[current_laser_index]] = if ld_idx == 0 {
+                VerticalBeam
+            } else {
+                HorizonalBeam
+            };
 
             for coord in ns {
                 is_covered[*square_coords.get_by_right(&coord.convert()).unwrap()] += 1;
@@ -330,7 +305,6 @@ fn helper(
                 square_choices,
                 current_laser_index + 1,
                 is_covered,
-                level + 1,
             );
 
             if ok {
