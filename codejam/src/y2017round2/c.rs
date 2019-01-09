@@ -27,7 +27,7 @@ pub fn solve_all_cases()
             }
         }
 
-        if case == 4 {
+        if case != 9994 {
             print!("{}", solve(case, &mut grid));
         }
     }
@@ -203,7 +203,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
 
         for (laser_index, laser_data) in laser_traces.iter().enumerate() {
             if laser_data[0] == None && laser_data[1] == None {
-                return format!("Case #{}:\nIMPOSSIBLE\n", case_no);
+                return format!("Case #{}: IMPOSSIBLE\n", case_no);
             }
             if let Some(ns) = &laser_data[0] {
                 if ns.contains(&es.convert()) {
@@ -227,12 +227,13 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
 
         //if a square can't get hit with any laser, we have no solution
         if sc.is_empty() {
-            return format!("Case #{}:\nIMPOSSIBLE\n", case_no);
+            return format!("Case #{}: IMPOSSIBLE\n", case_no);
         }
 
         square_choices.push(sc);
     }
 
+    /*
     for (idx, sc) in square_choices.iter().enumerate() {
         debug!("For square {} choices are {:?}", empty_squares[idx], sc);
     }
@@ -249,13 +250,26 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
         "Empties {:?} for \n{}",
         grid.filter_by_val(&Empty).take(2).collect::<Vec<_>>(),
         grid
-    );
+    );*/
 
     let mut is_covered: Vec<i16> = vec![0; square_choices.len()];
 
+    //let mut is_fixed: Vec<bool> = vec![0; laser_coords.len()];
+
+    //Make all single choices
+    /*for (idx, sc) in square_choices.iter().enumerate() {
+        assert!(!sc.is_empty());
+
+        if sc.len() == 1 {
+
+        }
+    }*/
+
+
     if !helper(grid, &laser_traces, &laser_coords, &square_coords,
+
     &square_choices, 0, &mut is_covered, 0) {
-        return format!("Case #{}:\nIMPOSSIBLE\n", case_no);
+        return format!("Case #{}: IMPOSSIBLE\n", case_no);
     }
 
     format!("Case #{}: POSSIBLE\n{}", case_no, grid)
@@ -273,8 +287,23 @@ fn helper(
 ) -> bool
 {
     //base case
-    if current_laser_index == laser_traces.len() && *is_covered.iter().min().unwrap() > 0 {
-        return true;
+    if current_laser_index == laser_traces.len()  {
+        return *is_covered.iter().min().unwrap() > 0;
+    }
+
+    /*
+    debug!(
+            "Level {} Helper current_laser_index={}",
+            " ".repeat(level * 2),
+            current_laser_index);
+            */
+
+    //short circuit; check lasers less than index
+    for lc in square_choices {
+        if lc.iter().filter( |&c| c.laser_index >= current_laser_index
+        || c.orientation == grid[laser_coords[c.laser_index]]).count() <= 0 {
+            return false;
+        }
     }
 
     let laser_data = &laser_traces[current_laser_index];
