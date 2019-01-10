@@ -8,12 +8,12 @@ use self::y2017round2::c::solve_all_cases;
 
 mod util;
 
+mod algo;
 mod y2017qual;
 mod y2017round1A;
 mod y2017round1B;
 mod y2017round1C;
 mod y2017round2;
-mod algo;
 
 #[macro_use]
 extern crate log;

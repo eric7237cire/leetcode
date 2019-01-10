@@ -94,6 +94,7 @@ impl<'a> ConnectivityGraph<'a>
         connect
     }
 
+    //Tarjan's algorithm
     fn scc(&mut self, u: usize, data: &mut ConnectivityData)
     {
         data.visit(u);

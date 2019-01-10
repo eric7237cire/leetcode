@@ -1,10 +1,10 @@
-use bit_vec::BitVec;
 use super::graph::Graph;
+use bit_vec::BitVec;
 
-impl Graph {
-    fn dfs(&self, v: usize, ) -> DfsIterator
+impl Graph
+{
+    fn dfs(&self, v: usize) -> DfsIterator
     {
-
         // Create a stack for DFS
         let mut stack: Vec<usize> = Vec::new();
 
@@ -14,7 +14,7 @@ impl Graph {
         DfsIterator {
             graph: self,
             visited: BitVec::from_elem(self.num_v(), false),
-            stack
+            stack,
         }
     }
 }
@@ -22,32 +22,30 @@ pub struct DfsIterator<'a>
 {
     graph: &'a Graph,
     //is vertex visited
-    visited : BitVec,
+    visited: BitVec,
     //stack of vertices
-    stack: Vec<usize>
+    stack: Vec<usize>,
 }
 
 impl<'a> Iterator for DfsIterator<'a>
 {
-    type Item =  usize;
+    type Item = usize;
 
-    /// Produces an outgoing edge and vertex.
+    /// Returns next vertex in the DFS
     fn next(&mut self) -> Option<Self::Item>
     {
         let mut r = None;
 
+        //Code translated/adapted from https://www.geeksforgeeks.org/iterative-depth-first-traversal/
         while !self.stack.is_empty() {
-
             // Pop a vertex from stack and print it
             let s = self.stack.pop().unwrap();
-
 
             // Stack may contain same vertex twice. So
             // we need to print the popped item only
             // if it is not visited.
-            if !self.visited[s]
-            {
-                self.visited.set(s,  true);
+            if !self.visited[s] {
+                self.visited.set(s, true);
                 r = Some(s);
             }
 
@@ -69,14 +67,14 @@ impl<'a> Iterator for DfsIterator<'a>
     }
 }
 
-
 #[cfg(test)]
 mod test
 {
     use super::*;
 
     #[test]
-    fn test_dfs() {
+    fn test_dfs()
+    {
         let mut graph = Graph::new(4, 8);
         graph.add_edge(0, 2);
         graph.add_edge(2, 0);
@@ -89,14 +87,11 @@ mod test
 
         let dfs_search = graph.dfs(2).collect::<Vec<_>>();
         assert_eq!(dfs_search, vec![2, 0, 1, 3]);
-
-        ////https://www.geeksforgeeks.org/iterative-depth-first-traversal/
-
-
     }
 
     #[test]
-    fn test_dfs2() {
+    fn test_dfs2()
+    {
         let mut graph = Graph::new(5, 8);
         graph.add_edge(0, 2);
         graph.add_edge(2, 1);
@@ -109,6 +104,5 @@ mod test
         assert_eq!(dfs_search, vec![0, 2, 1, 3, 4]);
         //0 3 4 2 1 or
         //0 2 1 3 4
-
     }
 }

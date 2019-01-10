@@ -1,4 +1,5 @@
 pub use self::graph::Graph;
 
-mod graph;
+mod bfs;
 mod dfs;
+mod graph;

@@ -275,7 +275,6 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>) -> String
             }
             format!("Case #{}: POSSIBLE\n{}", case_no, grid)
         }
-
     } else {
         //what I did, backtracking.  must be release mode
 

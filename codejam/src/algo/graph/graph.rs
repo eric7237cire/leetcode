@@ -1,4 +1,3 @@
-
 /// A compact graph representation. Edges are numbered in order of insertion.
 /// Each adjacency list consists of all edges pointing out from a given vertex.
 pub struct Graph
@@ -53,7 +52,6 @@ impl Graph
         self.add_edge(v, u);
     }
 
-
     /// Gets vertex u's adjacency list.
     pub fn adj_list(&self, u: usize) -> AdjListIterator
     {
@@ -63,7 +61,6 @@ impl Graph
         }
     }
 }
-
 
 /// An iterator for convenient adjacency list traversal.
 pub struct AdjListIterator<'a>
