@@ -11,6 +11,7 @@ log = "*"
 itertools = "*"
 num = "*"
 bimap = "0.1"
+bit-vec = "*"
 
 [features]
 default = []
