@@ -288,7 +288,7 @@ mod test
         graph.add_edge(a_start+4, b_start+3, 1, 1);
         graph.add_edge(a_start+5, b_start+5, 1, 1);
 
-        let flow = graph.dinic(0, 5);
+        let flow = graph.dinic(source, sink);
         assert_eq!(flow, 5);
     }
 }
