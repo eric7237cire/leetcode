@@ -15,13 +15,14 @@ pub struct FlowGraph
 impl FlowGraph
 {
     /// An upper limit to the flow.
-    const INF: i64 = 0x3f3f_3f3f_3f3f_3f3f;
+    const INF: i64 = std::i64::MAX;
 
     /// Initializes an flow network with vmax vertices and no edges.
     pub fn new(vmax: usize, emax_hint: usize) -> Self
     {
         Self {
             graph: Graph::new(vmax, 2 * emax_hint),
+
             cap: Vec::with_capacity(2 * emax_hint),
             cost: Vec::with_capacity(2 * emax_hint),
         }
@@ -64,7 +65,8 @@ impl FlowGraph
         max_flow
     }
 
-    // Compute BFS distances to restrict attention to shortest path edges.
+    /// Compute BFS distances to restrict attention to shortest path edges.
+    ///
     fn dinic_search(&self, s: usize, flow: &[i64]) -> Vec<i64>
     {
         let mut dist = vec![Self::INF; self.graph.num_v()];
@@ -241,7 +243,7 @@ mod test
     fn test_max_flow()
     {
         let mut graph = FlowGraph::new(6, 4);
-        
+
         graph.add_edge(0, 1, 16, 1);
         graph.add_edge(0, 2, 13, 1);
         graph.add_edge(1, 2, 10, 1);
@@ -252,7 +254,41 @@ mod test
         graph.add_edge(3, 5, 20, 1);
         graph.add_edge(4, 3, 7, 1);
         graph.add_edge(4, 5, 4, 1);
-            let flow = graph.dinic(0, 5);
+        let flow = graph.dinic(0, 5);
         assert_eq!(flow, 23);
+    }
+
+    #[test]
+    fn test_max_matching()
+    {
+        let mut graph = FlowGraph::new(14, 4);
+
+        let source = 0;
+        let sink = 13;
+
+        let a_start = 1;
+        let b_start = 7;
+        //6 nodes in A
+
+        for a in a_start..a_start+6 {
+            graph.add_edge(source, a, 1, 1);
+        }
+
+        //6 nodes in B
+        for b in b_start..b_start+6 {
+            graph.add_edge(b, sink,1, 1);
+        }
+
+        graph.add_edge(a_start+0, b_start+1, 1, 1);
+        graph.add_edge(a_start+0, b_start+2, 1, 1);
+        graph.add_edge(a_start+2, b_start+0, 1, 1);
+        graph.add_edge(a_start+2, b_start+3, 1, 1);
+        graph.add_edge(a_start+3, b_start+2, 1, 1);
+        graph.add_edge(a_start+4, b_start+2, 1, 1);
+        graph.add_edge(a_start+4, b_start+3, 1, 1);
+        graph.add_edge(a_start+5, b_start+5, 1, 1);
+
+        let flow = graph.dinic(0, 5);
+        assert_eq!(flow, 5);
     }
 }

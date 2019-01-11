@@ -88,6 +88,5 @@ mod test
 
         let bfs_search = graph.bfs(0).collect::<Vec<_>>();
         assert_eq!(bfs_search, vec![0, 3, 2, 4, 1]);
-
     }
 }
