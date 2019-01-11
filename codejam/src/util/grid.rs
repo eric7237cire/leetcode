@@ -21,7 +21,7 @@ pub trait GridCoordTrait: Hash + Integer + Display + NumCast + Copy + Mul + Add
 impl<N> GridCoordTrait for N where N: Hash + Integer + Display + NumCast + Copy + Mul + Add {}
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
-pub struct IntCoord2d<T>(T, T)
+pub struct IntCoord2d<T>(pub T, pub T)
 where
     T: GridCoordTrait;
 
@@ -229,6 +229,7 @@ mod tests
     }
 }
 
+/// A + B will convert B to A's unit
 impl<N: GridCoordTrait, M: GridCoordTrait> Add<IntCoord2d<M>> for IntCoord2d<N>
 {
     type Output = Self;

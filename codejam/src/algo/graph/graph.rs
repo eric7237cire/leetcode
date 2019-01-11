@@ -8,7 +8,7 @@ pub struct Graph
     /// An edge can only be in 1 adj. list since each edge only has one 'from'
     next: Vec<Option<usize>>,
     /// Maps an edge id to the vertex that it points to.
-    pub(super) endp: Vec<usize>,
+    pub endp: Vec<usize>,
 }
 
 impl Graph
@@ -85,7 +85,6 @@ impl<'a> Iterator for AdjListIterator<'a>
     }
 }
 
-
 #[cfg(test)]
 mod test
 {
@@ -96,14 +95,14 @@ mod test
     {
         let mut graph = Graph::new(4, 4);
 
-        assert_eq!(graph.first, vec![None;4]);
-        assert_eq!(graph.next, vec![Some(0usize);0]);
-        assert_eq!(graph.endp, vec![0usize;0]);
+        assert_eq!(graph.first, vec![None; 4]);
+        assert_eq!(graph.next, vec![Some(0usize); 0]);
+        assert_eq!(graph.endp, vec![0usize; 0]);
 
         graph.add_edge(0, 1);
 
         assert_eq!(graph.first, vec![Some(0), None, None, None]);
-        assert_eq!(graph.next, vec![None;1]);
+        assert_eq!(graph.next, vec![None; 1]);
         assert_eq!(graph.endp, vec![1]);
 
         graph.add_edge(0, 2);
@@ -111,6 +110,5 @@ mod test
         assert_eq!(graph.first, vec![Some(1), None, None, None]);
         assert_eq!(graph.next, vec![None, Some(0)]);
         assert_eq!(graph.endp, vec![1, 2]);
-
     }
 }
