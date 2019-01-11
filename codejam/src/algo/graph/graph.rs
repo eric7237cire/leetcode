@@ -3,10 +3,10 @@
 pub struct Graph
 {
     /// Maps a vertex id to the first edge in its adjacency list.  New edges are added to the front
-    first: Vec<Option<usize>>,
+    vertex_to_first_edge: Vec<Option<usize>>,
     /// Maps an edge id to the next edge in the same adjacency list.
     /// An edge can only be in 1 adj. list since each edge only has one 'from'
-    next: Vec<Option<usize>>,
+    edge_to_next_edge: Vec<Option<usize>>,
     /// Maps an edge id to the vertex that it points to.
     pub endp: Vec<usize>,
 }
@@ -19,8 +19,8 @@ impl Graph
     pub fn new(vmax: usize, emax_hint: usize) -> Self
     {
         Self {
-            first: vec![None; vmax],
-            next: Vec::with_capacity(emax_hint),
+            vertex_to_first_edge: vec![None; vmax],
+            edge_to_next_edge: Vec::with_capacity(emax_hint),
             endp: Vec::with_capacity(emax_hint),
         }
     }
@@ -28,7 +28,7 @@ impl Graph
     /// Returns the number of vertices.
     pub fn num_v(&self) -> usize
     {
-        self.first.len()
+        self.vertex_to_first_edge.len()
     }
 
     /// Returns the number of edges, double-counting undirected edges.
@@ -40,8 +40,8 @@ impl Graph
     /// Adds a directed edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize)
     {
-        self.next.push(self.first[u]);
-        self.first[u] = Some(self.num_e());
+        self.edge_to_next_edge.push(self.vertex_to_first_edge[u]);
+        self.vertex_to_first_edge[u] = Some(self.num_e());
         self.endp.push(v);
     }
 
@@ -58,7 +58,7 @@ impl Graph
     {
         AdjListIterator {
             graph: self,
-            next_e: self.first[u],
+            next_e: self.vertex_to_first_edge[u],
         }
     }
 }
@@ -79,7 +79,7 @@ impl<'a> Iterator for AdjListIterator<'a>
     {
         self.next_e.map(|e| {
             let v = self.graph.endp[e];
-            self.next_e = self.graph.next[e];
+            self.next_e = self.graph.edge_to_next_edge[e];
             (e, v)
         })
     }
@@ -95,20 +95,20 @@ mod test
     {
         let mut graph = Graph::new(4, 4);
 
-        assert_eq!(graph.first, vec![None; 4]);
-        assert_eq!(graph.next, vec![Some(0usize); 0]);
+        assert_eq!(graph.vertex_to_first_edge, vec![None; 4]);
+        assert_eq!(graph.edge_to_next_edge, vec![Some(0usize); 0]);
         assert_eq!(graph.endp, vec![0usize; 0]);
 
         graph.add_edge(0, 1);
 
-        assert_eq!(graph.first, vec![Some(0), None, None, None]);
-        assert_eq!(graph.next, vec![None; 1]);
+        assert_eq!(graph.vertex_to_first_edge, vec![Some(0), None, None, None]);
+        assert_eq!(graph.edge_to_next_edge, vec![None; 1]);
         assert_eq!(graph.endp, vec![1]);
 
         graph.add_edge(0, 2);
 
-        assert_eq!(graph.first, vec![Some(1), None, None, None]);
-        assert_eq!(graph.next, vec![None, Some(0)]);
+        assert_eq!(graph.vertex_to_first_edge, vec![Some(1), None, None, None]);
+        assert_eq!(graph.edge_to_next_edge, vec![None, Some(0)]);
         assert_eq!(graph.endp, vec![1, 2]);
     }
 }

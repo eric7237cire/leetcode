@@ -7,7 +7,7 @@ BFS
 Hard
 */
 use super::super::algo::graph::flow::*;
-//use super::super::algo::graph::*;
+use super::super::algo::graph::*;
 use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec};
 use super::super::util::input::*;
@@ -139,8 +139,8 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
     let T = grid.filter_by_val(&Turret).count();
 
     //Construct the 2 graphs: G and G'
-    let mut G1 = FlowGraph::new(2 + S + T, 4);
-    let mut G2 = FlowGraph::new(2 + S + T, 4);
+    let mut G = FlowGraph::new(2 + S + T, 4);
+    let mut Gprime : Vec<(usize,usize)> = Vec::new();
 
     let source = S + T;
     let sink = S + T + 1;
@@ -170,10 +170,10 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
             let mut turret_visible = false;
             for turret_index in visible_turrets {
                 turret_visible = true;
-                G1.add_edge(soldier_index, S + turret_index, 1, 1);
+                G.add_edge(soldier_index, S + turret_index, 1, 1);
 
                 if !seen_turret {
-                    G2.add_edge(soldier_index, S + turret_index, 1, 1);
+                    Gprime.push( (soldier_index, S + turret_index) );
                 }
             }
 
@@ -212,15 +212,16 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
 
     //Now find max matching of G1 (G has an edge from soldier s to turret t if and only if soldier s can destroy turret t after all other turrets have been destroyed)
     for s in 0..S {
-        G1.add_edge(source, s, 1, 1);
+        G.add_edge(source, s, 1, 1);
     }
 
     for t in S..S + T {
-        G1.add_edge(t, sink, 1, 1);
+        G.add_edge(t, sink, 1, 1);
     }
 
-    let (R, flow) = G1.dinic(source, sink);
+    let (R, flow) = G.dinic(source, sink);
 
+    /*
     debug!(
         "U->V edges, flow in G:\n{}",
         flow.iter()
@@ -247,20 +248,42 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
             .collect::<Vec<String>>()
             .join("\n")
     );
+    */
 
-    debug!(
-        "U->V edges in maximum matching:\n{:?}",
-        flow.iter()
+    let M = flow.iter()
             .enumerate()
             .filter(|&(_e, f)| *f > 0)
             //map to u->v
-            .map(|(e, _f)| (G1.graph.endp[e ^ 1], G1.graph.endp[e]))
+            .map(|(e, _f)| (G.graph.endp[e ^ 1], G.graph.endp[e]))
             //leave out source and sink nodes
             .filter(|&(u, v)| u != source && v != sink)
-            .collect::<Vec<_>>()
+            .collect::<Vec<_>>();
+
+    debug!(
+        "U->V edges in maximum matching:\n{:?}",
+        M
     );
 
-    format!("Case #{}: POSSIBLE\n{}", case_no, grid)
+    let soldiers_in_m = M.iter().map( |&(s,_t)| s).collect::<Vec<_>>();
+
+    //Now build graph H
+    let mut H = Graph::new(S+T, 4);
+
+    for &(s,t) in Gprime.iter() {
+        if soldiers_in_m.contains(&s) {
+            H.add_edge(s, t);
+        }
+    }
+    for &(s,t) in M {
+        H.add_edge(t, s);
+    }
+
+    let mut ans = format!("Case #{}: {}\n", case_no, R);
+
+    for _ in 0..R {
+
+
+    }
 }
 
 impl Display for Grid<Tile>
