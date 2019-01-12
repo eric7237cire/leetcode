@@ -12,6 +12,7 @@ itertools = "*"
 num = "*"
 bimap = "0.1"
 bit-vec = "*"
+threadpool = "*"
 
 [features]
 default = []
