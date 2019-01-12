@@ -213,3 +213,20 @@ mod moves_in_squared_strings_2 {
         );
     }
 }
+
+mod string_ends_with {
+    fn solution(word: &str, ending: &str) -> bool {
+        return word.ends_with(ending);
+    }
+
+    // Rust test example:
+    // TODO: replace with your own tests (TDD), these are just how-to examples.
+    // See: https://doc.rust-lang.org/book/testing.html
+
+    #[test]
+    fn returns_expected() {
+        assert_eq!(true, solution("abc", "c"));
+        assert_eq!(false, solution("strawberry", "banana"));
+    }
+
+}
