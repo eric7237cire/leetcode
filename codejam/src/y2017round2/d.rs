@@ -145,6 +145,15 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
     let source = S + T;
     let sink = S + T + 1;
 
+    let vertex_to_string = |v: usize| {
+        match v {
+                    s if s < S => format!("Soldier {}", s + 1),
+                    t if t >= S && t < S + T => format!("Turret #{} ({})", t - S + 1, t),
+                    v if v == sink => "Sink".to_string(),
+                    _source => "Source".to_string(),
+                }
+    };
+
     //BFS for each soldier
 
     //will be in left to right order, then top down order
@@ -259,10 +268,9 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
             .filter(|&(u, v)| u != source && v != sink)
             .collect::<Vec<_>>();
 
-    debug!(
-        "U->V edges in maximum matching:\n{:?}",
-        M
-    );
+
+    debug!("Edges in M= {}", M.iter().map( |&(u,v)| format!("{}->{}",
+vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
 
     let soldiers_in_m = M.iter().map( |&(s,_t)| s).collect::<Vec<_>>();
 
@@ -274,17 +282,43 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
             H.add_edge(s, t);
         }
     }
-    for &(s,t) in M {
+    for &(s,t) in M.iter() {
         H.add_edge(t, s);
     }
+
+
+
+    debug!("Edges in G'= {}", Gprime.iter().map( |&(u,v)| format!("{}->{}",
+vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
+
+    debug!("Edges in H= {}", H.edges().map( |(u,v)| format!("{}->{}",
+vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
 
     let mut ans = format!("Case #{}: {}\n", case_no, R);
 
     for _ in 0..R {
+        let turrets_in_M = M.iter().map(|&(s,t)| t).collect::<Vec<_>>();
+        //find an edge (s,t') where t' is not in m
+        let st_prime = Gprime.iter().filter( |&(s,t)| !turrets_in_M.contains(t)).next();
 
+        if !st_prime.is_none() {
+            let &(s,t) = st_prime.unwrap();
+            debug!("Found (s,t') s={} t'={}",s,t-S);
+            ans += &format!("{} {}\n", s+1, t+1-S);
 
+            let new_edges= H.edges().filter( |&(u,v)| u!=s && v!=s && u!=t && u!=s).collect::<Vec<_>>();
+            H = Graph::new(S+T, 4);
+            for (u, v) in new_edges {
+                H.add_edge(u, v);
+            }
+        }
     }
+
+    ans
 }
+
+
+
 
 impl Display for Grid<Tile>
 {
