@@ -62,13 +62,13 @@ impl Graph
         }
     }
 
-    pub fn edges<'a>(&'a self) -> impl Iterator<Item = (usize,usize)> + 'a
+    pub fn edges<'a>(&'a self) -> impl Iterator<Item = (usize, usize)> + 'a
     {
-        (0..self.num_v()).map( move|u| self.adj_list(u)
-            .map( move|(_e,v)| (u,v))).flatten()
+        (0..self.num_v())
+            .map(move |u| self.adj_list(u).map(move |(_e, v)| (u, v)))
+            .flatten()
     }
 }
-
 
 /// An iterator for convenient adjacency list traversal.
 pub struct AdjListIterator<'a>
@@ -79,7 +79,7 @@ pub struct AdjListIterator<'a>
 
 impl<'a> Iterator for AdjListIterator<'a>
 {
-    type Item = (usize,usize);
+    type Item = (usize, usize);
 
     /// Produces an outgoing edge and vertex.
     fn next(&mut self) -> Option<Self::Item>
@@ -87,7 +87,7 @@ impl<'a> Iterator for AdjListIterator<'a>
         self.next_e.map(|e| {
             let v = self.graph.endp[e];
             self.next_e = self.graph.edge_to_next_edge[e];
-            (e,v)
+            (e, v)
         })
     }
 }
@@ -130,9 +130,10 @@ mod test
         graph.add_edge(3, 0);
         graph.add_edge(3, 2);
 
-        assert_eq!(graph.edges().collect::<Vec<_>>(),
-                   vec![(1,0), (2,3), (2,2), (3,2), (3,0)]);
-
+        assert_eq!(
+            graph.edges().collect::<Vec<_>>(),
+            vec![(1, 0), (2, 3), (2, 2), (3, 2), (3, 0)]
+        );
     }
 
 }
