@@ -148,7 +148,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
     let vertex_to_string = |v: usize| {
         match v {
                     s if s < S => format!("Soldier {}", s + 1),
-                    t if t >= S && t < S + T => format!("Turret #{} ({})", t - S + 1, t),
+                    t if t >= S && t < S + T => format!("Turret #{}", t - S + 1),
                     v if v == sink => "Sink".to_string(),
                     _source => "Source".to_string(),
                 }
@@ -269,7 +269,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M: usize) -> String
             .collect::<Vec<_>>();
 
 
-    debug!("Edges in M= {}", M.iter().map( |&(u,v)| format!("{}->{}",
+    debug!("Edges in M=\n{}\n", M.iter().map( |&(u,v)| format!("{}->{}",
 vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
 
     let soldiers_in_m = M.iter().map( |&(s,_t)| s).collect::<Vec<_>>();
@@ -288,18 +288,18 @@ vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
 
 
 
-    debug!("Edges in G'= {}", Gprime.iter().map( |&(u,v)| format!("{}->{}",
+    debug!("Edges in G'=\n{}\n", Gprime.iter().map( |&(u,v)| format!("{}->{}",
 vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
 
-    debug!("Edges in H= {}", H.edges().map( |(u,v)| format!("{}->{}",
+    debug!("Edges in H=\n{}\n", H.edges().map( |(u,v)| format!("{}->{}",
 vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
 
     let mut ans = format!("Case #{}: {}\n", case_no, R);
 
     for _ in 0..R {
-        let turrets_in_M = M.iter().map(|&(s,t)| t).collect::<Vec<_>>();
+        let turrets_in_M = M.iter().map(|&(_s,t)| t).collect::<Vec<_>>();
         //find an edge (s,t') where t' is not in m
-        let st_prime = Gprime.iter().filter( |&(s,t)| !turrets_in_M.contains(t)).next();
+        let st_prime = Gprime.iter().filter( |&(_s,t)| !turrets_in_M.contains(t)).next();
 
         if !st_prime.is_none() {
             let &(s,t) = st_prime.unwrap();
@@ -311,7 +311,42 @@ vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
             for (u, v) in new_edges {
                 H.add_edge(u, v);
             }
+            continue;
         }
+
+        //Now we need to find a cycle
+
+        //Start at a soldier in H
+        let soldier_in_h = H.edges().filter( |&(u,_v)| u <= S).next().unwrap().0;
+
+        let mut cycle_edges = Vec::new();
+        let mut edge = H.adj_list(soldier_in_h).next().unwrap();
+        let mut visited = BitVec::from_elem(H.num_v(), false);
+
+        debug!("Edge {:?}.  H {}", edge.0, H.num_v());
+        debug!("v {}", visited[edge.0]);
+        while !visited[edge.0] {
+            visited.set(edge.0, true);
+            cycle_edges.push(edge);
+            edge = H.adj_list(edge.1).next().unwrap();
+            debug!("Edge {:?}.  H {}", edge.0, H.num_v());
+        }
+
+        debug!("Cycle C =\n{}\n", cycle_edges.iter().map(|&(u,v)| format!("{}->{}",
+vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
+
+        //Consider a new matching M' of G consisting of the edges of M whose reverse is not in C, p
+        // lus the edges in C whose reverse is not in M. That is, M' is M but exchanging the edges
+        // present in C in some direction. M' in this case is also a matching of G of the same size as M
+
+        let mut M_new: Vec<(usize,usize)> = Vec::new();
+        M_new.extend( M.iter().filter( |&&(u,v)| !cycle_edges.contains( &(v,u))));
+        M_new.extend( cycle_edges.iter().filter( |&&(u,v)| !M.contains( &(v,u))));
+
+        debug!("New matching M =\n{}\n", M_new.iter().map(|&(u,v)| format!("{}->{}",
+vertex_to_string(u), vertex_to_string(v))).collect::<Vec<_>>().join("\n"));
+
+        break;
     }
 
     ans
