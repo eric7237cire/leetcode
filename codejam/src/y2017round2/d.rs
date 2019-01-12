@@ -34,7 +34,7 @@ pub fn solve_all_cases()
             }
         }
 
-        if case != 2 {continue;}
+        if case != 10 {continue;}
         print!("{}", solve(case, &mut grid, M));
     }
 }
@@ -176,8 +176,8 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
     let sink = S + T + 1;
 
     let vertex_to_string = |v: usize| match v {
-        s if s < S => format!("Soldier #{} ({})", s + 1, s),
-        t if t >= S && t < S + T => format!("Turret #{} ({})", t - S + 1, t),
+        s if s < S => format!("Soldier #{} ({})", s + 1, *S_map.get_by_left(&s).unwrap()),
+        t if t >= S && t < S + T => format!("Turret #{} ({})", t - S + 1, *T_map.get_by_left(&(t-S)).unwrap()),
         v if v == sink => "Sink".to_string(),
         _source => "Source".to_string(),
     };
@@ -241,7 +241,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         .collect::<Vec<_>>();
 
     debug!(
-        "Edges in M=\n{}\n",
+        "Edges in M initial matching=\n{}\n",
         M.iter()
             .map(|&(u, v)| format!("{}->{}", vertex_to_string(u), vertex_to_string(v)))
             .collect::<Vec<_>>()
@@ -268,6 +268,15 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         for &(s, t) in M.iter() {
             H.add_edge(t, s);
         }
+
+        debug!(
+            "Current matching M =\n{}\n",
+            M
+                .iter()
+                .map(|&(u, v)| format!("{}->{}", vertex_to_string(u), vertex_to_string(v)))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
 
         debug!(
             "Edges in G'=\n{}\n",
@@ -320,6 +329,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         while !visited[edge.0] {
             visited.set(edge.0, true);
             cycle_edges.push(edge);
+            debug!("pushed Edge {:?} ", format!("{}->{}", vertex_to_string(edge.0), vertex_to_string(edge.1)));
             edge = (edge.1, H.adj_list(edge.1).next().unwrap().1);
             debug!("Edge {:?} ", edge);
         }
@@ -439,9 +449,9 @@ impl GraphData {
 fn build_graph(grid: &Grid<Tile>, is_g_prime: bool, M: usize,
                s_mapping: &BiMap<usize, GridCoord>,
                 t_mapping: &BiMap<usize, GridCoord>
-) -> Vec<(usize, usize)>
+) -> HashSet<(usize, usize)>
 {
-    let mut G:Vec<(usize, usize)> = Vec::new();
+    let mut G:HashSet<(usize, usize)> = HashSet::new();
 
     let turret_locations =grid
         .filter_by_val(&Turret).collect::<Vec<_>>();
@@ -462,7 +472,7 @@ fn build_graph(grid: &Grid<Tile>, is_g_prime: bool, M: usize,
     let T = turret_squares_list.len();
 
     for (soldier_index, soldier_loc) in soldier_locations.iter().enumerate() {
-        debug!("BFS search on soldier {} @ {}", soldier_index, soldier_loc);
+        //debug!("BFS search on soldier {} @ {}", soldier_index, soldier_loc);
 
         //Node is location, distance, seen_turret
         let mut queue: VecDeque<(GridRowColVec, usize, bool)> = VecDeque::new();
@@ -486,7 +496,9 @@ fn build_graph(grid: &Grid<Tile>, is_g_prime: bool, M: usize,
                 if !is_g_prime || (!seen_turret && is_g_prime){
                     let s_vertex = *s_mapping.get_by_right(soldier_loc).unwrap();
                     let t_vertex = *t_mapping.get_by_right(&turret_locations[turret_index]).unwrap();
-                    G.push((s_vertex, s_mapping.len() + t_vertex));
+                    /*debug!("Found s{} t{} mapped to soldier {} => {} at loc {}",
+                    soldier_index, turret_index, s_vertex, t_vertex, loc);*/
+                    G.insert((s_vertex, s_mapping.len() + t_vertex));
                 }
 
             }
@@ -524,7 +536,7 @@ fn build_graph(grid: &Grid<Tile>, is_g_prime: bool, M: usize,
         }
     }
 
-    debug!("Built graph from\n{:?}\n  S={} T={}", grid, S, T);
+    debug!("Built graph from\n{}\n  S={} T={}", grid, S, T);
     G
 }
 
