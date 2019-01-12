@@ -51,7 +51,7 @@ use bimap::BiMap;
 use bit_vec::BitVec;
 use std::collections::HashSet;
 use std::collections::VecDeque;
-use std::iter::FromIterator;
+//use std::iter::FromIterator;
 
 impl Tile
 {
@@ -477,7 +477,7 @@ fn build_graph(
     let S = soldier_locations.len();
     let T = turret_squares_list.len();
 
-    for (soldier_index, soldier_loc) in soldier_locations.iter().enumerate() {
+    for (_soldier_index, soldier_loc) in soldier_locations.iter().enumerate() {
         //debug!("BFS search on soldier {} @ {}", soldier_index, soldier_loc);
 
         //Node is location, distance, seen_turret
