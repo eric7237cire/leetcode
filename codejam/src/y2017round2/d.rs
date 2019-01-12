@@ -24,6 +24,7 @@ use std::io::Write;
 use std::time::{Instant};
 use threadpool::ThreadPool;
 use std::sync::mpsc::channel;
+use indexmap::IndexSet;
 
 pub fn solve_all_cases()
 {
@@ -342,23 +343,24 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         //Start at a soldier in H
         let soldier_in_h = H.edges().filter(|&(u, _v)| u <= S).next().unwrap().0;
 
-        let mut cycle_edges = Vec::new();
+        let mut cycle_edges = VecDeque::new();
         let mut edge = (soldier_in_h, H.adj_list(soldier_in_h).next().unwrap().1);
         let mut visited = BitVec::from_elem(H.num_v(), false);
 
         while !visited[edge.0] {
             visited.set(edge.0, true);
-            cycle_edges.push(edge);
+            cycle_edges.push_back(edge);
             debug!(
                 "pushed Edge {:?} ",
                 format!("{}->{}", vertex_to_string(edge.0), vertex_to_string(edge.1))
             );
+            //adj list returns an (internal edge index, next vertex)
             edge = (edge.1, H.adj_list(edge.1).next().unwrap().1);
             debug!("Edge {:?} ", edge);
         }
 
         //cut to the actual cycle found
-        let cycle_end = cycle_edges.last().unwrap().1;
+        let cycle_end = cycle_edges.back().unwrap().1;
         let cycle_start = cycle_edges
             .iter()
             .position(|&(u, _v)| u == cycle_end)
@@ -407,14 +409,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
             r -= 1;
         }
 
-        let mut st_map: BiMap<usize, usize> = BiMap::new();
-        for &uv in st_actions.iter() {
-            st_map.insert(uv.0, uv.1);
-        }
-
-
         M = M_new;
-
     }
 
     ans
@@ -429,9 +424,9 @@ fn build_graph(
     s_mapping: &BiMap<usize, GridCoord>,
     t_mapping: &BiMap<usize, GridCoord>,
     turret_reachable_squares_list: &Vec<HashSet<GridRowColVec>>
-) -> HashSet<(usize, usize)>
+) -> IndexSet<(usize, usize)>
 {
-    let mut G: HashSet<(usize, usize)> = HashSet::new();
+    let mut G: IndexSet<(usize, usize)> = IndexSet::new();
 
     let turret_locations = grid.filter_by_val(&Turret).collect::<HashSet<_>>();
 
