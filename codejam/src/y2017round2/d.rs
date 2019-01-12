@@ -12,7 +12,7 @@ use super::super::algo::graph::*;
 use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec};
 use super::super::util::input::*;
-use std::thread;
+//use std::thread;
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -21,13 +21,18 @@ use bit_vec::BitVec;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::io::Write;
-use std::time::{Duration, Instant};
+use std::time::{Instant};
+use threadpool::ThreadPool;
+use std::sync::mpsc::channel;
 
 pub fn solve_all_cases()
 {
     let now = Instant::now();
 
-    let mut children: Vec<thread::JoinHandle<_>> = vec![];
+    //let mut children: Vec<thread::JoinHandle<_>> = vec![];
+    let pool = ThreadPool::new(6);
+
+    let (tx, rx) = channel();
 
     let mut reader = InputReader::new();
     let t = reader.read_int();
@@ -42,22 +47,26 @@ pub fn solve_all_cases()
             }
         }
 
-        children.push(thread::spawn(move || -> String {
+        let tx = tx.clone();
+        pool.execute(move || {
             let now = Instant::now();
             let _ = writeln!(::std::io::stderr(), "Starting {} of {} ", case, t);
             let s = solve(case, &mut grid, M);
+            tx.send((case,s)).expect("Channel is there");
 
             let duration = now.elapsed();
             let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
             let _ = writeln!(::std::io::stderr(), "Finished #{} in {:.2} second(s)", case, secs);
 
-            s
-        }));
+
+        });
 
     }
 
-    for child in children {
-        print!("{}", child.join().unwrap());
+    let mut output = rx.iter().take(t as usize).collect::<Vec<_>>();
+    output.sort();
+    for (_,s) in output  {
+        print!("{}", s);
     }
 
     let duration = now.elapsed();
@@ -474,6 +483,10 @@ fn build_graph(
                 }
             }
 
+            //no need to queue once we have been shot by a turret
+            if is_g_prime && turret_visible {
+                continue;
+            }
             /*
             debug!(
                 "Viewing {} dist {} seen turret? {} turret visible? {}",
