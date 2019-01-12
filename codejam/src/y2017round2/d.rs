@@ -12,13 +12,23 @@ use super::super::algo::graph::*;
 use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec};
 use super::super::util::input::*;
-//use bimap::BiMap;
+use std::thread;
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use bimap::BiMap;
+use bit_vec::BitVec;
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::io::Write;
+use std::time::{Duration, Instant};
 
 pub fn solve_all_cases()
 {
+    let now = Instant::now();
+
+    let mut children: Vec<thread::JoinHandle<_>> = vec![];
+
     let mut reader = InputReader::new();
     let t = reader.read_int();
 
@@ -32,9 +42,27 @@ pub fn solve_all_cases()
             }
         }
 
-        //if case > 15 {continue;}
-        print!("{}", solve(case, &mut grid, M));
+        children.push(thread::spawn(move || -> String {
+            let now = Instant::now();
+            let _ = writeln!(::std::io::stderr(), "Starting {} of {} ", case, t);
+            let s = solve(case, &mut grid, M);
+
+            let duration = now.elapsed();
+            let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
+            let _ = writeln!(::std::io::stderr(), "Finished #{} in {:.2} second(s)", case, secs);
+
+            s
+        }));
+
     }
+
+    for child in children {
+        print!("{}", child.join().unwrap());
+    }
+
+    let duration = now.elapsed();
+    let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
+    let _ = write!(::std::io::stderr(), "\nElapsed time {:.2} second(s)\n", secs);
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -47,11 +75,7 @@ enum Tile
 }
 
 use self::Tile::*;
-use bimap::BiMap;
-use bit_vec::BitVec;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-//use std::iter::FromIterator;
+
 
 impl Tile
 {
@@ -142,27 +166,38 @@ impl<L, R> FromIterator<(L, R)> for BiMap<L, R>
 
 fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> String
 {
+
     debug!(
         "Solving case {}\nM={}\n{}\n",
         case_no, M_soldier_limit, grid
     );
 
-    //original solider & turret locations
+    //original solider & turret index to location map
     let S_map = grid
         .filter_by_val(&Soldier)
         .enumerate()
         .collect::<BiMap<_, _>>();
-    let T_map = grid
-        .filter_by_val(&Turret)
+    let turret_locations = grid
+        .filter_by_val(&Turret).collect::<Vec<_>>();
+
+    //precalucate what squares a turret can reach
+    let turret_reachable_squares_list = turret_locations
+        .iter()
+        .map(|t_loc| reachable(&grid, *t_loc))
+        .collect::<Vec<_>>();
+
+    let T_map = turret_locations.into_iter()
         .enumerate()
         .collect::<BiMap<_, _>>();
 
     let S = grid.filter_by_val(&Soldier).count();
     let T = grid.filter_by_val(&Turret).count();
 
-    //Construct the 2 graphs: G and G'
 
-    let G_edges = build_graph(&grid, false, M_soldier_limit, &S_map, &T_map);
+
+    //Construct the initial Graph
+
+    let G_edges = build_graph(&grid, false, M_soldier_limit, &S_map, &T_map, &turret_reachable_squares_list);
 
     let mut G = FlowGraph::new(2 + S + T, 4);
 
@@ -201,34 +236,6 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
 
     let mut ans = format!("Case #{}: {}\n", case_no, R);
 
-    /*
-    debug!(
-        "U->V edges, flow in G:\n{}",
-        flow.iter()
-            .enumerate()
-            .filter(|&(_e, f)| *f >= 0)
-            //map to u->v
-            .map(|(e, f)| (G1.graph.endp[e ^ 1], G1.graph.endp[e], f))
-            .map(|(u, v, f)| format!(
-                "{} => {}; {}",
-                match u {
-                    s if s < S => format!("Soldier {}", s + 1),
-                    t if t >= S && t < S + T => format!("Turret #{} ({})", t - S + 1, t),
-                    v if v == sink => "Sink".to_string(),
-                    _source => "Source".to_string(),
-                },
-                match v {
-                    s if s < S => format!("Soldier {}", s + 1),
-                    t if t >= S && t < S + T => format!("Turret {} ({})", t - S + 1, t),
-                    v if v == sink => "Sink".to_string(),
-                    _source => "Source".to_string(),
-                },
-                format!("Flow: {}", f)
-            ))
-            .collect::<Vec<String>>()
-            .join("\n")
-    );
-    */
 
     //Compute initial matching
     let mut M = flow
@@ -253,7 +260,8 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
 
     while r > 0 {
         //Let us define the graph G' with the same nodes as G, but an edge between soldier s and turret t only exists in G' if s can destroy t with the other turrets active
-        let Gprime = build_graph(&grid, true, M_soldier_limit, &S_map, &T_map);
+        let Gprime = build_graph(&grid, true,
+                                 M_soldier_limit, &S_map, &T_map, &turret_reachable_squares_list);
 
         //Now build graph H
         let mut H = Graph::new(S + T, 4);
@@ -395,59 +403,15 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
             st_map.insert(uv.0, uv.1);
         }
 
-        /*
-        let mut H_new = Graph::new(S + T, 4);
 
-
-        for &(u, v) in Gprime.iter() {
-            if !st_map.contains_left(&u)
-                && !st_map.contains_left(&v)
-                && !st_map.contains_right(&u)
-                && !st_map.contains_right(&v)
-            {
-                H_new.add_edge(u, v);
-            }
-        }
-
-
-        for &(u, v) in M_new.iter() {
-            if !st_map.contains_left(&u)
-                && !st_map.contains_left(&v)
-                && !st_map.contains_right(&u)
-                && !st_map.contains_right(&v)
-            {
-                H_new.add_edge(v, u);
-            }
-        }
-
-        H = H_new;*/
         M = M_new;
-        /*
-        debug!(
-            "Edges in new H at iterator {}=\n{}\n",
-            r,
-            H.edges()
-                .map(|(u, v)| format!("{}->{}", vertex_to_string(u), vertex_to_string(v)))
-                .collect::<Vec<_>>()
-                .join("\n")
-        );*/
+
     }
 
     ans
 }
 
-/*
-impl GraphData {
-    fn convert_soldier_index(&self, s: usize, mapping: &BiMap<usize, GridCoord>) -> usize
-    {
-        *mapping.get_by_right(&self.soldier_locations[s]).unwrap()
-    }
-    fn convert_turret_index(&self, t: usize, mapping: &BiMap<usize, GridCoord>) -> usize
-    {
-        debug!("T_map: {:?}.  t={}  S={} turret_locations: {:?}", mapping, t, self.S, self.turret_locations);
-        *mapping.get_by_right(&self.turret_locations[t - self.S]).unwrap()
-    }
-}*/
+
 
 fn build_graph(
     grid: &Grid<Tile>,
@@ -455,16 +419,14 @@ fn build_graph(
     M: usize,
     s_mapping: &BiMap<usize, GridCoord>,
     t_mapping: &BiMap<usize, GridCoord>,
+    turret_reachable_squares_list: &Vec<HashSet<GridRowColVec>>
 ) -> HashSet<(usize, usize)>
 {
     let mut G: HashSet<(usize, usize)> = HashSet::new();
 
-    let turret_locations = grid.filter_by_val(&Turret).collect::<Vec<_>>();
+    let turret_locations = grid.filter_by_val(&Turret).collect::<HashSet<_>>();
 
-    let turret_squares_list = turret_locations
-        .iter()
-        .map(|t_loc| reachable(&grid, *t_loc))
-        .collect::<Vec<_>>();
+
 
     /*
 
@@ -475,7 +437,7 @@ fn build_graph(
     let soldier_locations = grid.filter_by_val(&Soldier).collect::<Vec<_>>();
 
     let S = soldier_locations.len();
-    let T = turret_squares_list.len();
+    let T = turret_reachable_squares_list.len();
 
     for (_soldier_index, soldier_loc) in soldier_locations.iter().enumerate() {
         //debug!("BFS search on soldier {} @ {}", soldier_index, soldier_loc);
@@ -490,10 +452,12 @@ fn build_graph(
         while !queue.is_empty() {
             let (loc, dist, seen_turret) = queue.pop_front().unwrap();
 
-            let visible_turrets = turret_squares_list
+            let visible_turrets = turret_reachable_squares_list
                 .iter()
                 .enumerate()
-                .filter(|&(_turret_index, turret_squares)| turret_squares.contains(&loc))
+                .filter(|(turret_index, turret_squares)|
+                    turret_locations.contains(t_mapping.get_by_left(turret_index).unwrap() ) &&
+                    turret_squares.contains(&loc))
                 .map(|(turret_index, _)| turret_index);
 
             let mut turret_visible = false;
@@ -501,12 +465,12 @@ fn build_graph(
                 turret_visible = true;
                 if !is_g_prime || (!seen_turret && is_g_prime) {
                     let s_vertex = *s_mapping.get_by_right(soldier_loc).unwrap();
-                    let t_vertex = *t_mapping
-                        .get_by_right(&turret_locations[turret_index])
-                        .unwrap();
+
+                    //The turret index is already using the original grids index
+
                     /*debug!("Found s{} t{} mapped to soldier {} => {} at loc {}",
                     soldier_index, turret_index, s_vertex, t_vertex, loc);*/
-                    G.insert((s_vertex, s_mapping.len() + t_vertex));
+                    G.insert((s_vertex, s_mapping.len() + turret_index));
                 }
             }
 
