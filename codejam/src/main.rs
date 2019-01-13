@@ -9,18 +9,18 @@ use self::y2017round3::a::solve_all_cases;
 mod util;
 
 mod algo;
-mod y2017qual;
+/*mod y2017qual;
 mod y2017round1A;
 mod y2017round1B;
 mod y2017round1C;
-mod y2017round2;
+mod y2017round2;*/
 mod y2017round3;
 
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 
-mod algo_ebtech;
+//mod algo_ebtech;
 
 use self::util::log::init_log;
 
