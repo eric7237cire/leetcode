@@ -188,7 +188,10 @@ fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
             stack.remove(&node);
             if blocked.contains(&node) {
                 blocked.remove(&node);
-                stack.extend(B[&node].iter());
+                //simulate python default dict
+                if B.contains_key(&node) {
+                    stack.extend(B[&node].iter());
+                }
                 B.insert(node, HashSet::new());
             }
         }
@@ -220,6 +223,12 @@ fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
 
     while !sccs.is_empty() {
         let mut scc = sccs.pop().unwrap();
+        let sccG = subG.subgraph(&scc[..]);
+        //already handled self loops
+        if scc.len() <= 1 {
+            continue;
+        }
+
         //# order of scc determines ordering of nodes
         let startnode = scc.pop().unwrap();
         //# Processing node runs "circuit" routine from recursive version
@@ -229,7 +238,7 @@ fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
         blocked.insert(startnode);
         let mut B: HashMap<usize, HashSet<usize>> = HashMap::new(); //# graph portions that yield no elementary circuit
         let mut stack: Vec<(usize, Vec<usize>)> =
-            vec![(startnode, G.adj_list(startnode).collect())]; //# subG gives component nbrs
+            vec![(startnode, sccG.adj_list(startnode).collect())]; //# subG gives component nbrs
         while !stack.is_empty() {
             let (thisnode, nbrs) = stack.last_mut().unwrap();
             let thisnode = *thisnode;
@@ -242,7 +251,7 @@ fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
                 //#                        print "Found a cycle",path,closed
                 } else if !blocked.contains(&nextnode) {
                     path.push(nextnode);
-                    stack.push((nextnode, subG.adj_list(nextnode).collect()));
+                    stack.push((nextnode, sccG.adj_list(nextnode).collect()));
                     closed.remove(&nextnode);
                     blocked.insert(nextnode);
                     continue;
@@ -253,9 +262,9 @@ fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
                 if closed.contains(&thisnode) {
                     _unblock(thisnode, &mut blocked, &mut B);
                 } else {
-                    for nbr in subG.adj_list(thisnode) {
-                        if !B[&nbr].contains(&thisnode) {
-                            B[&nbr].insert(thisnode);
+                    for nbr in sccG.adj_list(thisnode) {
+                        if ! B.entry(nbr).or_insert(HashSet::new()).contains(&thisnode) {
+                            B.get_mut(&nbr).unwrap().insert(thisnode);
                         }
                     }
                 }
@@ -266,9 +275,10 @@ fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
             }
         }
         //# done processing this node
-        subG.remove_node(startnode);
+
         let H = subG.subgraph(&scc[..]); //# make smaller to avoid work in SCC routine
-        sccs.extend(strongly_connected_components(&H));
+        sccs.extend(
+            strongly_connected_components(&H));
     }
 
     ans
@@ -355,8 +365,10 @@ mod test
             vec![(0, 0), (0, 1), (0, 2), (1, 2), (2, 0), (2, 1), (2, 2)];
         let G: DirectedGraph = edges.iter().collect();
         let mut cc = simple_cycles(&G);
-        cc.sort();
+        double_sort(&mut cc);
         let ca = vec![vec![0], vec![0, 1, 2], vec![0, 2], vec![1, 2], vec![2]];
+
+        println!("CC {:?}  correct: {:?}", cc,ca);
         assert_eq!(cc.len(), ca.len());
         for c in cc {
             //   assert_true(any(self.is_cyclic_permutation(c, rc);
