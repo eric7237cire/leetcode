@@ -2,6 +2,9 @@ use super::super::util::input::*;
 use permutohedron::LexicalPermutation;
 use std::collections::HashMap;
 use indexmap::IndexSet;
+use num_integer::binomial;
+use std::time::Instant;
+use std::io::Write;
 
 /*
 permutations with repeated elements
@@ -10,6 +13,8 @@ recursion
 */
 pub fn solve_all_cases()
 {
+    let now = Instant::now();
+
     let mut reader = InputReader::new();
     let t = reader.read_int();
 
@@ -19,11 +24,18 @@ pub fn solve_all_cases()
 
         print!("{}", solve(case, &G, &mut memo));
     }
+
+    let duration = now.elapsed();
+    let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
+    let _ = writeln!(
+        ::std::io::stderr(),
+        "\nElapsed time {:.2} second(s)\n",
+        secs);
 }
 
 struct Memo
 {
-    map: HashMap<Vec<u8>, u32>,
+    map: HashMap< (usize, usize), u32>,
 
 }
 
@@ -31,14 +43,17 @@ impl  Memo
 {
     fn count_ancestors(&mut self, num: &[u8]) -> u32
     {
-        //let index = num.iter().fold(0usize, |a, &d| a * 10 + d as usize);
+        let index = num.iter().fold(0usize, |a, &d| a * 10 + d as usize);
         //debug!("Index is {} for {:?}", index, num);
 
-        if let Some(ans) = self.map.get(num) {
+        if let Some(ans) = self.map.get(&(index, num.len())) {
+            debug!("Memoized");
             return *ans;
         }
 
         let digit_sum = num.iter().sum::<u8>() as usize;
+        //An ancestor can only generate a number whose digit sum <= L
+        // 4001 would need 11114 which would be too long
         if digit_sum > num.len() {
             return 1;
         }
@@ -54,6 +69,20 @@ impl  Memo
             }
         }
         //debug!("Perm is {:?} ", perm);
+        let perm_digit_sum = perm.iter().sum::<u8>() as usize;
+
+        //none can have ancestors, so short circuit and  directly calculate
+        if perm_digit_sum > num.len() {
+            let mut sum = 1u32;
+            let mut digits_remaining = num.len() as u8;
+            for &dc in num.iter() {
+                sum *= binomial(digits_remaining, dc) as u32;
+                digits_remaining -= dc;
+            }
+            self.map.insert((index, num.len()), 1+sum);
+
+            return 1+sum;
+        }
 
         let mut permutations = IndexSet::new();
 
@@ -73,7 +102,7 @@ impl  Memo
             sum += self.count_ancestors(&p[..]);
         }
 
-        self.map.insert(num.to_vec(), sum);
+        self.map.insert((index, num.len()), sum);
 
         sum
     }
