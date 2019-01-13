@@ -23,17 +23,18 @@ pub fn solve_all_cases()
 
 struct Memo
 {
-    map: HashMap<usize, u32>,
+    map: HashMap<Vec<u8>, u32>,
+
 }
 
-impl Memo
+impl  Memo
 {
     fn count_ancestors(&mut self, num: &[u8]) -> u32
     {
         let index = num.iter().fold(0usize, |a, &d| a * 10 + d as usize);
         debug!("Index is {} for {:?}", index, num);
 
-        if let Some(ans) = self.map.get(&index) {
+        if let Some(ans) = self.map.get(num) {
             return *ans;
         }
 
@@ -42,6 +43,11 @@ impl Memo
             return 1;
         }
 
+        //handle repeat
+        /*if digit_sum == 1 && num[0] == 1 {
+            return 1;
+        }*/
+
         //seed permutation
         let mut perm = Vec::new();
         for _ in 0..num.len() - digit_sum {
@@ -49,7 +55,7 @@ impl Memo
         }
         for (pos, count) in num.iter().enumerate() {
             for _ in 0..*count {
-                perm.push(pos + 1);
+                perm.push(pos as u8 + 1);
             }
         }
         debug!("Perm is {:?} ", perm);
@@ -64,7 +70,17 @@ impl Memo
         }
 
         debug!("perms are {:?}",  permutations);
-        3
+
+        let mut sum = 1;
+        for p in permutations {
+            if p != num {
+                sum += self.count_ancestors(&p[..]);
+            }
+        }
+
+        self.map.insert(num.to_vec(), sum);
+
+        sum
     }
     fn new() -> Memo
     {
@@ -85,7 +101,7 @@ fn solve(case_no: u32, G: &str, memo: &mut Memo) -> String
 
     let count = memo.count_ancestors(&digits[..]);
 
-    debug!("G {:?} {}", digits, G,);
+    //debug!("G {:?} {}", digits, G,);
 
-    format!("Case #{}: {}\n", case_no, 3)
+    format!("Case #{}: {}\n", case_no, count)
 }
