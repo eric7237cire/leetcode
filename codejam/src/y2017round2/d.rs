@@ -358,7 +358,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         let soldier_in_h = H.edges().filter(|&(u, _v)| u <= S).next().unwrap().0;
 
         let mut cycle_edges = VecDeque::new();
-        let mut edge = (soldier_in_h, H.adj_list(soldier_in_h).next().unwrap().1);
+        let mut edge = (soldier_in_h, H.adj_list_with_edges(soldier_in_h).next().unwrap().1);
         let mut visited = BitVec::from_elem(H.num_v(), false);
 
         while !visited[edge.0] {
@@ -369,7 +369,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
                 format!("{}->{}", vertex_to_string(edge.0), vertex_to_string(edge.1))
             );
             //adj list returns an (internal edge index, next vertex)
-            edge = (edge.1, H.adj_list(edge.1).next().unwrap().1);
+            edge = (edge.1, H.adj_list_with_edges(edge.1).next().unwrap().1);
             debug!("Edge {:?} ", edge);
         }
 

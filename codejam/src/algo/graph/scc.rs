@@ -4,122 +4,106 @@
 
 //! Graph connectivity structures.
 use super::Graph;
+use bit_vec::BitVec;
+use std::cmp::min;
 
-//Directed only
+//https://networkx.github.io/documentation/networkx-1.9.1/_modules/networkx/algorithms/components/strongly_connected.html#strongly_connected_components
+fn strongly_connected_components(G: &Graph) -> Vec<Vec<usize>>{
+    /*Generate nodes in strongly connected components of graph.
 
-/// Helper struct that carries data needed for the depth-first searches in
-/// ConnectivityGraph's constructor.
-struct ConnectivityData
-{
-    time: usize,
-    vis: Vec<usize>,
-    low: Vec<usize>,
-    v_stack: Vec<usize>,
+    Parameters
+    ----------
+    G : NetworkX Graph
+       An directed graph.
 
-}
+    Returns
+    -------
+    comp : generator of lists
+       A list of nodes for each strongly connected component of G.
 
-impl ConnectivityData
-{
-    fn new(num_v: usize) -> Self
-    {
-        Self {
-            time: 0,
-            vis: vec![0; num_v],
-            low: vec![0; num_v],
-            v_stack: Vec::new(),
-        }
-    }
+    Raises
+    ------
+    NetworkXNotImplemented: If G is undirected.
 
-    fn visit(&mut self, u: usize)
-    {
-        self.time += 1;
-        self.vis[u] = self.time;
-        self.low[u] = self.time;
-        self.v_stack.push(u);
-    }
+    See Also
+    --------
+    connected_components, weakly_connected_components
 
-    fn lower(&mut self, u: usize, val: usize)
-    {
-        if self.low[u] > val {
-            self.low[u] = val
-        }
-    }
-}
+    Notes
+    -----
+    Uses Tarjan's algorithm with Nuutila's modifications.
+    Nonrecursive version of algorithm.
 
-/// Represents the decomposition of a graph into any of its constituent parts:
-///
-/// - Connected components (CC),
-/// - Strongly connected components (SCC),
-/// - 2-edge-connected components (2ECC),
-/// - 2-vertex-connected components (2VCC)
-///
-/// Multiple-edges and self-loops are correctly handled.
-pub struct ConnectivityGraph<'a>
-{
-    // Immutable graph, frozen for the lifetime of the ConnectivityGraph object.
-    pub graph: &'a Graph,
-    /// ID of a vertex's CC, SCC or 2ECC, whichever applies.
-    pub cc: Vec<usize>,
+    References
+    ----------
+    .. [1] Depth-first search and linear graph algorithms, R. Tarjan
+       SIAM Journal of Computing 1(2):146-160, (1972).
 
-    /// Total number of CCs, SCCs or 2ECCs, whichever applies.
-    pub num_cc: usize,
+    .. [2] On finding the strongly connected components in a directed graph.
+       E. Nuutila and E. Soisalon-Soinen
+       Information Processing Letters 49(1): 9-14, (1994)..
+    """
+    */
+    let mut preorder: Vec<Option<usize>> = vec![None; G.num_v()];
+    let mut lowlink = vec![0; G.num_v()];
+    let mut scc_found = BitVec::from_elem(G.num_v(), false);
+    let mut scc_queue:Vec<usize> = vec![];
+    let mut i = 0; //     # Preorder counter
+    let mut return_scc = Vec::new();
 
-}
+    for source in 0..G.num_v() {
+        println!("Source is {}", source);
+        if !scc_found[source] {
+            let mut queue = vec![source];
+            while !queue.is_empty() {
+                let v:usize = *queue.last().unwrap();
+                println!("Processing v={} on queue", v);
+                if preorder[v] == None {
+                    i = i + 1;
+                    preorder[v] = Some(i);
+                }
+                let mut done = 1;
 
-impl<'a> ConnectivityGraph<'a>
-{
-    /// Computes CCs (connected components), SCCs (strongly connected
-    /// components), 2ECCs (2-edge-connected components), and/or 2VCCs
-    /// (2-vertex-connected components), depending on the parameter and graph:
-    /// - is_directed == true on directed graph: SCCs in rev-topological order
-    /// - is_directed == true on undirected graph: CCs
-    /// - is_directed == false on undirected graph: 2ECCs and 2VCCs
-    /// - is_directed == false on directed graph: undefined behavior
-    pub fn new(graph: &'a Graphl) -> Self
-    {
-        let mut connect = Self {
-            graph,
-            cc: vec![0; graph.num_v()],
-            num_cc: 0,
-        };
-        let mut data = ConnectivityData::new(graph.num_v());
-        for u in 0..graph.num_v() {
-            if data.vis[u] == 0 {
-
-                    connect.scc(u, &mut data);
-
-            }
-        }
-        connect
-    }
-
-    //Tarjan's algorithm
-    fn scc(&mut self, u: usize, data: &mut ConnectivityData)
-    {
-        data.visit(u);
-        for (_, v) in self.graph.adj_list(u) {
-            if data.vis[v] == 0 {
-                self.scc(v, data);
-            }
-            if self.cc[v] == 0 {
-                data.lower(u, data.low[v]);
-            }
-        }
-        if data.vis[u] == data.low[u] {
-            self.num_cc += 1;
-            while let Some(v) = data.v_stack.pop() {
-                self.cc[v] = self.num_cc;
-                if v == u {
-                    break;
+                for w in G.adj_list(v) {
+                    if preorder[w] == None {
+                        queue.push(w);
+                        done = 0;
+                        break;
+                    }
+                }
+                if done == 1 {
+                    lowlink[v] = preorder[v].unwrap();
+                    for w in G.adj_list(v) {
+                        if !scc_found[w] {
+                            if preorder[w] > preorder[v] {
+                                lowlink[v] = min(lowlink[v], lowlink[w]);
+                            } else {
+                                lowlink[v] = min(lowlink[v], preorder[w].unwrap());
+                            }
+                        }
+                    }
+                    queue.pop();
+                    if lowlink[v] == preorder[v].unwrap() {
+                        scc_found.set(v, true);
+                        let mut scc = vec![v];
+                        while !scc_queue.is_empty() && preorder[*scc_queue.last().unwrap()] > preorder[v] {
+                            let k = scc_queue.pop().unwrap();
+                            scc_found.set(k,true);
+                            scc.push(k);
+                        }
+                        return_scc.push( scc);
+                        continue;
+                    } else {
+                        scc_queue.push(v);
+                    }
                 }
             }
         }
     }
 
-
-
-
+    return_scc
 }
+
 
 #[cfg(test)]
 mod test
@@ -131,20 +115,35 @@ mod test
     #[test]
     fn test_scc()
     {
-        let mut graph = Graph::new(3, 6);
-        graph.add_undirected_edge(0, 1);
-        graph.add_undirected_edge(1, 2);
-        graph.add_undirected_edge(1, 2);
+        let pairs = vec![
+(3, 4),
+(1, 3),
+(7, 4),
+(2, 3),
+(4, 5),
+(4, 6),
+(1, 2),
+(2, 4),
+(1, 4),
+(6, 7),
+        ];
 
-        let cg = ConnectivityGraph::new(&graph, false);
-        let bridges = (0..graph.num_e())
-            .filter(|&e| cg.is_cut_edge(e))
-            .collect::<Vec<_>>();
-        let articulation_points = (0..graph.num_v())
-            .filter(|&u| cg.is_cut_vertex(u))
-            .collect::<Vec<_>>();
+        let mut graph = Graph::new(pairs.len(), 6);
+        let mut graph2 = super::super::super::super::algo_ebtech::graph::Graph::new(pairs.len(), 6);
 
-        assert_eq!(bridges, vec![0, 1]);
-        assert_eq!(articulation_points, vec![1]);
+        for p in pairs {
+            graph.add_undirected_edge(p.0, p.1);
+            graph2.add_undirected_edge(p.0, p.1);
+        }
+
+        let cg = super::super::super::super::algo_ebtech::graph::connectivity::ConnectivityGraph::new(&graph2, true);
+        assert_eq!(cg.num_cc, 4);
+
+        let ccs = strongly_connected_components(&graph);
+
+        println!("{:?}", ccs);
+
+        assert_eq!(ccs.len(), 4);
+
     }
 }

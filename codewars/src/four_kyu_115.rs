@@ -144,31 +144,35 @@ mod n_linear {
 
         return *u.last().unwrap();
     }
-fn n_linear(m: &[u32], n: usize) -> u32 {
-    println!("{:?} n={}", m,n);
-    let mut m = m.to_vec();
-    m.sort();
+    fn n_linear(m: &[u32], n: usize) -> u32 {
+        println!("{:?} n={}", m, n);
+        let mut m = m.to_vec();
+        m.sort();
 
-    let mut u = vec![1u32];
-    //tuples are (cur U index to calculate, next u(m) value
-    let mut next_values = m.iter().enumerate().map( |(m_idx, m_val)| ( 1*m_val + 1, m_idx,0 ) ).collect::<Vec<_>>();
+        let mut u = vec![1u32];
+        //tuples are (cur U index to calculate, next u(m) value
+        let mut next_values = m
+            .iter()
+            .enumerate()
+            .map(|(m_idx, m_val)| (1 * m_val + 1, m_idx, 0))
+            .collect::<Vec<_>>();
 
-    for i in 0..n {
-        next_values.sort();
-        let nv = next_values[0].0;
-        u.push( nv );
-        for j in 0..m.len() {
-            if next_values[j].0 == nv {
-                let (_,m_idx,u_idx) = next_values[j];
-                next_values[j] = ( u[u_idx+1]*m[m_idx]+1, m_idx, u_idx+1);
-            } else {
-                break;
+        for i in 0..n {
+            next_values.sort();
+            let nv = next_values[0].0;
+            u.push(nv);
+            for j in 0..m.len() {
+                if next_values[j].0 == nv {
+                    let (_, m_idx, u_idx) = next_values[j];
+                    next_values[j] = (u[u_idx + 1] * m[m_idx] + 1, m_idx, u_idx + 1);
+                } else {
+                    break;
+                }
             }
         }
-    }
 
-    *u.last().unwrap()
-}
+        *u.last().unwrap()
+    }
     #[test]
     fn pair_test() {
         assert_eq!(n_linear(&[2, 3], 2), 4);
@@ -188,4 +192,71 @@ fn n_linear(m: &[u32], n: usize) -> u32 {
         assert_eq!(n_linear(&[5, 7, 8], 13), 156);
         assert_eq!(n_linear(&[5, 7, 8], 14), 206);
     }
+}
+
+mod num_partitions {
+    use std::cmp::min;
+
+    fn partitions(n: isize) -> isize {
+        let n = n as usize;
+        let mut dp = vec![vec![0isize; n + 1]; n + 1];
+        //dp[n][m] = # of ways to partition n using digits <= m
+
+        //initialize
+        for i in 0..n + 1 {
+            dp[0][i] = 1;
+            dp[1][i] = 1;
+        }
+
+        for p in 2..n + 1 {
+            //count placing p by itself [p]
+
+            for max_digit in 1..p + 1 {
+                //place 1 of max digit
+                let remaining = p - max_digit;
+                //place bounds on how high this digit can be
+                let rem_max_digit = min(remaining, min(p - 1, max_digit));
+
+                // count of placing [p] then the remaining + the previous loop calculation
+                dp[p][max_digit] = dp[remaining][rem_max_digit] + dp[p][max_digit - 1];
+            }
+
+            println!("For p={} ", p,);
+        }
+
+        dp[n][n]
+    }
+
+    #[test]
+    fn basic_test_01() {
+        assert_eq!(partitions(1), 1, "1");
+        //2, 1 1
+        assert_eq!(partitions(2), 2);
+        //3, 21, 111
+        assert_eq!(partitions(3), 3);
+        //4, 3 1, 2 2, 2 1 1, 1 1 1 1
+        assert_eq!(partitions(4), 5);
+
+        //5, 41, 32, 311, 221, 2111, 11111
+        assert_eq!(partitions(5), 7);
+
+        //6 51 42  411 33  321 3111 222  2211 21111 11111
+        assert_eq!(partitions(6), 11);
+    }
+
+    #[test]
+    fn basic_test_05() {
+        assert_eq!(partitions(5), 7);
+    }
+
+    #[test]
+    fn basic_test_10() {
+        assert_eq!(partitions(10), 42);
+    }
+
+    #[test]
+    fn basic_test_25() {
+        assert_eq!(partitions(25), 1958);
+    }
+
 }

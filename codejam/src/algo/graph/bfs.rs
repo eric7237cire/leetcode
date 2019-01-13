@@ -42,7 +42,7 @@ impl<'a> Iterator for BfsIterator<'a>
 
         //Code translated/adapted from https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/
 
-        for (_e, u) in self.graph.adj_list(r) {
+        for (_e, u) in self.graph.adj_list_with_edges(r) {
             if !self.visited[u] {
                 self.visited.set(u, true);
                 self.queue.push_back(u);

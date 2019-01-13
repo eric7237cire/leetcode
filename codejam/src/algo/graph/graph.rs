@@ -54,6 +54,14 @@ impl Graph
     }
 
     /// Gets vertex u's adjacency list.
+    pub fn adj_list_with_edges(&self, u: usize) -> AdjListIteratorWithEdges
+    {
+        AdjListIteratorWithEdges {
+            graph: self,
+            next_e: self.vertex_to_first_edge[u],
+        }
+    }
+
     pub fn adj_list(&self, u: usize) -> AdjListIterator
     {
         AdjListIterator {
@@ -65,19 +73,19 @@ impl Graph
     pub fn edges<'a>(&'a self) -> impl Iterator<Item = (usize, usize)> + 'a
     {
         (0..self.num_v())
-            .map(move |u| self.adj_list(u).map(move |(_e, v)| (u, v)))
+            .map(move |u| self.adj_list_with_edges(u).map(move |(_e, v)| (u, v)))
             .flatten()
     }
 }
 
 /// An iterator for convenient adjacency list traversal.
-pub struct AdjListIterator<'a>
+pub struct AdjListIteratorWithEdges<'a>
 {
     graph: &'a Graph,
     next_e: Option<usize>,
 }
 
-impl<'a> Iterator for AdjListIterator<'a>
+impl<'a> Iterator for AdjListIteratorWithEdges<'a>
 {
     type Item = (usize, usize);
 
@@ -91,6 +99,28 @@ impl<'a> Iterator for AdjListIterator<'a>
         })
     }
 }
+
+pub struct AdjListIterator<'a>
+{
+    graph: &'a Graph,
+    next_e: Option<usize>,
+}
+
+impl<'a> Iterator for AdjListIterator<'a>
+{
+    type Item = usize;
+
+    /// Produces an outgoing edge and vertex.
+    fn next(&mut self) -> Option<Self::Item>
+    {
+        self.next_e.map(|e| {
+            let v = self.graph.endp[e];
+            self.next_e = self.graph.edge_to_next_edge[e];
+            v
+        })
+    }
+}
+
 
 #[cfg(test)]
 mod test

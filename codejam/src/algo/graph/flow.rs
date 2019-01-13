@@ -1,5 +1,5 @@
 //! Maximum flows, matchings, and minimum cuts.
-use super::graph::{AdjListIterator, Graph};
+use super::graph::{AdjListIteratorWithEdges, Graph};
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph
@@ -58,7 +58,7 @@ impl FlowGraph
             }
             // Keep track of adjacency lists to avoid revisiting blocked edges.
             let mut adj_iters = (0..self.graph.num_v())
-                .map(|u| self.graph.adj_list(u).peekable())
+                .map(|u| self.graph.adj_list_with_edges(u).peekable())
                 .collect::<Vec<_>>();
             max_flow += self.dinic_augment(s, t, Self::INF, &dist, &mut adj_iters, &mut flow);
         }
@@ -74,7 +74,7 @@ impl FlowGraph
         dist[s] = 0;
         q.push_back(s);
         while let Some(u) = q.pop_front() {
-            for (e, v) in self.graph.adj_list(u) {
+            for (e, v) in self.graph.adj_list_with_edges(u) {
                 if dist[v] == Self::INF && flow[e] < self.cap[e] {
                     dist[v] = dist[u] + 1;
                     q.push_back(v);
@@ -91,7 +91,7 @@ impl FlowGraph
         t: usize,
         f: i64,
         dist: &[i64],
-        adj: &mut [::std::iter::Peekable<AdjListIterator>],
+        adj: &mut [::std::iter::Peekable<AdjListIteratorWithEdges>],
         flow: &mut [i64],
     ) -> i64
     {
@@ -179,7 +179,7 @@ impl FlowGraph
         {
             vis[u] = true;
             pot[u] = dist[u];
-            for (e, v) in self.graph.adj_list(u) {
+            for (e, v) in self.graph.adj_list_with_edges(u) {
                 if dist[v] > dist[u] + self.cost[e] && flow[e] < self.cap[e] {
                     dist[v] = dist[u] + self.cost[e];
                     par[v] = Some(e);

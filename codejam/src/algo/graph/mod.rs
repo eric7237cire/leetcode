@@ -5,3 +5,4 @@ pub mod flow;
 mod bfs;
 mod dfs;
 mod graph;
+mod scc;
