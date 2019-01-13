@@ -1,12 +1,12 @@
 use super::super::util::input::*;
 use permutohedron::LexicalPermutation;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use indexmap::IndexSet;
 
 /*
 permutations with repeated elements
 digit manipulation
+recursion
 */
 pub fn solve_all_cases()
 {
@@ -31,8 +31,8 @@ impl  Memo
 {
     fn count_ancestors(&mut self, num: &[u8]) -> u32
     {
-        let index = num.iter().fold(0usize, |a, &d| a * 10 + d as usize);
-        debug!("Index is {} for {:?}", index, num);
+        //let index = num.iter().fold(0usize, |a, &d| a * 10 + d as usize);
+        //debug!("Index is {} for {:?}", index, num);
 
         if let Some(ans) = self.map.get(num) {
             return *ans;
@@ -42,11 +42,6 @@ impl  Memo
         if digit_sum > num.len() {
             return 1;
         }
-
-        //handle repeat
-        /*if digit_sum == 1 && num[0] == 1 {
-            return 1;
-        }*/
 
         //seed permutation
         let mut perm = Vec::new();
@@ -58,7 +53,7 @@ impl  Memo
                 perm.push(pos as u8 + 1);
             }
         }
-        debug!("Perm is {:?} ", perm);
+        //debug!("Perm is {:?} ", perm);
 
         let mut permutations = IndexSet::new();
 
@@ -69,13 +64,13 @@ impl  Memo
             }
         }
 
-        debug!("perms are {:?}",  permutations);
+        //debug!("perms are {:?}",  permutations);
+        //needed to prevent infinite recursion
+        permutations.remove(num);
 
         let mut sum = 1;
         for p in permutations {
-            if p != num {
-                sum += self.count_ancestors(&p[..]);
-            }
+            sum += self.count_ancestors(&p[..]);
         }
 
         self.map.insert(num.to_vec(), sum);
