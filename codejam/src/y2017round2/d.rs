@@ -13,18 +13,18 @@ use super::super::util::grid::constants::*;
 use super::super::util::grid::{Grid, GridCoord, GridRowColVec};
 use super::super::util::input::*;
 //use std::thread;
+use bimap::BiMap;
+use bit_vec::BitVec;
+use indexmap::IndexSet;
+use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::default::Default;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use bimap::BiMap;
-use bit_vec::BitVec;
-use std::collections::HashSet;
-use std::collections::VecDeque;
 use std::io::Write;
-use std::time::{Instant};
-use threadpool::ThreadPool;
 use std::sync::mpsc::channel;
-use indexmap::IndexSet;
+use std::time::Instant;
+use threadpool::ThreadPool;
 
 pub fn solve_all_cases()
 {
@@ -53,26 +53,32 @@ pub fn solve_all_cases()
             let now = Instant::now();
             let _ = writeln!(::std::io::stderr(), "Starting {} of {} ", case, t);
             let s = solve(case, &mut grid, M);
-            tx.send((case,s)).expect("Channel is there");
+            tx.send((case, s)).expect("Channel is there");
 
             let duration = now.elapsed();
             let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
-            let _ = writeln!(::std::io::stderr(), "Finished #{} in {:.2} second(s)", case, secs);
-
-
+            let _ = writeln!(
+                ::std::io::stderr(),
+                "Finished #{} in {:.2} second(s)",
+                case,
+                secs
+            );
         });
-
     }
 
     let mut output = rx.iter().take(t as usize).collect::<Vec<_>>();
     output.sort();
-    for (_,s) in output  {
+    for (_, s) in output {
         print!("{}", s);
     }
 
     let duration = now.elapsed();
     let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
-    let _ = write!(::std::io::stderr(), "\nElapsed time {:.2} second(s)\n", secs);
+    let _ = write!(
+        ::std::io::stderr(),
+        "\nElapsed time {:.2} second(s)\n",
+        secs
+    );
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -85,7 +91,6 @@ enum Tile
 }
 
 use self::Tile::*;
-
 
 impl Tile
 {
@@ -176,7 +181,6 @@ impl<L, R> FromIterator<(L, R)> for BiMap<L, R>
 
 fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> String
 {
-
     debug!(
         "Solving case {}\nM={}\n{}\n",
         case_no, M_soldier_limit, grid
@@ -187,8 +191,7 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         .filter_by_val(&Soldier)
         .enumerate()
         .collect::<BiMap<_, _>>();
-    let turret_locations = grid
-        .filter_by_val(&Turret).collect::<Vec<_>>();
+    let turret_locations = grid.filter_by_val(&Turret).collect::<Vec<_>>();
 
     //precalucate what squares a turret can reach
     let turret_reachable_squares_list = turret_locations
@@ -196,18 +199,24 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
         .map(|t_loc| reachable(&grid, *t_loc))
         .collect::<Vec<_>>();
 
-    let T_map = turret_locations.into_iter()
+    let T_map = turret_locations
+        .into_iter()
         .enumerate()
         .collect::<BiMap<_, _>>();
 
     let S = grid.filter_by_val(&Soldier).count();
     let T = grid.filter_by_val(&Turret).count();
 
-
-
     //Construct the initial Graph
 
-    let G_edges = build_graph(&grid, false, M_soldier_limit, &S_map, &T_map, &turret_reachable_squares_list);
+    let G_edges = build_graph(
+        &grid,
+        false,
+        M_soldier_limit,
+        &S_map,
+        &T_map,
+        &turret_reachable_squares_list,
+    );
 
     let mut G = FlowGraph::new(2 + S + T, 4);
 
@@ -246,7 +255,6 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
 
     let mut ans = format!("Case #{}: {}\n", case_no, R);
 
-
     //Compute initial matching
     let mut M = flow
         .iter()
@@ -270,8 +278,14 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
 
     while r > 0 {
         //Let us define the graph G' with the same nodes as G, but an edge between soldier s and turret t only exists in G' if s can destroy t with the other turrets active
-        let Gprime = build_graph(&grid, true,
-                                 M_soldier_limit, &S_map, &T_map, &turret_reachable_squares_list);
+        let Gprime = build_graph(
+            &grid,
+            true,
+            M_soldier_limit,
+            &S_map,
+            &T_map,
+            &turret_reachable_squares_list,
+        );
 
         //Now build graph H
         let mut H = Graph::new(S + T, 4);
@@ -415,22 +429,18 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
     ans
 }
 
-
-
 fn build_graph(
     grid: &Grid<Tile>,
     is_g_prime: bool,
     M: usize,
     s_mapping: &BiMap<usize, GridCoord>,
     t_mapping: &BiMap<usize, GridCoord>,
-    turret_reachable_squares_list: &Vec<HashSet<GridRowColVec>>
+    turret_reachable_squares_list: &Vec<HashSet<GridRowColVec>>,
 ) -> IndexSet<(usize, usize)>
 {
     let mut G: IndexSet<(usize, usize)> = IndexSet::new();
 
     let turret_locations = grid.filter_by_val(&Turret).collect::<HashSet<_>>();
-
-
 
     /*
 
@@ -459,9 +469,10 @@ fn build_graph(
             let visible_turrets = turret_reachable_squares_list
                 .iter()
                 .enumerate()
-                .filter(|(turret_index, turret_squares)|
-                    turret_locations.contains(t_mapping.get_by_left(turret_index).unwrap() ) &&
-                    turret_squares.contains(&loc))
+                .filter(|(turret_index, turret_squares)| {
+                    turret_locations.contains(t_mapping.get_by_left(turret_index).unwrap())
+                        && turret_squares.contains(&loc)
+                })
                 .map(|(turret_index, _)| turret_index);
 
             let mut turret_visible = false;

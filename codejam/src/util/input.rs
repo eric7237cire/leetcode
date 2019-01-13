@@ -100,4 +100,11 @@ impl InputReader
         stdin().read_line(&mut self.s).unwrap();
         self.s.chars().take(amt).collect::<Vec<_>>()
     }
+
+    pub fn read_string(&mut self) -> &str
+    {
+        self.s.clear();
+        stdin().read_line(&mut self.s).unwrap();
+        self.s.trim()
+    }
 }

@@ -142,14 +142,16 @@ mod morse_code {
         fn decode_morse(&self, encoded: &str) -> String {
             //A billion times better than my first attempt...
             encoded
-            .trim()
-            .split("   ")
-            .map(|x| x.split(' ')
-                      .filter_map(|y| { self.morse_code.get(y) })
-                      .cloned()
-                      .collect())
-            .collect::<Vec<String>>()
-            .join(" ")
+                .trim()
+                .split("   ")
+                .map(|x| {
+                    x.split(' ')
+                        .filter_map(|y| self.morse_code.get(y))
+                        .cloned()
+                        .collect()
+                })
+                .collect::<Vec<String>>()
+                .join(" ")
         }
 
         fn new() -> MorseDecoder {
@@ -221,9 +223,6 @@ mod morse_code {
             decoder.decode_morse(" .... . -.--   .--- ..- -.. . "),
             "HEY JUDE"
         );
-        assert_eq!(
-            decoder.decode_morse(".   .   "),
-            "E E"
-        );
+        assert_eq!(decoder.decode_morse(".   .   "), "E E");
     }
 }

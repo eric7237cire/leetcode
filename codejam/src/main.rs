@@ -4,7 +4,7 @@
 //use self::y2017round1B::c::solve_all_cases;
 //use self::y2017round1C::a::solve_all_cases;
 //use self::y2017round1C::c::solve_all_cases;
-use self::y2017round2::d::solve_all_cases;
+use self::y2017round3::a::solve_all_cases;
 
 mod util;
 
@@ -14,6 +14,7 @@ mod y2017round1A;
 mod y2017round1B;
 mod y2017round1C;
 mod y2017round2;
+mod y2017round3;
 
 #[macro_use]
 extern crate log;
@@ -26,7 +27,7 @@ use self::util::log::init_log;
 fn main()
 {
     //Init logging
-    if false
+    //if false
     // cfg!(feature = "debug_print")
     {
         init_log();
