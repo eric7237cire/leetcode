@@ -121,7 +121,6 @@ impl<'a> Iterator for AdjListIterator<'a>
     }
 }
 
-
 #[cfg(test)]
 mod test
 {

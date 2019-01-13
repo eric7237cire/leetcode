@@ -26,8 +26,6 @@ where
     cast::<T, V>(n1).unwrap() - cast::<U, V>(n2).unwrap()
 }
 
-
-
 #[test]
 fn test_int_div_ceil()
 {

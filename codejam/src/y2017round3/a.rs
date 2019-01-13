@@ -1,10 +1,10 @@
 use super::super::util::input::*;
-use permutohedron::LexicalPermutation;
-use std::collections::HashMap;
 use indexmap::IndexSet;
 use num_integer::binomial;
-use std::time::Instant;
+use permutohedron::LexicalPermutation;
+use std::collections::HashMap;
 use std::io::Write;
+use std::time::Instant;
 
 /*
 permutations with repeated elements
@@ -30,16 +30,16 @@ pub fn solve_all_cases()
     let _ = writeln!(
         ::std::io::stderr(),
         "\nElapsed time {:.2} second(s)\n",
-        secs);
+        secs
+    );
 }
 
 struct Memo
 {
-    map: HashMap< (usize, usize), u32>,
-
+    map: HashMap<(usize, usize), u32>,
 }
 
-impl  Memo
+impl Memo
 {
     fn count_ancestors(&mut self, num: &[u8]) -> u32
     {
@@ -79,9 +79,9 @@ impl  Memo
                 sum *= binomial(digits_remaining, dc) as u32;
                 digits_remaining -= dc;
             }
-            self.map.insert((index, num.len()), 1+sum);
+            self.map.insert((index, num.len()), 1 + sum);
 
-            return 1+sum;
+            return 1 + sum;
         }
 
         let mut permutations = IndexSet::new();

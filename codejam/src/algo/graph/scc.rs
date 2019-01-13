@@ -3,14 +3,15 @@
 //https://www.geeksforgeeks.org/iterative-depth-first-traversal/
 
 //! Graph connectivity structures.
-use super::Graph;
+use super::DirectedGraph;
 use bit_vec::BitVec;
 use std::cmp::min;
-use std::collections::HashSet;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 //https://networkx.github.io/documentation/networkx-1.9.1/_modules/networkx/algorithms/components/strongly_connected.html#strongly_connected_components
-fn strongly_connected_components(G: &Graph) -> Vec<Vec<usize>>{
+fn strongly_connected_components(G: &DirectedGraph) -> Vec<Vec<usize>>
+{
     /*Generate nodes in strongly connected components of graph.
 
     Parameters
@@ -49,7 +50,7 @@ fn strongly_connected_components(G: &Graph) -> Vec<Vec<usize>>{
     let mut preorder: Vec<Option<usize>> = vec![None; G.num_v()];
     let mut lowlink = vec![0; G.num_v()];
     let mut scc_found = BitVec::from_elem(G.num_v(), false);
-    let mut scc_queue:Vec<usize> = vec![];
+    let mut scc_queue: Vec<usize> = vec![];
     let mut i = 0; //     # Preorder counter
     let mut return_scc = Vec::new();
 
@@ -60,7 +61,7 @@ fn strongly_connected_components(G: &Graph) -> Vec<Vec<usize>>{
         }
         let mut queue = vec![source];
         while !queue.is_empty() {
-            let v:usize = *queue.last().unwrap();
+            let v: usize = *queue.last().unwrap();
             //println!("Processing v={} on queue", v);
             if preorder[v] == None {
                 i = i + 1;
@@ -90,29 +91,30 @@ fn strongly_connected_components(G: &Graph) -> Vec<Vec<usize>>{
                 if lowlink[v] == preorder[v].unwrap() {
                     scc_found.set(v, true);
                     let mut scc = vec![v];
-                    while !scc_queue.is_empty() && preorder[*scc_queue.last().unwrap()] > preorder[v] {
+                    while !scc_queue.is_empty()
+                        && preorder[*scc_queue.last().unwrap()] > preorder[v]
+                    {
                         let k = scc_queue.pop().unwrap();
-                        scc_found.set(k,true);
+                        scc_found.set(k, true);
                         scc.push(k);
                     }
-                    return_scc.push( scc);
+                    return_scc.push(scc);
                     continue;
                 } else {
                     scc_queue.push(v);
                 }
             }
         }
-
     }
 
     return_scc
 }
 
-
 /*https://github.com/networkx/networkx/blob/2736e7649c8c8e7aa5bc8f3745043d2fa24aaf9f/networkx/algorithms/cycles.py
 https://github.com/networkx/networkx/blob/2736e7649c8c8e7aa5bc8f3745043d2fa24aaf9f/networkx/algorithms/tests/test_cycles.py
 */
-fn simple_cycles(G: &Graph) -> Vec<Vec<usize>> {
+fn simple_cycles(G: &DirectedGraph) -> Vec<Vec<usize>>
+{
     /* """Find simple cycles (elementary circuits) of a directed graph.
 
     An simple cycle, or elementary circuit, is a closed path where no
@@ -173,14 +175,21 @@ fn simple_cycles(G: &Graph) -> Vec<Vec<usize>> {
     cycle_basis
     """
         */
-    fn _unblock(thisnode:usize, blocked: &mut HashSet<usize>, B: &mut HashMap<usize, HashSet<usize>>) {
-        stack = set([thisnode]);
-        while stack {
-            node = stack.pop();
+    fn _unblock(
+        thisnode: usize,
+        blocked: &mut HashSet<usize>,
+        B: &mut HashMap<usize, HashSet<usize>>,
+    )
+    {
+        let mut stack: HashSet<usize> = HashSet::new();
+        stack.insert(thisnode);
+        while !stack.is_empty() {
+            let node = *stack.iter().next().unwrap();
+            stack.remove(&node);
             if blocked.contains(&node) {
-                blocked.remove(node);
-                stack.update(B[node]);
-                B[node].clear();
+                blocked.remove(&node);
+                stack.extend(B[&node].iter());
+                B.insert(node, HashSet::new());
             }
         }
     }
@@ -191,87 +200,85 @@ fn simple_cycles(G: &Graph) -> Vec<Vec<usize>> {
     # There is no need to track the ordering as each node removed as processed.
     */
     //subG = type (G)(G.edges_iter()); /*# save the actual graph so we can mutate it here
-                             // # We only take the edges because we do not want to
-                            //  # copy edge and node attributes here.*/
+    // # We only take the edges because we do not want to
+    //  # copy edge and node attributes here.*/
     let mut sccs = strongly_connected_components(G);
 
-    let ans: Vec<Vec<usize>> = Vec::new();
+    let mut ans: Vec<Vec<usize>> = Vec::new();
 
-    sccs.retain( |sc| sc.len() > 1);
+    sccs.retain(|sc| sc.len() > 1);
 
     let mut subG_edges = G.edges().collect::<Vec<_>>();
 
-    for self_edge in subG_edges.iter().filter( |(u,v)| u==v) {
-        ans.push( vec![u] );
+    for self_edge in subG_edges.iter().filter(|(u, v)| u == v) {
+        ans.push(vec![self_edge.0]);
     }
 
-    subG_edges.retain( |uv| uv.0 != uv.1);
+    subG_edges.retain(|uv| uv.0 != uv.1);
 
-    let mut subG = Graph::from(edges);
+    let mut subG: DirectedGraph = subG_edges.iter().collect();
 
     while !sccs.is_empty() {
-        let scc = sccs.pop();
+        let mut scc = sccs.pop().unwrap();
         //# order of scc determines ordering of nodes
-        let startnode = scc.pop();
+        let startnode = scc.pop().unwrap();
         //# Processing node runs "circuit" routine from recursive version
         let mut path = vec![startnode];
         let mut blocked = HashSet::new(); //# vertex: blocked from search?
-        let mut closed = HashSet::new(); //# nodes involved in a cycle
+        let mut closed:HashSet<usize> = HashSet::new(); //# nodes involved in a cycle
         blocked.insert(startnode);
-        let mut B : HashMap<usize, HashSet<usize>> = HashMap::new(); //# graph portions that yield no elementary circuit
-        let mut stack: Vec<(usize, Vec<usize>)> = vec!
-        [(startnode, G.adj_list(start_node).collect()) ];  //# subG gives component nbrs
+        let mut B: HashMap<usize, HashSet<usize>> = HashMap::new(); //# graph portions that yield no elementary circuit
+        let mut stack: Vec<(usize, Vec<usize>)> =
+            vec![(startnode, G.adj_list(startnode).collect())]; //# subG gives component nbrs
         while !stack.is_empty() {
-            let (thisnode, nbrs) = *stack.last().unwrap();
+            let (thisnode, nbrs) = stack.last_mut().unwrap();
+            let thisnode = *thisnode;
+
             if !nbrs.is_empty() {
-                let nextnode = nbrs.pop();
+                let nextnode = nbrs.pop().unwrap();
                 if nextnode == startnode {
-                    ans.push(path);
-                    closed.extend(path);
-//#                        print "Found a cycle",path,closed
-                } else if !blocked.contains(nextnode) {
-                    path.append(nextnode);
-                    stack.append((nextnode, list(subG[nextnode])));
-                    closed.discard(nextnode);
-                    blocked.add(nextnode);
+                    ans.push(path.clone());
+                    closed.extend(path.iter());
+                //#                        print "Found a cycle",path,closed
+                } else if !blocked.contains(&nextnode) {
+                    path.push(nextnode);
+                    stack.push((nextnode, subG.adj_list(nextnode).collect()));
+                    closed.remove(&nextnode);
+                    blocked.insert(nextnode);
                     continue;
                 }
-            }                    //# done with nextnode... look for more neighbors
-            if nbrs.is_empty() {  //# no more nbrs
+            } //# done with nextnode... look for more neighbors
+            if nbrs.is_empty() {
+                //# no more nbrs
                 if closed.contains(&thisnode) {
-                    _unblock(thisnode,
-                    blocked,
-                    B);
-                }
-                else {
+                    _unblock(thisnode, &mut blocked, &mut B);
+                } else {
                     for nbr in subG.adj_list(thisnode) {
-                        if !B[nbr].contains(thisnode) {
-                            B[nbr].add(thisnode);
+                        if !B[&nbr].contains(&thisnode) {
+                            B[&nbr].insert(thisnode);
                         }
                     }
                 }
 
                 stack.pop();
-//#                assert path[-1]==thisnode
+                //#                assert path[-1]==thisnode
                 path.pop();
             }
         }
         //# done processing this node
         subG.remove_node(startnode);
-        H = subG.subgraph(scc);  //# make smaller to avoid work in SCC routine
-        sccs.extend(list(nx.strongly_connected_components(H)));
-
+        let H = subG.subgraph(&scc[..]); //# make smaller to avoid work in SCC routine
+        sccs.extend(strongly_connected_components(&H));
     }
 
     ans
 }
 
-
 #[cfg(test)]
 mod test
 {
     use super::*;
-    use std::collections::HashSet;
+    //use std::collections::HashSet;
 
     fn double_sort(v: &mut Vec<Vec<usize>>)
     {
@@ -286,63 +293,73 @@ mod test
     #[test]
     fn test_scc()
     {
-        use std::iter::FromIterator;
-        let pairs:Vec<(usize,usize)> = vec![
-(1, 2), (2, 3), (2, 8), (3, 4), (3, 7), (4, 5),
-                          (5, 3), (5, 6), (7, 4), (7, 6), (8, 1), (8, 7)
+        //use std::iter::FromIterator;
+        let pairs: Vec<(usize, usize)> = vec![
+            (1, 2),
+            (2, 3),
+            (2, 8),
+            (3, 4),
+            (3, 7),
+            (4, 5),
+            (5, 3),
+            (5, 6),
+            (7, 4),
+            (7, 6),
+            (8, 1),
+            (8, 7),
         ];
 
-        let sccs:Vec<Vec<usize>> = vec![
-        vec![3, 4, 5, 7], vec![1, 2, 8], vec![6] ];
+        let sccs: Vec<Vec<usize>> = vec![vec![3, 4, 5, 7], vec![1, 2, 8], vec![6]];
 
-        let mut graph = Graph::new(8, 6);
+        let mut graph = DirectedGraph::new();
 
         for p in pairs {
-            graph.add_edge(p.0-1, p.1-1);
+            graph.add_edge(p.0 - 1, p.1 - 1);
         }
 
         let mut ans = strongly_connected_components(&graph);
 
         double_sort(&mut ans);
-        let mut check_ans= sccs.iter()
-            .map( |a| a.iter().map( |b| b-1).collect::<Vec<usize>>()
-            ).collect::<Vec<Vec<usize>>>();
+        let mut check_ans = sccs
+            .iter()
+            .map(|a| a.iter().map(|b| b - 1).collect::<Vec<usize>>())
+            .collect::<Vec<Vec<usize>>>();
         double_sort(&mut check_ans);
 
         println!("{:?} correct: {:?}", ans, check_ans);
 
         assert_eq!(ans.len(), check_ans.len());
         assert_eq!(ans, check_ans);
-
     }
 
-     fn is_cyclic_permutation(a: &Vec<usize>, b: &Vec<usize>) -> bool {
-         let n = a.len();
-         if b.len() != n {
-             return false;
-         }
-         let l : Vec<usize> = a.iter().chain(a.iter()).collect();
+    fn is_cyclic_permutation(a: &Vec<usize>, b: &Vec<usize>) -> bool
+    {
+        let n = a.len();
+        if b.len() != n {
+            return false;
+        }
+        let l: Vec<usize> = a.iter().chain(a.iter()).map(|e| *e).collect();
 
-         for i in 0..n {
-             if l[i..i + n] == b {
-                 return true;
-             }
-         }
-         return false;
-     }
+        for i in 0..n {
+            if &l[i..i + n] == &b[..] {
+                return true;
+            }
+        }
+        return false;
+    }
 
     #[test]
     fn test_simple_cycles()
     {
-
-        let edges = vec![(0, 0), (0, 1), (0, 2), (1, 2), (2, 0), (2, 1), (2, 2)];
-        let G: Graph = edges.collect();
+        let edges: Vec<(usize, usize)> =
+            vec![(0, 0), (0, 1), (0, 2), (1, 2), (2, 0), (2, 1), (2, 2)];
+        let G: DirectedGraph = edges.iter().collect();
         let mut cc = simple_cycles(&G);
         cc.sort();
         let ca = vec![vec![0], vec![0, 1, 2], vec![0, 2], vec![1, 2], vec![2]];
-        assert_eq!(len(cc), len(ca));
+        assert_eq!(cc.len(), ca.len());
         for c in cc {
-         //   assert_true(any(self.is_cyclic_permutation(c, rc);
+            //   assert_true(any(self.is_cyclic_permutation(c, rc);
         }
         //for rc in ca))
     }
