@@ -1,4 +1,4 @@
-use super::graph::Graph;
+use super::edge_graph::Graph;
 use bit_vec::BitVec;
 
 impl Graph
@@ -63,7 +63,7 @@ impl<'a> Iterator for DfsIterator<'a>
             }
         }
 
-        return None;
+        None
     }
 }
 

@@ -1,5 +1,5 @@
 //! Maximum flows, matchings, and minimum cuts.
-use super::graph::{AdjListIteratorWithEdges, Graph};
+use super::edge_graph::{AdjListIteratorWithEdges, Graph};
 
 /// Representation of a network flow problem with (optional) costs.
 pub struct FlowGraph

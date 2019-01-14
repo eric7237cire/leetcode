@@ -1,4 +1,4 @@
-use super::graph::Graph;
+use super::edge_graph::Graph;
 use bit_vec::BitVec;
 use std::collections::VecDeque;
 
