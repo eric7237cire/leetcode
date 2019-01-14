@@ -4,6 +4,7 @@ use std::iter::FromIterator;
 
 /// A compact graph representation. Edges are numbered in order of insertion.
 /// Each adjacency list consists of all edges pointing out from a given vertex.
+#[derive(Clone)]
 pub struct DiGraph
 {
     adj_list: Vec<Vec<usize>>,

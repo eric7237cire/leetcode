@@ -52,7 +52,7 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
     let mut lowlink = vec![0; G.num_v()];
     let mut scc_found = BitVec::from_elem(G.num_v(), false);
     let mut scc_queue: Vec<usize> = vec![];
-    let mut i = 0; //     # Preorder counter
+    let mut next_preorder_value = 0; //     # Preorder counter
     let mut return_scc = Vec::new();
 
     for source in 0..G.num_v() {
@@ -64,13 +64,16 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
             continue;
         }
         let mut queue = vec![source];
-        while !queue.is_empty() {
-            let v: usize = *queue.last().unwrap();
+        while let Some(v) = queue.last() {
+            let v = *v;
+
             //println!("Processing v={} on queue", v);
             if preorder[v] == None {
-                i += 1;
-                preorder[v] = Some(i);
+                next_preorder_value += 1;
+                preorder[v] = Some(next_preorder_value);
             }
+
+            //Used to delay the rest until the queue gets back to this value
             let mut done = true;
 
             for w in G.adj_list(v) {
@@ -80,33 +83,33 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
                     break;
                 }
             }
-            if done {
-                lowlink[v] = preorder[v].unwrap();
-                for w in G.adj_list(v) {
-                    if !scc_found[w] {
-                        if preorder[w] > preorder[v] {
-                            lowlink[v] = min(lowlink[v], lowlink[w]);
-                        } else {
-                            lowlink[v] = min(lowlink[v], preorder[w].unwrap());
-                        }
-                    }
+            if !done {
+                continue;
+            }
+            lowlink[v] = preorder[v].unwrap();
+            for w in G.adj_list(v).filter(|&w| !scc_found[w]) {
+                lowlink[v] = min(
+                    lowlink[v],
+                    if preorder[w] > preorder[v] {
+                        lowlink[w]
+                    } else {
+                        preorder[w].unwrap()
+                    },
+                );
+            }
+            queue.pop();
+            if lowlink[v] == preorder[v].unwrap() {
+                scc_found.set(v, true);
+                let mut scc = vec![v];
+                while !scc_queue.is_empty() && preorder[*scc_queue.last().unwrap()] > preorder[v] {
+                    let k = scc_queue.pop().unwrap();
+                    scc_found.set(k, true);
+                    scc.push(k);
                 }
-                queue.pop();
-                if lowlink[v] == preorder[v].unwrap() {
-                    scc_found.set(v, true);
-                    let mut scc = vec![v];
-                    while !scc_queue.is_empty()
-                        && preorder[*scc_queue.last().unwrap()] > preorder[v]
-                    {
-                        let k = scc_queue.pop().unwrap();
-                        scc_found.set(k, true);
-                        scc.push(k);
-                    }
-                    return_scc.push(scc);
-                    continue;
-                } else {
-                    scc_queue.push(v);
-                }
+                return_scc.push(scc);
+                continue;
+            } else {
+                scc_queue.push(v);
             }
         }
     }

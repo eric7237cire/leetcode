@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 
 //TODO have this return an iterator
-fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
+pub fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
 {
     /* """Find simple cycles (elementary circuits) of a directed graph.
 
@@ -128,11 +128,13 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
 
         let sccG = subG.subgraph(&scc[..]);
 
+        /*
         println!(
             "Viewing scc {:?}\n of graph {:?}\n",
             scc,
             sccG.edges().collect::<Vec<_>>()
         );
+        */
 
         //# order of scc determines ordering of nodes
         let startnode = scc.pop().unwrap();
