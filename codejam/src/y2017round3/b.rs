@@ -107,7 +107,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0].0;
 
-            let non_tree_edges:Vec<_> = subG.adj_list(dis_node).collect();
+            let non_tree_edges:Vec<_> = subG.adj_list(dis_node).filter(|&n| !visited[n]).collect();
 
             debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
                    non_tree_edges,
