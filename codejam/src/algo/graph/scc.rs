@@ -3,14 +3,14 @@
 //https://www.geeksforgeeks.org/iterative-depth-first-traversal/
 
 //! Graph connectivity structures.
-use super::DirectedGraph;
+use super::DiGraph;
 use bit_vec::BitVec;
 use std::cmp::min;
-use std::collections::HashMap;
-use std::collections::HashSet;
+//use std::collections::HashMap;
+//use std::collections::HashSet;
 
 //https://networkx.github.io/documentation/networkx-1.9.1/_modules/networkx/algorithms/components/strongly_connected.html#strongly_connected_components
-fn strongly_connected_components(G: &DirectedGraph) -> Vec<Vec<usize>>
+pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
 {
     /*Generate nodes in strongly connected components of graph.
 
@@ -115,6 +115,14 @@ mod test
 {
     use super::*;
 
+    fn double_sort(v: &mut Vec<Vec<usize>>)
+    {
+        for vv in v.iter_mut() {
+            vv.sort();
+        }
+        v.sort();
+    }
+
     #[test]
     fn test_scc()
     {
@@ -136,7 +144,7 @@ mod test
 
         let sccs: Vec<Vec<usize>> = vec![vec![3, 4, 5, 7], vec![1, 2, 8], vec![6]];
 
-        let mut graph = DirectedGraph::new();
+        let mut graph = DiGraph::new();
 
         for p in pairs {
             graph.add_edge(p.0 - 1, p.1 - 1);

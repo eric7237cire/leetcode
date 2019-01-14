@@ -4,13 +4,14 @@ use std::iter::FromIterator;
 
 /// A compact graph representation. Edges are numbered in order of insertion.
 /// Each adjacency list consists of all edges pointing out from a given vertex.
-pub struct DirectedGraph
+pub struct DiGraph
 {
-    pub adj_list: Vec<Vec<usize>>,
+    adj_list: Vec<Vec<usize>>,
     exists: BitVec,
+    has_edge: Vec<BitVec>
 }
 
-impl DirectedGraph
+impl DiGraph
 {
     /// Initializes a graph with vmax vertices and no edges. To reduce
     /// unnecessary allocations, emax_hint should be close to the number of
@@ -18,9 +19,26 @@ impl DirectedGraph
     pub fn new() -> Self
     {
         Self {
+            //Index is from vector, vector contains edge targes
             adj_list: Vec::new(),
             exists: BitVec::new(),
+            has_edge: Vec::new()
         }
+    }
+
+    pub fn complete_graph(n: usize) -> Self {
+        let mut g = Self::new();
+
+        for u in 0..n {
+            for v in 0..n {
+                if u == v {
+                    continue;
+                }
+                g.add_edge(u, v);
+            }
+        }
+
+        g
     }
 
     /// Returns the number of vertices.
@@ -35,13 +53,26 @@ impl DirectedGraph
         for _ in self.adj_list.len()..=max(u, v) {
             self.exists.push(false);
             self.adj_list.push(Vec::new());
+            self.has_edge.push( BitVec::new());
         }
         self.exists.set(u, true);
         self.exists.set(v, true);
-        self.adj_list[u].push(v);
+
+        let has_edge_len = self.has_edge[u].len();
+
+        //lazily grow adjacency bit matrix
+        if has_edge_len < v + 1 {
+            self.has_edge[u].grow(v + 1 - has_edge_len, false);
+        }
+
+        //disallow duplicate edges
+        if !self.has_edge[u][v] {
+            self.adj_list[u].push(v);
+            self.has_edge[u].set(v, true);
+        }
     }
 
-    pub fn subgraph(&self, nodes: &[usize]) -> DirectedGraph
+    pub fn subgraph(&self, nodes: &[usize]) -> DiGraph
     {
         //could be more efficient
         self.edges()
@@ -68,11 +99,11 @@ impl DirectedGraph
     }
 }
 
-impl FromIterator<(usize, usize)> for DirectedGraph
+impl FromIterator<(usize, usize)> for DiGraph
 {
     fn from_iter<I: IntoIterator<Item = (usize, usize)>>(iter: I) -> Self
     {
-        let mut c = DirectedGraph::new();
+        let mut c = DiGraph::new();
 
         for i in iter {
             c.add_edge(i.0, i.1);
@@ -81,11 +112,11 @@ impl FromIterator<(usize, usize)> for DirectedGraph
         c
     }
 }
-impl<'a> FromIterator<&'a (usize, usize)> for DirectedGraph
+impl<'a> FromIterator<&'a (usize, usize)> for DiGraph
 {
     fn from_iter<I: IntoIterator<Item = &'a (usize, usize)>>(iter: I) -> Self
     {
-        let mut c = DirectedGraph::new();
+        let mut c = DiGraph::new();
 
         for i in iter {
             c.add_edge(i.0, i.1);
@@ -94,11 +125,11 @@ impl<'a> FromIterator<&'a (usize, usize)> for DirectedGraph
         c
     }
 }
-impl FromIterator<(i32, i32)> for DirectedGraph
+impl FromIterator<(i32, i32)> for DiGraph
 {
     fn from_iter<I: IntoIterator<Item = (i32, i32)>>(iter: I) -> Self
     {
-        let mut c = DirectedGraph::new();
+        let mut c = DiGraph::new();
 
         for i in iter {
             c.add_edge(i.0 as usize, i.1 as usize);
@@ -117,7 +148,7 @@ mod test_directed_graph
     #[test]
     fn test_edge_iterator()
     {
-        let mut graph = DirectedGraph::new();
+        let mut graph = DiGraph::new();
         graph.add_edge(2, 2);
         graph.add_edge(2, 3);
         graph.add_edge(1, 0);
@@ -134,7 +165,7 @@ mod test_directed_graph
     fn test_collect()
     {
         let pairs: Vec<(usize, usize)> = vec![(1, 2), (2, 3), (2, 8), (3, 4), (3, 7), (4, 5)];
-        let graph: DirectedGraph = pairs.iter().collect();
+        let graph: DiGraph = pairs.iter().collect();
 
         assert_eq!(
             graph.edges().collect::<Vec<_>>(),
