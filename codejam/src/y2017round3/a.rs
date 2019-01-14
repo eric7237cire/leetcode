@@ -26,7 +26,7 @@ pub fn solve_all_cases()
     }
 
     let duration = now.elapsed();
-    let secs = duration.as_secs() as f64 + duration.subsec_nanos() as f64 / 1e9f64;
+    let secs = f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
     let _ = writeln!(
         ::std::io::stderr(),
         "\nElapsed time {:.2} second(s)\n",
@@ -76,7 +76,7 @@ impl Memo
             let mut sum = 1u32;
             let mut digits_remaining = num.len() as u8;
             for &dc in num.iter() {
-                sum *= binomial(digits_remaining, dc) as u32;
+                sum *= u32::from(binomial(digits_remaining, dc));
                 digits_remaining -= dc;
             }
             self.map.insert((index, num.len()), 1 + sum);

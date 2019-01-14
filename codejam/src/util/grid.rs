@@ -135,9 +135,9 @@ impl<T> Index<usize> for Grid<T>
 {
     type Output = [T];
 
-    fn index<'a>(&'a self, row_index: usize) -> &'a [T]
+    fn index(&'_ self, row_index: usize) -> &'_ [T]
     {
-        &self.data[row_index * self.C..(row_index + 1 * self.C)]
+        &self.data[row_index * self.C..(row_index + self.C)]
     }
 }
 //get a cell
@@ -171,7 +171,7 @@ impl<T> Index<(usize, usize)> for Grid<T>
 {
     type Output = T;
 
-    fn index<'a>(&'a self, row_col_index: (usize, usize)) -> &'a T
+    fn index(&'_ self, row_col_index: (usize, usize)) -> &'_ T
     {
         &self.data[row_col_index.0 * self.C + row_col_index.1]
     }
@@ -179,7 +179,7 @@ impl<T> Index<(usize, usize)> for Grid<T>
 //set a cell
 impl<T> IndexMut<(usize, usize)> for Grid<T>
 {
-    fn index_mut<'a>(&'a mut self, row_col_index: (usize, usize)) -> &'a mut T
+    fn index_mut(&'_ mut self, row_col_index: (usize, usize)) -> &'_ mut T
     {
         &mut self.data[row_col_index.0 * self.C + row_col_index.1]
     }
@@ -197,7 +197,7 @@ where
                     return Err(err);
                 }
             }
-            if let Err(err) = writeln!(f, "") {
+            if let Err(err) = writeln!(f) {
                 return Err(err);
             }
         }

@@ -1,5 +1,5 @@
 use bit_vec::BitVec;
-use std::cmp::max;
+//use std::cmp::max;
 use std::iter::FromIterator;
 
 /// A compact graph representation. Edges are numbered in order of insertion.
@@ -8,7 +8,7 @@ pub struct DiGraph
 {
     adj_list: Vec<Vec<usize>>,
     exists: BitVec,
-    has_edge: Vec<BitVec>
+    has_edge: Vec<BitVec>,
 }
 
 impl DiGraph
@@ -21,12 +21,17 @@ impl DiGraph
         Self {
             //Index is from vector, vector contains edge targes
             adj_list: Vec::new(),
+
+            //Does vectex exist? index == vertex
             exists: BitVec::new(),
-            has_edge: Vec::new()
+
+            //has_edge[u][v] is u->v an edge in the graph
+            has_edge: Vec::new(),
         }
     }
 
-    pub fn complete_graph(n: usize) -> Self {
+    pub fn complete_graph(n: usize) -> Self
+    {
         let mut g = Self::new();
 
         for u in 0..n {
@@ -47,16 +52,26 @@ impl DiGraph
         self.adj_list.len()
     }
 
+    pub fn v_exists(&self, v: usize) -> bool
+    {
+        v < self.exists.len() && self.exists[v]
+    }
+
+    pub fn add_vertex(&mut self, v: usize)
+    {
+        for _ in self.adj_list.len()..=v {
+            self.exists.push(false);
+            self.adj_list.push(Vec::new());
+            self.has_edge.push(BitVec::new());
+        }
+        self.exists.set(v, true);
+    }
+
     /// Adds a directed edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize)
     {
-        for _ in self.adj_list.len()..=max(u, v) {
-            self.exists.push(false);
-            self.adj_list.push(Vec::new());
-            self.has_edge.push( BitVec::new());
-        }
-        self.exists.set(u, true);
-        self.exists.set(v, true);
+        self.add_vertex(u);
+        self.add_vertex(v);
 
         let has_edge_len = self.has_edge[u].len();
 
@@ -88,7 +103,7 @@ impl DiGraph
 
     pub fn adj_list<'a>(&'a self, node: usize) -> impl Iterator<Item = usize> + 'a
     {
-        self.adj_list[node].iter().map(|n| *n)
+        self.adj_list[node].iter().cloned()
     }
 
     pub fn edges<'a>(&'a self) -> impl Iterator<Item = (usize, usize)> + 'a

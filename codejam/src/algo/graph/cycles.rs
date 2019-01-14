@@ -5,10 +5,10 @@ https://github.com/networkx/networkx/blob/master/networkx/algorithms/tests/test_
 and
 https://github.com/networkx/networkx/blob/master/networkx/algorithms/cycles.py
 */
-use std::collections::HashSet;
-use std::collections::HashMap;
-use crate::algo::graph::DiGraph;
 use crate::algo::graph::scc::strongly_connected_components;
+use crate::algo::graph::DiGraph;
+use std::collections::HashMap;
+use std::collections::HashSet;
 
 //TODO have this return an iterator
 fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
@@ -87,7 +87,7 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
             if blocked.contains(&node) {
                 blocked.remove(&node);
                 //simulate python default dict
-                stack.extend(B.entry(node).or_insert(HashSet::new()).iter());
+                stack.extend(B.entry(node).or_insert_with(HashSet::new).iter());
 
                 B.get_mut(&node).unwrap().clear();
             }
@@ -128,7 +128,11 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
 
         let sccG = subG.subgraph(&scc[..]);
 
-        println!("Viewing scc {:?}\n of graph {:?}\n", scc, sccG.edges().collect::<Vec<_>>());
+        println!(
+            "Viewing scc {:?}\n of graph {:?}\n",
+            scc,
+            sccG.edges().collect::<Vec<_>>()
+        );
 
         //# order of scc determines ordering of nodes
         let startnode = scc.pop().unwrap();
@@ -144,7 +148,6 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
             let thisnode = *thisnode;
 
             if let Some(nextnode) = nbrs.pop() {
-
                 if nextnode == startnode {
                     ans.push(path.clone());
                     closed.extend(path.iter());
@@ -163,7 +166,7 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
                     _unblock(thisnode, &mut blocked, &mut B);
                 } else {
                     for nbr in sccG.adj_list(thisnode) {
-                        let B_set: &mut HashSet<usize> =B.entry(nbr).or_insert(HashSet::new());
+                        let B_set: &mut HashSet<usize> = B.entry(nbr).or_insert_with(HashSet::new);
                         if !B_set.contains(&thisnode) {
                             B_set.insert(thisnode);
                         }
@@ -189,8 +192,6 @@ mod test
 {
     use super::*;
     //use std::collections::HashSet;
-
-
 
     //https://github.com/networkx/networkx/blob/bf1c7cc9b144767523e5abcf84f949d4223848a0/networkx/algorithms/components/tests/test_strongly_connected.py
 
@@ -223,37 +224,51 @@ mod test
         println!("CC {:?}  correct: {:?}", cycles, correct_cycles);
         assert_eq!(cycles.len(), correct_cycles.len());
         for c in cycles {
-            assert!( correct_cycles.iter().any( |rc| is_cyclic_permutation(&c, rc) ));
+            assert!(correct_cycles
+                .iter()
+                .any(|rc| is_cyclic_permutation(&c, rc)));
         }
     }
 
     #[test]
     fn test_fig8_cycles()
     {
-        let edges: Vec<(usize, usize)> =
-            vec![(1, 6), (8, 1), (6, 4), (4,2), (2,3), (3, 8),
-                 (5, 1), (7, 5), (2, 9), (9, 5)
-            ];
+        let edges: Vec<(usize, usize)> = vec![
+            (1, 6),
+            (8, 1),
+            (6, 4),
+            (4, 2),
+            (2, 3),
+            (3, 8),
+            (5, 1),
+            (7, 5),
+            (2, 9),
+            (9, 5),
+        ];
         let G: DiGraph = edges.iter().collect();
         let cycles = simple_cycles(&G);
 
-        let correct_cycles = vec![vec![1, 6, 4, 2, 3, 8], vec![5, 1, 6, 4, 2, 9,],];
+        let correct_cycles = vec![vec![1, 6, 4, 2, 3, 8], vec![5, 1, 6, 4, 2, 9]];
 
         println!("CC {:?}  correct: {:?}", cycles, correct_cycles);
         assert_eq!(cycles.len(), correct_cycles.len());
         for c in cycles {
-            assert!( correct_cycles.iter().any( |rc| is_cyclic_permutation(&c, rc) ));
+            assert!(correct_cycles
+                .iter()
+                .any(|rc| is_cyclic_permutation(&c, rc)));
         }
     }
 
     #[test]
-    fn test_simple_cycles_empty() {
+    fn test_simple_cycles_empty()
+    {
         let G = DiGraph::new();
         assert_eq!(simple_cycles(&G).len(), 0);
     }
 
     #[test]
-    fn test_complete_directed_graph() {
+    fn test_complete_directed_graph()
+    {
         //# see table 2 in Johnson's paper
         let ncircuits = [1, 5, 20, 84, 409, 2365, 16064usize];
         for (n, c) in (2..9).zip(ncircuits.iter()) {
@@ -262,7 +277,8 @@ mod test
         }
     }
 
-    fn worst_case_graph(k: usize) -> DiGraph {
+    fn worst_case_graph(k: usize) -> DiGraph
+    {
         //# see figure 1 in Johnson's paper
         //# this graph has exactly 3k simple cycles
         let mut G = DiGraph::new();
@@ -285,13 +301,18 @@ mod test
     }
 
     #[test]
-    fn test_worst_case_graph() {
+    fn test_worst_case_graph()
+    {
         //# see figure 1 in Johnson's paper
         for k in 3..10 {
             let G = worst_case_graph(k);
             let l = simple_cycles(&G).len();
-            println!("{:?}\n{:?}", G.edges().collect::<Vec<_>>(), simple_cycles(&G));
-            assert_eq!(l, 3 * k, );
+            println!(
+                "{:?}\n{:?}",
+                G.edges().collect::<Vec<_>>(),
+                simple_cycles(&G)
+            );
+            assert_eq!(l, 3 * k,);
         }
     }
 }

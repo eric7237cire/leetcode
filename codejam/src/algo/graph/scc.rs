@@ -56,6 +56,9 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
     let mut return_scc = Vec::new();
 
     for source in 0..G.num_v() {
+        if !G.v_exists(source) {
+            continue;
+        }
         //println!("Source is {}", source);
         if scc_found[source] {
             continue;
@@ -65,7 +68,7 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
             let v: usize = *queue.last().unwrap();
             //println!("Processing v={} on queue", v);
             if preorder[v] == None {
-                i = i + 1;
+                i += 1;
                 preorder[v] = Some(i);
             }
             let mut done = true;
@@ -112,9 +115,11 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
 }
 
 #[cfg(test)]
-mod test
+mod test_scc
 {
     use super::*;
+
+    //https://github.com/networkx/networkx/blob/master/networkx/algorithms/components/tests/test_strongly_connected.py
 
     fn double_sort(v: &mut Vec<Vec<usize>>)
     {
@@ -124,10 +129,40 @@ mod test
         v.sort();
     }
 
-    #[test]
-    fn test_scc()
+    fn verify_scc(pairs: &Vec<(usize, usize)>, sccs: &Vec<Vec<usize>>)
     {
-        //use std::iter::FromIterator;
+        verify_scc_extra(pairs, sccs, Vec::new());
+    }
+    fn verify_scc_extra(
+        pairs: &Vec<(usize, usize)>,
+        sccs: &Vec<Vec<usize>>,
+        extra_vertex: Vec<usize>,
+    )
+    {
+        let mut graph = DiGraph::new();
+
+        for p in pairs {
+            graph.add_edge(p.0, p.1);
+        }
+        for v in extra_vertex {
+            graph.add_vertex(v);
+        }
+
+        let mut ans = strongly_connected_components(&graph);
+
+        double_sort(&mut ans);
+        let mut check_ans = sccs.clone();
+        double_sort(&mut check_ans);
+
+        println!("{:?} correct: {:?}", ans, check_ans);
+
+        assert_eq!(ans.len(), check_ans.len());
+        assert_eq!(ans, check_ans);
+    }
+
+    #[test]
+    fn test_scc_1()
+    {
         let pairs: Vec<(usize, usize)> = vec![
             (1, 2),
             (2, 3),
@@ -145,24 +180,87 @@ mod test
 
         let sccs: Vec<Vec<usize>> = vec![vec![3, 4, 5, 7], vec![1, 2, 8], vec![6]];
 
-        let mut graph = DiGraph::new();
+        verify_scc(&pairs, &sccs);
+    }
 
-        for p in pairs {
-            graph.add_edge(p.0 - 1, p.1 - 1);
-        }
+    #[test]
+    fn test_scc_2()
+    {
+        let pairs: Vec<(usize, usize)> = vec![(1, 2), (1, 3), (1, 4), (4, 2), (3, 4), (2, 3)];
 
-        let mut ans = strongly_connected_components(&graph);
+        let sccs: Vec<Vec<usize>> = vec![vec![2, 3, 4], vec![1]];
 
-        double_sort(&mut ans);
-        let mut check_ans = sccs
-            .iter()
-            .map(|a| a.iter().map(|b| b - 1).collect::<Vec<usize>>())
-            .collect::<Vec<Vec<usize>>>();
-        double_sort(&mut check_ans);
+        verify_scc(&pairs, &sccs);
+    }
 
-        println!("{:?} correct: {:?}", ans, check_ans);
+    #[test]
+    fn test_scc_3()
+    {
+        //use std::iter::FromIterator;
+        let pairs: Vec<(usize, usize)> = vec![(1, 2), (2, 3), (3, 2), (2, 1)];
 
-        assert_eq!(ans.len(), check_ans.len());
-        assert_eq!(ans, check_ans);
+        let sccs: Vec<Vec<usize>> = vec![vec![1, 2, 3]];
+
+        verify_scc(&pairs, &sccs);
+    }
+
+    //Eppstein's tests
+    #[test]
+    fn test_scc_4()
+    {
+        //use std::iter::FromIterator;
+        let pairs: Vec<(usize, usize)> = vec![
+            (0, 1),
+            (1, 2),
+            (1, 3),
+            (2, 4),
+            (2, 5),
+            (3, 4),
+            (3, 5),
+            (4, 6),
+        ];
+
+        let sccs: Vec<Vec<usize>> = vec![
+            vec![0],
+            vec![1],
+            vec![2],
+            vec![3],
+            vec![4],
+            vec![5],
+            vec![6],
+        ];
+
+        verify_scc(&pairs, &sccs);
+    }
+
+    #[test]
+    fn test_scc_5()
+    {
+        //use std::iter::FromIterator;
+        let pairs: Vec<(usize, usize)> = vec![
+            (0, 1),
+            (1, 2),
+            (1, 3),
+            (1, 4),
+            (2, 0),
+            (2, 3),
+            (3, 4),
+            (4, 3),
+        ];
+
+        let sccs: Vec<Vec<usize>> = vec![vec![0, 1, 2], vec![3, 4]];
+
+        verify_scc(&pairs, &sccs);
+    }
+
+    #[test]
+    fn test_empty_scc()
+    {
+        //use std::iter::FromIterator;
+        let pairs: Vec<(usize, usize)> = vec![];
+
+        let sccs: Vec<Vec<usize>> = vec![];
+
+        verify_scc(&pairs, &sccs);
     }
 }

@@ -49,7 +49,7 @@ impl<'a> Iterator for BfsIterator<'a>
             }
         }
 
-        return Some(r);
+        Some(r)
     }
 }
 
