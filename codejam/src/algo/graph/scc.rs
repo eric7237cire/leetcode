@@ -10,6 +10,7 @@ use std::cmp::min;
 //use std::collections::HashSet;
 
 //https://networkx.github.io/documentation/networkx-1.9.1/_modules/networkx/algorithms/components/strongly_connected.html#strongly_connected_components
+//TODO have this return an iterator
 pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
 {
     /*Generate nodes in strongly connected components of graph.

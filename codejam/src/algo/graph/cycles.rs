@@ -1,11 +1,16 @@
-/*https://github.com/networkx/networkx/blob/2736e7649c8c8e7aa5bc8f3745043d2fa24aaf9f/networkx/algorithms/cycles.py
-https://github.com/networkx/networkx/blob/2736e7649c8c8e7aa5bc8f3745043d2fa24aaf9f/networkx/algorithms/tests/test_cycles.py
+/*
+
+This code is a Rust translation of
+https://github.com/networkx/networkx/blob/master/networkx/algorithms/tests/test_cycles.py
+and
+https://github.com/networkx/networkx/blob/master/networkx/algorithms/cycles.py
 */
 use std::collections::HashSet;
 use std::collections::HashMap;
 use crate::algo::graph::DiGraph;
 use crate::algo::graph::scc::strongly_connected_components;
 
+//TODO have this return an iterator
 fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
 {
     /* """Find simple cycles (elementary circuits) of a directed graph.
@@ -135,12 +140,11 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
         let mut B: HashMap<usize, HashSet<usize>> = HashMap::new(); //# graph portions that yield no elementary circuit
         let mut stack: Vec<(usize, Vec<usize>)> =
             vec![(startnode, sccG.adj_list(startnode).collect())]; //# subG gives component nbrs
-        while !stack.is_empty() {
-            let (thisnode, nbrs) = stack.last_mut().unwrap();
+        while let Some((thisnode, nbrs)) = stack.last_mut() {
             let thisnode = *thisnode;
 
-            if !nbrs.is_empty() {
-                let nextnode = nbrs.pop().unwrap();
+            if let Some(nextnode) = nbrs.pop() {
+
                 if nextnode == startnode {
                     ans.push(path.clone());
                     closed.extend(path.iter());
@@ -159,7 +163,7 @@ fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
                     _unblock(thisnode, &mut blocked, &mut B);
                 } else {
                     for nbr in sccG.adj_list(thisnode) {
-                        let mut B_set: &mut HashSet<usize> =B.entry(nbr).or_insert(HashSet::new());
+                        let B_set: &mut HashSet<usize> =B.entry(nbr).or_insert(HashSet::new());
                         if !B_set.contains(&thisnode) {
                             B_set.insert(thisnode);
                         }
