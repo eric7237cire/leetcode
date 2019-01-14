@@ -58,6 +58,9 @@ impl DiGraph
         v < self.exists.len() && self.exists[v]
     }
 
+    pub fn has_edge(&self, u:usize, v:usize) -> bool {
+        self.has_edge.len() > u && self.has_edge[u].len() > v && self.has_edge[u][v]
+    }
     pub fn add_vertex(&mut self, v: usize)
     {
         for _ in self.adj_list.len()..=v {
@@ -71,6 +74,14 @@ impl DiGraph
     /// Adds a directed edge from u to v.
     pub fn add_edge(&mut self, u: usize, v: usize)
     {
+        //disallow duplicate edges
+        if !self.has_edge(u, v) {
+            self.add_edge_dups_ok(u,v);
+        }
+    }
+
+    pub fn add_edge_dups_ok(&mut self, u: usize, v: usize)
+    {
         self.add_vertex(u);
         self.add_vertex(v);
 
@@ -79,12 +90,20 @@ impl DiGraph
         //lazily grow adjacency bit matrix
         if has_edge_len < v + 1 {
             self.has_edge[u].grow(v + 1 - has_edge_len, false);
+
         }
 
-        //disallow duplicate edges
-        if !self.has_edge[u][v] {
-            self.adj_list[u].push(v);
-            self.has_edge[u].set(v, true);
+        self.adj_list[u].push(v);
+        self.has_edge[u].set(v, true);
+    }
+
+    pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
+    {
+        if let Some(pos) = self.adj_list[u].iter().position(|n| *n==v) {
+            self.adj_list[u].remove(pos);
+        }
+        if let Some(pos) = self.adj_list[v].iter().position(|n| *n==u) {
+            self.adj_list[v].remove(pos);
         }
     }
 

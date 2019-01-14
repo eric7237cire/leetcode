@@ -60,42 +60,31 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
            P,
            G.edges().collect::<Vec<_>>(), cycles, connected_components);
 
-    let mut edge_values:HashMap< (usize,usize), i64> = HashMap::new();
+    let mut edge_values:Vec< (usize,usize, i64)> = Vec::new();
 
     for cc in connected_components.iter() {
         let mut subG = G.subgraph(&cc);
         for (u, v) in subG.edges().collect::<Vec<_>>() {
-            subG.add_edge(v, u);
+            if subG.has_edge(v,u) && v < u {
+                subG.add_edge_dups_ok(v, u);
+                subG.add_edge_dups_ok(u, v);
+            }
+            else {subG.add_edge(v, u);}
         }
         debug!("CC {:?}\nsubG {:?}", cc, subG.edges().collect::<Vec<_>>());
 
         //spanning tree
         let mut ST = DiGraph::new();
-        let mut dfs_stack = Vec::new();
+
         let mut visited = BitVec::from_elem(subG.max_v()+1, false);
-        dfs_stack.push(cc[0]);
+
 
         let mut discovery_order = Vec::new();
 
-        while let Some(u) = dfs_stack.pop() {
+        dfs(&mut discovery_order, &mut ST, &subG, cc[0]);
 
-            assert!(u <= subG.max_v());
-
-            if !visited[u] {
-
-                discovery_order.push(u);
-                visited.set(u, true);
-                // Get all adjacent vertices of the popped vertex s
-                // If a adjacent has not been visited, then puah it
-                // to the stack.
-                for v in subG.adj_list(u) {
-                    if !ST.has_vertex(v) {
-                        //root to leaf direction
-                        ST.add_edge(u,v );
-                        dfs_stack.push(v);
-                    }
-                }
-            }
+        for st_edge in ST.edges() {
+            subG.remove_undirected_edge(st_edge.0, st_edge.1);
         }
 
         debug!("For {:?} spanning tree is {:?}",
@@ -118,29 +107,42 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0].0;
 
-            let all_nbrs:Vec<_> = subG.adj_list(dis_node).filter(|&n|
-                !tree_children.contains(&n)
-            && n != tree_parent).collect();
+            let non_tree_edges:Vec<_> = subG.adj_list(dis_node).collect();
+
+            debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
+                   non_tree_edges,
+                   dis_node);
 
             //this->parent edge is not in the tree, was initially assigned val. of 1
-            let mut balanced_value:i64 = 1;
+            let mut balanced_value:i64 = 0;
             //ancestor nodes
-            for v in all_nbrs {
-                //send positive from descendant to ancestor (up the tree)
-                edge_values.insert( (dis_node, v), 1);
+            for v in non_tree_edges {
+                /*Direct all edges in root-to-leaf direction
+                 (we reverse or split edges after solving, as explained above).
+                  We assign edges not in the tree a value of 1,
+                that is, they send positive news from nodes to descendants. */
+                //assert!(!edge_values.contains(&(dis_node,v)));
+                //assert!(edge_values.insert((dis_node,v),-1)==None);
+                edge_values.push((v, dis_node, 1));
                 balanced_value += 1;
             }
 
-            debug!("Looking at tree children {:?} tree parent {} for {}", tree_children, tree_parent, dis_node);
+
 
             for t in tree_children {
                 assert!(visited[t]);
 
-                balanced_value -= edge_values.get( &(dis_node, t) ).unwrap();
+                balanced_value -= edge_values.iter().filter( |&ev|
+                                                                 ev.0 == dis_node && ev.1 == t)
+                    .map( |ev| ev.2)
+                    .sum::<i64>();
+                                                                 //.get( &(dis_node, t) ).unwrap();
 
             }
 
-            edge_values.insert( (tree_parent, dis_node), -balanced_value);
+            edge_values.push( (tree_parent, dis_node, -balanced_value));
+            //assert!(None==edge_values.insert((tree_parent, dis_node), - balanced_value));
+            //*edge_values.entry( (tree_parent, dis_node)).or_insert(0)  -= balanced_value;
 
 
         }
@@ -178,4 +180,19 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
     } else {
     */
         format!("Case #{}: IMPOSSIBLE\n", case_no)
+}
+
+
+fn dfs(discovery_order: &mut Vec<usize>, ST: &mut DiGraph, subG: &DiGraph, u: usize)
+{
+    discovery_order.push(u);
+    for v in subG.adj_list(u) {
+        if !ST.has_vertex(v) {
+            //root to leaf direction
+            ST.add_edge(u, v);
+
+            dfs(discovery_order, ST, subG, v);
+        }
+
+    }
 }
