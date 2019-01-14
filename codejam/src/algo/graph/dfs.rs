@@ -1,7 +1,7 @@
-use super::edge_graph::Graph;
 use bit_vec::BitVec;
+use crate::algo::graph::DiGraph;
 
-impl Graph
+impl DiGraph
 {
     fn dfs(&self, v: usize) -> DfsIterator
     {
@@ -13,14 +13,14 @@ impl Graph
 
         DfsIterator {
             graph: self,
-            visited: BitVec::from_elem(self.num_v(), false),
+            visited: BitVec::from_elem(self.max_v(), false),
             stack,
         }
     }
 }
 pub struct DfsIterator<'a>
 {
-    graph: &'a Graph,
+    graph: &'a DiGraph,
     //is vertex visited
     visited: BitVec,
     //stack of vertices
@@ -37,25 +37,18 @@ impl<'a> Iterator for DfsIterator<'a>
         let mut r = None;
 
         //Code translated/adapted from https://www.geeksforgeeks.org/iterative-depth-first-traversal/
-        while !self.stack.is_empty() {
-            // Pop a vertex from stack and print it
-            let s = self.stack.pop().unwrap();
+        while let Some(s) = self.stack.pop() {
 
             // Stack may contain same vertex twice. So
             // we need to print the popped item only
             // if it is not visited.
             if !self.visited[s] {
-                self.visited.set(s, true);
                 r = Some(s);
-            }
-
-            // Get all adjacent vertices of the popped vertex s
-            // If a adjacent has not been visited, then puah it
-            // to the stack.
-            for (_e, u) in self.graph.adj_list_with_edges(s) {
-                if !self.visited[u] {
-                    self.stack.push(u);
-                }
+                self.visited.set(s, true);
+                // Get all adjacent vertices of the popped vertex s
+                // If a adjacent has not been visited, then puah it
+                // to the stack.
+                self.stack.extend(self.graph.adj_list(s));
             }
 
             if r != None {
@@ -75,7 +68,7 @@ mod test
     #[test]
     fn test_dfs()
     {
-        let mut graph = Graph::new(4, 8);
+        let mut graph = DiGraph::new();
         graph.add_edge(0, 2);
         graph.add_edge(2, 0);
         graph.add_edge(1, 2);
@@ -86,13 +79,13 @@ mod test
         //start at 2;  -- 2 0 1 3
 
         let dfs_search = graph.dfs(2).collect::<Vec<_>>();
-        assert_eq!(dfs_search, vec![2, 0, 1, 3]);
+        assert_eq!(dfs_search, vec![2, 3, 0, 1]);
     }
 
     #[test]
     fn test_dfs2()
     {
-        let mut graph = Graph::new(5, 8);
+        let mut graph = DiGraph::new();
         graph.add_edge(0, 2);
         graph.add_edge(2, 1);
         graph.add_edge(1, 0);
@@ -101,8 +94,6 @@ mod test
         graph.add_edge(4, 0);
 
         let dfs_search = graph.dfs(0).collect::<Vec<_>>();
-        assert_eq!(dfs_search, vec![0, 2, 1, 3, 4]);
-        //0 3 4 2 1 or
-        //0 2 1 3 4
+        assert_eq!(dfs_search, vec![0, 3, 4, 2, 1]);
     }
 }

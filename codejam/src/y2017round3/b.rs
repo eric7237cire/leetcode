@@ -1,9 +1,12 @@
 use super::super::util::input::*;
 use crate::algo::graph::cycles::simple_cycles;
 use crate::algo::graph::DiGraph;
-use std::collections::HashMap;
+use crate::algo::graph::scc::strongly_connected_components;
+//use std::collections::HashMap;
 use std::io::Write;
 use std::time::Instant;
+use bit_vec::BitVec;
+use std::collections::HashMap;
 
 /*
 
@@ -47,32 +50,106 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
 
     let mut G = G.clone();
     //add reverse edges
-    for &(u, v) in P.iter() {
-        G.add_edge(v, u);
-    }
+
 
     let cycles = simple_cycles(&G);
 
-    debug!("P is\n{:?}\nGraph is\n{:?}\nCycles are\n{:?}\n",
+    let connected_components = strongly_connected_components(&G);
+
+    debug!("P is\n{:?}\nGraph is\n{:?}\nCycles are\n{:?}\ncc's are\n{:?}\n",
            P,
-           G.edges().collect::<Vec<_>>(), cycles);
+           G.edges().collect::<Vec<_>>(), cycles, connected_components);
 
-    let mut news_values: HashMap<(usize,usize), i64> = HashMap::new();
+    let mut edge_values:HashMap< (usize,usize), i64> = HashMap::new();
 
-    for (cycle_index, cycle) in cycles.iter().enumerate() {
-        let mut c_it = cycle.iter().cycle().peekable();
-        for _ in 0..cycle.len() {
-            let edge = (*c_it.next().unwrap(), **c_it.peek().unwrap());
-            debug!("See edge {:?} cycle index {}",
-                edge, cycle_index + 1);
-            *news_values.entry(edge).or_insert(0i64) += cycle_index as i64 + 1;
+    for cc in connected_components.iter() {
+        let mut subG = G.subgraph(&cc);
+        for (u, v) in subG.edges().collect::<Vec<_>>() {
+            subG.add_edge(v, u);
         }
+        debug!("CC {:?}\nsubG {:?}", cc, subG.edges().collect::<Vec<_>>());
+
+        //spanning tree
+        let mut ST = DiGraph::new();
+        let mut dfs_stack = Vec::new();
+        let mut visited = BitVec::from_elem(subG.max_v()+1, false);
+        dfs_stack.push(cc[0]);
+
+        let mut discovery_order = Vec::new();
+
+        while let Some(u) = dfs_stack.pop() {
+
+            assert!(u <= subG.max_v());
+
+            if !visited[u] {
+
+                discovery_order.push(u);
+                visited.set(u, true);
+                // Get all adjacent vertices of the popped vertex s
+                // If a adjacent has not been visited, then puah it
+                // to the stack.
+                for v in subG.adj_list(u) {
+                    if !ST.has_vertex(v) {
+                        //root to leaf direction
+                        ST.add_edge(u,v );
+                        dfs_stack.push(v);
+                    }
+                }
+            }
+        }
+
+        debug!("For {:?} spanning tree is {:?}",
+            subG.edges().collect::<Vec<_>>(), ST.edges().collect::<Vec<_>>());
+
+
+        visited.clear();
+        debug!("Discovery order is {:?} ", discovery_order);
+        //root is automatically balanced
+        discovery_order.reverse();
+        discovery_order.pop();
+
+        for dis_node in discovery_order {
+
+
+            visited.set(dis_node, true);
+
+            let tree_children:Vec<_> = ST.adj_list(dis_node).collect();
+            let tree_parents:Vec<_> = ST.edges().filter(|e| e.1 == dis_node).collect();
+            assert_eq!(tree_parents.len(), 1);
+            let tree_parent = tree_parents[0].0;
+
+            let all_nbrs:Vec<_> = subG.adj_list(dis_node).filter(|&n|
+                !tree_children.contains(&n)
+            && n != tree_parent).collect();
+
+            //this->parent edge is not in the tree, was initially assigned val. of 1
+            let mut balanced_value:i64 = 1;
+            //ancestor nodes
+            for v in all_nbrs {
+                //send positive from descendant to ancestor (up the tree)
+                edge_values.insert( (dis_node, v), 1);
+                balanced_value += 1;
+            }
+
+            debug!("Looking at tree children {:?} tree parent {} for {}", tree_children, tree_parent, dis_node);
+
+            for t in tree_children {
+                assert!(visited[t]);
+
+                balanced_value -= edge_values.get( &(dis_node, t) ).unwrap();
+
+            }
+
+            edge_values.insert( (tree_parent, dis_node), -balanced_value);
+
+
+        }
+
+        debug!("Edge values are {:?}", edge_values);
     }
 
-    debug!("news values is\n{:?}",
-           news_values);
 
-    let ans = P.iter().map( |&fe| {
+   /* let ans = P.iter().map( |&fe| {
         let mut sum = 0;
         if let Some(pos) = news_values.get(&fe) {
             sum += pos;
@@ -85,8 +162,10 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
             }
             news_values.remove(&other_edge);
         }
-        sum.to_string()
-    }).collect::<Vec<String>>();
+        sum
+    }).collect::<Vec<_>>();
+
+
 
     if ans.contains(&"0".to_string()) {
         return format!("Case #{}: IMPOSSIBLE\n", case_no);
@@ -97,6 +176,6 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
     if news_values.is_empty() {
         format!("Case #{}: {}\n", case_no, ans.join(" "))
     } else {
+    */
         format!("Case #{}: IMPOSSIBLE\n", case_no)
-    }
 }

@@ -48,12 +48,12 @@ impl DiGraph
     }
 
     /// Returns the number of vertices.
-    pub fn num_v(&self) -> usize
+    pub fn max_v(&self) -> usize
     {
         self.adj_list.len()
     }
 
-    pub fn v_exists(&self, v: usize) -> bool
+    pub fn has_vertex(&self, v: usize) -> bool
     {
         v < self.exists.len() && self.exists[v]
     }
@@ -90,10 +90,18 @@ impl DiGraph
 
     pub fn subgraph(&self, nodes: &[usize]) -> DiGraph
     {
-        //could be more efficient
-        self.edges()
-            .filter(|&uv| nodes.contains(&uv.0) && nodes.contains(&uv.1))
-            .collect()
+        let mut sg:Self = DiGraph::new();
+        for n in nodes.iter() {
+            sg.add_vertex(*n);
+        }
+        for uv in self.edges()
+        {
+            if sg.has_vertex(uv.0) && sg.has_vertex(uv.1) {
+                sg.add_edge(uv.0, uv.1);
+            }
+        }
+
+        sg
     }
 
     pub fn remove_node(&mut self, node: usize)
@@ -187,6 +195,22 @@ mod test_directed_graph
             graph.edges().collect::<Vec<_>>(),
             vec![(1, 2), (2, 3), (2, 8), (3, 4), (3, 7), (4, 5),]
         );
+    }
+
+    #[test]
+    fn test_subgraph()
+    {
+        let pairs: Vec<(usize, usize)> = vec![(1, 2), (2, 3), (2, 8), (3, 4), (3, 7), (4, 5)];
+        let mut graph: DiGraph = pairs.iter().collect();
+        graph.add_vertex(14);
+
+        let sg = graph.subgraph(&vec![1,2,8,14]);
+        assert_eq!(
+            sg.edges().collect::<Vec<_>>(),
+            vec![(1, 2), (2, 8)]
+        );
+
+        assert!(sg.has_vertex(14));
     }
 
 }

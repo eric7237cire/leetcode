@@ -48,15 +48,15 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
        Information Processing Letters 49(1): 9-14, (1994)..
     """
     */
-    let mut preorder: Vec<Option<usize>> = vec![None; G.num_v()];
-    let mut lowlink = vec![0; G.num_v()];
-    let mut scc_found = BitVec::from_elem(G.num_v(), false);
+    let mut preorder: Vec<Option<usize>> = vec![None; G.max_v()];
+    let mut lowlink = vec![0; G.max_v()];
+    let mut scc_found = BitVec::from_elem(G.max_v(), false);
     let mut scc_queue: Vec<usize> = vec![];
     let mut next_preorder_value = 0; //     # Preorder counter
     let mut return_scc = Vec::new();
 
-    for source in 0..G.num_v() {
-        if !G.v_exists(source) {
+    for source in 0..G.max_v() {
+        if !G.has_vertex(source) {
             continue;
         }
         //println!("Source is {}", source);
@@ -263,6 +263,19 @@ mod test_scc
         let pairs: Vec<(usize, usize)> = vec![];
 
         let sccs: Vec<Vec<usize>> = vec![];
+
+        verify_scc(&pairs, &sccs);
+    }
+
+    #[test]
+    fn test_scc_6()
+    {
+        //use std::iter::FromIterator;
+        let pairs: Vec<(usize, usize)> = vec![
+            (1, 2), (1, 3), (2, 3), (2, 1), (3, 1), (3, 2)
+        ];
+
+        let sccs: Vec<Vec<usize>> = vec![vec![1, 2, 3]];
 
         verify_scc(&pairs, &sccs);
     }

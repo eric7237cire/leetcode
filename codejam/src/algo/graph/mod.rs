@@ -8,4 +8,4 @@ pub mod cycles;
 mod dfs;
 mod directed_graph;
 mod edge_graph;
-mod scc;
+pub mod scc;
