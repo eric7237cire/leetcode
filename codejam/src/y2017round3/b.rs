@@ -144,7 +144,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0];
 
-            let non_tree_edges_ancestor: Vec<_> = subG
+            /*let non_tree_edges_ancestor: Vec<_> = subG
                 .edges()
                 .filter(|&edge| edge.1 == current_node)
                 .map(|edge| edge.0)
@@ -154,7 +154,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 
             debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
                        non_tree_edges_ancestor,
-                       current_node);
+                       current_node);*/
 
             //this->parent edge is not in the tree, was initially assigned val. of 1
             let mut balanced_value: i64 = 0;
@@ -170,7 +170,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
                 balanced_value += 1;
             }
 
-            for v in non_tree_edges_descendent {
+            for _ in subG.edges_from(current_node) {
                 //these have already been assigned
                 balanced_value -= 1;
             }
