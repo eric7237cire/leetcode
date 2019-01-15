@@ -69,8 +69,8 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         "P is\n{:?}\nGraph is\n{:?}\n",
         P,
         g_undirected.edges().collect::<Vec<_>>(),
-       // cycles,
-       // connected_components
+        // cycles,
+        // connected_components
     );
 
     let mut edge_values: Vec<(usize, usize, i64)> = Vec::new();
@@ -103,13 +103,35 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         }
 
         debug!(
-            "For {:?} spanning tree is {:?}",
+            "For sub graph {:?} spanning tree is {:?}",
             subG.edges().collect::<Vec<_>>(),
             ST.edges().collect::<Vec<_>>()
         );
 
         visited.clear();
         debug!("Discovery order is {:?} ", discovery_order);
+
+        //Direct all edges in root-to-leaf direction
+        for subG_edge in subG.edges().collect::<Vec<_>>() {
+            let pos1 = discovery_order
+                .iter()
+                .position(|&d| d == subG_edge.0)
+                .unwrap();
+            let pos2 = discovery_order
+                .iter()
+                .position(|&d| d == subG_edge.1)
+                .unwrap();
+
+            if pos1 > pos2 {
+                subG.remove_edge(subG_edge.0, subG_edge.1);
+            }
+        }
+
+        debug!(
+            "For sub graph directed root->leaf {:?}",
+            subG.edges().collect::<Vec<_>>()
+        );
+
         //root is automatically balanced
         discovery_order.reverse();
         discovery_order.pop();
@@ -122,16 +144,22 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0].0;
 
-            let non_tree_edges: Vec<_> = subG.adj_list(dis_node).filter(|&n| !visited[n]).collect();
+            let non_tree_edges_ancestor: Vec<_> = subG
+                .edges()
+                .filter(|&edge| edge.1 == dis_node)
+                .map(|edge| edge.0)
+                .collect();
+            let non_tree_edges_descendent: Vec<_> =
+                subG.adj_list(dis_node).filter(|&n| visited[n]).collect();
 
             debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
-                       non_tree_edges,
+                       non_tree_edges_ancestor,
                        dis_node);
 
             //this->parent edge is not in the tree, was initially assigned val. of 1
             let mut balanced_value: i64 = 0;
             //ancestor nodes
-            for v in non_tree_edges {
+            for v in non_tree_edges_ancestor {
                 /*Direct all edges in root-to-leaf direction
                  (we reverse or split edges after solving, as explained above).
                   We assign edges not in the tree a value of 1,
@@ -140,6 +168,11 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
                 //assert!(edge_values.insert((dis_node,v),-1)==None);
                 edge_values.push((v, dis_node, 1));
                 balanced_value += 1;
+            }
+
+            for v in non_tree_edges_descendent {
+                //these have already been assigned
+                balanced_value -= 1;
             }
 
             for t in tree_children {
@@ -181,6 +214,16 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
     }
 
     //debug!("G {:?} {}", digits, G,);
+    let mut check_sums = vec![0; F];
+
+    for (p, a) in P.iter().zip(ans.iter()) {
+        check_sums[p.0 - 1] -= *a;
+        check_sums[p.1 - 1] += *a;
+    }
+
+    if check_sums.iter().any(|cs| *cs != 0) {
+        println!("Check sum failed: {:?} case {}", check_sums, case_no);
+    }
 
     format!(
         "Case #{}: {}\n",

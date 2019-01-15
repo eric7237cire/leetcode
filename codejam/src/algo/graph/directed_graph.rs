@@ -97,6 +97,13 @@ impl DiGraph
         self.has_edge[u].set(v, true);
     }
 
+    pub fn remove_edge(&mut self, u: usize, v: usize)
+    {
+        if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {
+            self.adj_list[u].remove(pos);
+        }
+    }
+
     pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
     {
         if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {

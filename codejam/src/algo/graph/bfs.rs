@@ -7,7 +7,7 @@ impl DiGraph
     pub fn bfs(&self, v: usize) -> BfsIterator
     {
         let mut queue: VecDeque<usize> = VecDeque::new();
-        let mut visited = BitVec::from_elem(self.max_v()+1, false);
+        let mut visited = BitVec::from_elem(self.max_v() + 1, false);
 
         queue.push_back(v);
         visited.set(v, true);
@@ -42,7 +42,7 @@ impl<'a> Iterator for BfsIterator<'a>
 
         //Code translated/adapted from https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/
 
-        for  u in self.graph.adj_list(r) {
+        for u in self.graph.adj_list(r) {
             if !self.visited[u] {
                 self.visited.set(u, true);
                 self.queue.push_back(u);
