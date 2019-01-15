@@ -106,6 +106,9 @@ impl DiGraph
         if let Some(pos) = self.adj_list_from[u].iter().position(|n| *n == v) {
             self.adj_list_from[u].remove(pos);
         }
+        if let Some(pos) = self.adj_list_to[v].iter().position(|n| *n == u) {
+            self.adj_list_to[v].remove(pos);
+        }
     }
 
     pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
@@ -129,11 +132,11 @@ impl DiGraph
         sg
     }
 
-    pub fn remove_node(&mut self, node: usize)
+    /*pub fn remove_node(&mut self, node: usize)
     {
         self.adj_list_from[node].clear();
         self.exists.set(node, false);
-    }
+    }*/
 
     pub fn edges_from<'a>(&'a self, node: usize) -> impl Iterator<Item = usize> + 'a
     {

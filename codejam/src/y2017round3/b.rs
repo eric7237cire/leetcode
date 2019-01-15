@@ -159,7 +159,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             //this->parent edge is not in the tree, was initially assigned val. of 1
             let mut balanced_value: i64 = 0;
             //ancestor nodes
-            for v in non_tree_edges_ancestor {
+            for v in subG.edges_to(current_node) { //non_tree_edges_ancestor {
                 /*Direct all edges in root-to-leaf direction
                  (we reverse or split edges after solving, as explained above).
                   We assign edges not in the tree a value of 1,
