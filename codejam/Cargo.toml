@@ -17,6 +17,7 @@ threadpool = "*"
 indexmap = "*"
 permutohedron = "*"
 num-integer = "*"
+rand = "*"
 
 [features]
 default = []

@@ -9,3 +9,5 @@ mod dfs;
 mod directed_graph;
 mod edge_graph;
 pub mod scc;
+
+pub mod disjointset;

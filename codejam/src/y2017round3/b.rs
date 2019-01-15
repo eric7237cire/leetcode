@@ -10,7 +10,14 @@ use std::io::Write;
 use std::time::Instant;
 
 /*
-
+DFS
+Spanning tree
+Bridges
+Cycles
+Connected components
+Double edges
+Undirected graph
+BFS
 */
 pub fn solve_all_cases()
 {
