@@ -1,15 +1,16 @@
-use bit_vec::BitVec;
+//use bit_vec::BitVec;
 //use std::cmp::max;
 use std::iter::FromIterator;
+use bit_set::BitSet;
 
 /// A compact graph representation. Edges are numbered in order of insertion.
 /// Each adjacency list consists of all edges pointing out from a given vertex.
 #[derive(Clone)]
 pub struct DiGraph
 {
-    adj_list: Vec<Vec<usize>>,
-    exists: BitVec,
-    has_edge: Vec<BitVec>,
+    exists: BitSet,
+    has_edge_from: Vec<BitSet>,
+    has_edge_to: Vec<BitSet>
 }
 
 impl DiGraph
@@ -20,14 +21,14 @@ impl DiGraph
     pub fn new() -> Self
     {
         Self {
-            //Index is from vector, vector contains edge targes
-            adj_list: Vec::new(),
 
-            //Does vectex exist? index == vertex
-            exists: BitVec::new(),
+            //Does vertex exist? index == vertex
+            exists: BitSet::new(),
 
             //has_edge[u][v] is u->v an edge in the graph
-            has_edge: Vec::new(),
+            has_edge_from: Vec::new(),
+
+            has_edge_to: Vec::new(),
         }
     }
 
@@ -50,26 +51,25 @@ impl DiGraph
     /// Returns the number of vertices.
     pub fn max_v(&self) -> usize
     {
-        self.adj_list.len()
+        self.has_edge_from.len()
     }
 
     pub fn has_vertex(&self, v: usize) -> bool
     {
-        v < self.exists.len() && self.exists[v]
+        self.exists.contains(v)
     }
 
     pub fn has_edge(&self, u: usize, v: usize) -> bool
     {
-        self.has_edge.len() > u && self.has_edge[u].len() > v && self.has_edge[u][v]
+        self.has_edge_from.len() > u && self.has_edge_from[u].contains(v)
     }
     pub fn add_vertex(&mut self, v: usize)
     {
-        for _ in self.adj_list.len()..=v {
-            self.exists.push(false);
-            self.adj_list.push(Vec::new());
-            self.has_edge.push(BitVec::new());
+        for _ in self.has_edge_from.len()..=v {
+            self.has_edge_from.push(BitSet::new());
+            self.has_edge_to.push(BitSet::new());
         }
-        self.exists.set(v, true);
+        self.exists.insert(v);
     }
 
     /// Adds a directed edge from u to v.
@@ -77,41 +77,29 @@ impl DiGraph
     {
         //disallow duplicate edges
         if !self.has_edge(u, v) {
-            self.add_edge_dups_ok(u, v);
+            self.add_vertex(u);
+            self.add_vertex(v);
+
+            self.has_edge_from[u].insert(v);
+            self.has_edge_to[v].insert(u);
         }
     }
 
-    pub fn add_edge_dups_ok(&mut self, u: usize, v: usize)
-    {
-        self.add_vertex(u);
-        self.add_vertex(v);
-
-        let has_edge_len = self.has_edge[u].len();
-
-        //lazily grow adjacency bit matrix
-        if has_edge_len < v + 1 {
-            self.has_edge[u].grow(v + 1 - has_edge_len, false);
-        }
-
-        self.adj_list[u].push(v);
-        self.has_edge[u].set(v, true);
+    pub fn add_undirected_edge(&mut self, u: usize, v: usize) {
+        self.add_edge(u,v);
+        self.add_edge(v,u);
     }
 
     pub fn remove_edge(&mut self, u: usize, v: usize)
     {
-        if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {
-            self.adj_list[u].remove(pos);
-        }
+        self.has_edge_to[v].remove(u);
+        self.has_edge_from[u].remove(v);
     }
 
     pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
     {
-        if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {
-            self.adj_list[u].remove(pos);
-        }
-        if let Some(pos) = self.adj_list[v].iter().position(|n| *n == u) {
-            self.adj_list[v].remove(pos);
-        }
+        self.remove_edge(u,v);
+        self.remove_edge(v,u);
     }
 
     pub fn subgraph(&self, nodes: &[usize]) -> DiGraph
@@ -122,7 +110,7 @@ impl DiGraph
         }
         for uv in self.edges() {
             if sg.has_vertex(uv.0) && sg.has_vertex(uv.1) {
-                sg.add_edge_dups_ok(uv.0, uv.1);
+                sg.add_edge(uv.0, uv.1);
             }
         }
 
@@ -131,19 +119,29 @@ impl DiGraph
 
     pub fn remove_node(&mut self, node: usize)
     {
-        self.adj_list[node].clear();
-        self.exists.set(node, false);
+        self.exists.remove(node);
+        if node < self.has_edge_from.len() {
+            self.has_edge_from[node].clear();
+        }
+        for to in self.has_edge_to.iter_mut() {
+            to.remove(node);
+        }
     }
 
     pub fn edges_from<'a>(&'a self, node: usize) -> impl Iterator<Item = usize> + 'a
     {
-        self.adj_list[node].iter().cloned()
+        self.has_edge_from[node].iter()
+    }
+
+    pub fn edges_to<'a>(&'a self, node: usize) -> impl Iterator<Item = usize> + 'a
+    {
+        self.has_edge_to[node].iter()
     }
 
     pub fn edges<'a>(&'a self) -> impl Iterator<Item = (usize, usize)> + 'a
     {
-        (0..self.adj_list.len())
-            .map(move |u| self.adj_list[u].iter().map(move |v| (u, *v)))
+        (0..self.has_edge_from.len())
+            .map(move |u| self.has_edge_from[u].iter().map(move |v| (u, v)))
             .flatten()
     }
 }

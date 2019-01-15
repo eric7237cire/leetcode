@@ -76,7 +76,7 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
             //Used to delay the rest until the queue gets back to this value
             let mut done = true;
 
-            for w in G.adj_list(v) {
+            for w in G.edges_from(v) {
                 if preorder[w] == None {
                     queue.push(w);
                     done = false;
@@ -87,7 +87,7 @@ pub fn strongly_connected_components(G: &DiGraph) -> Vec<Vec<usize>>
                 continue;
             }
             lowlink[v] = preorder[v].unwrap();
-            for w in G.adj_list(v).filter(|&w| !scc_found[w]) {
+            for w in G.edges_from(v).filter(|&w| !scc_found[w]) {
                 lowlink[v] = min(
                     lowlink[v],
                     if preorder[w] > preorder[v] {

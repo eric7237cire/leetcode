@@ -42,7 +42,7 @@ impl<'a> Iterator for BfsIterator<'a>
 
         //Code translated/adapted from https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph/
 
-        for u in self.graph.adj_list(r) {
+        for u in self.graph.edges_from(r) {
             if !self.visited[u] {
                 self.visited.set(u, true);
                 self.queue.push_back(u);
@@ -71,8 +71,11 @@ mod test
 
         //start at 2;  -- 2 0 1 3
 
-        let bfs_search = graph.bfs(2).collect::<Vec<_>>();
-        assert_eq!(bfs_search, vec![2, 3, 0, 1]);
+        let mut bfs_search = graph.bfs(2).collect::<Vec<_>>();
+        assert_eq!(bfs_search[3], 1);
+
+        bfs_search.sort();
+        assert_eq!(bfs_search, vec![0, 1,2,3]);
     }
 
     #[test]
@@ -86,7 +89,11 @@ mod test
         graph.add_edge(3, 4);
         graph.add_edge(4, 0);
 
-        let bfs_search = graph.bfs(0).collect::<Vec<_>>();
-        assert_eq!(bfs_search, vec![0, 3, 2, 4, 1]);
+        let mut bfs_search = graph.bfs(0).collect::<Vec<_>>();
+
+        assert_eq!(bfs_search[4], 1);
+
+        bfs_search.sort();
+        assert_eq!(bfs_search, vec![0, 1,2,3, 4]);
     }
 }

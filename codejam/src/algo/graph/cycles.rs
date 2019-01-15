@@ -145,7 +145,7 @@ pub fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
         blocked.insert(startnode);
         let mut B: HashMap<usize, HashSet<usize>> = HashMap::new(); //# graph portions that yield no elementary circuit
         let mut stack: Vec<(usize, Vec<usize>)> =
-            vec![(startnode, sccG.adj_list(startnode).collect())]; //# subG gives component nbrs
+            vec![(startnode, sccG.edges_from(startnode).collect())]; //# subG gives component nbrs
         while let Some((thisnode, nbrs)) = stack.last_mut() {
             let thisnode = *thisnode;
 
@@ -156,7 +156,7 @@ pub fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
                 //#                        print "Found a cycle",path,closed
                 } else if !blocked.contains(&nextnode) {
                     path.push(nextnode);
-                    stack.push((nextnode, sccG.adj_list(nextnode).collect()));
+                    stack.push((nextnode, sccG.edges_from(nextnode).collect()));
                     closed.remove(&nextnode);
                     blocked.insert(nextnode);
                     continue;
@@ -167,7 +167,7 @@ pub fn simple_cycles(G: &DiGraph) -> Vec<Vec<usize>>
                 if closed.contains(&thisnode) {
                     _unblock(thisnode, &mut blocked, &mut B);
                 } else {
-                    for nbr in sccG.adj_list(thisnode) {
+                    for nbr in sccG.edges_from(thisnode) {
                         let B_set: &mut HashSet<usize> = B.entry(nbr).or_insert_with(HashSet::new);
                         if !B_set.contains(&thisnode) {
                             B_set.insert(thisnode);

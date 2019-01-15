@@ -47,7 +47,7 @@ impl<'a> Iterator for DfsIterator<'a>
                 // Get all adjacent vertices of the popped vertex s
                 // If a adjacent has not been visited, then puah it
                 // to the stack.
-                self.stack.extend(self.graph.adj_list(s));
+                self.stack.extend(self.graph.edges_from(s));
             }
 
             if r != None {

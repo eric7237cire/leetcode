@@ -139,7 +139,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         for current_node in discovery_order {
             visited.set(current_node, true);
 
-            let tree_children: Vec<_> = ST.adj_list(current_node).collect();
+            let tree_children: Vec<_> = ST.edges_from(current_node).collect();
             let tree_parents: Vec<_> = ST.edges().filter(|e| e.1 == current_node).collect();
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0].0;
@@ -150,7 +150,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
                 .map(|edge| edge.0)
                 .collect();
             let non_tree_edges_descendent: Vec<_> =
-                subG.adj_list(current_node).filter(|&n| visited[n]).collect();
+                subG.edges_from(current_node).filter(|&n| visited[n]).collect();
 
             debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
                        non_tree_edges_ancestor,
@@ -238,7 +238,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 fn dfs(discovery_order: &mut Vec<usize>, ST: &mut DiGraph, subG: &DiGraph, u: usize)
 {
     discovery_order.push(u);
-    for v in subG.adj_list(u) {
+    for v in subG.edges_from(u) {
         if !ST.has_vertex(v) {
             //root to leaf direction
             ST.add_edge(u, v);
