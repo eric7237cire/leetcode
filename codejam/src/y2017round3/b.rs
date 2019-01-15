@@ -4,7 +4,7 @@ use super::super::util::input::*;
 use crate::algo::graph::DiGraph;
 //use std::collections::HashMap;
 use bit_set::BitSet;
-use bit_vec::BitVec;
+//use bit_vec::BitVec;
 //use std::collections::HashMap;
 use std::io::Write;
 use std::time::Instant;
@@ -49,6 +49,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 {
     debug!("\n\n\nSolving case {}", case_no);
 
+    //Create an undirected graph with duplicates when u->v and v-> already exist in P
     let mut g_undirected = G.clone();
     for (u, v) in g_undirected.edges().collect::<Vec<_>>() {
         if g_undirected.has_edge(v, u) && v < u {
@@ -58,19 +59,11 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             g_undirected.add_edge(v, u);
         }
     }
-    //add reverse edges
 
-    //let cycles = simple_cycles(&G);
-
-    //let connected_components = strongly_connected_components(&G);
-
-    //Cycles are\n{:?}\ncc's are\n{:?}\n"
     debug!(
-        "P is\n{:?}\nGraph is\n{:?}\n",
+        "P is\n{:?}\nUndirected Graph is\n{:?}\n",
         P,
         g_undirected.edges().collect::<Vec<_>>(),
-        // cycles,
-        // connected_components
     );
 
     let mut edge_values: Vec<(usize, usize, i64)> = Vec::new();
@@ -92,8 +85,6 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         //spanning tree
         let mut ST = DiGraph::new();
 
-        let mut visited = BitVec::from_elem(subG.max_v() + 1, false);
-
         let mut discovery_order = Vec::new();
 
         dfs(&mut discovery_order, &mut ST, &subG, cc[0]);
@@ -108,7 +99,6 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             ST.edges().collect::<Vec<_>>()
         );
 
-        visited.clear();
         debug!("Discovery order is {:?} ", discovery_order);
 
         //Direct all edges in root-to-leaf direction
@@ -137,49 +127,37 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         discovery_order.pop();
 
         for current_node in discovery_order {
-            visited.set(current_node, true);
 
             let tree_children: Vec<_> = ST.edges_from(current_node).collect();
             let tree_parents: Vec<_> = ST.edges_to(current_node).collect();
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0];
 
-            /*let non_tree_edges_ancestor: Vec<_> = subG
-                .edges()
-                .filter(|&edge| edge.1 == current_node)
-                .map(|edge| edge.0)
-                .collect();
-            let non_tree_edges_descendent: Vec<_> =
-                subG.edges_from(current_node).filter(|&n| visited[n]).collect();
 
-            debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
-                       non_tree_edges_ancestor,
-                       current_node);*/
-
-            //this->parent edge is not in the tree, was initially assigned val. of 1
             let mut balanced_value: i64 = 0;
-            //ancestor nodes
+
+            //These are edges not in the spanning tree that we assign 1 to
             for v in subG.edges_to(current_node) { //non_tree_edges_ancestor {
                 /*Direct all edges in root-to-leaf direction
                  (we reverse or split edges after solving, as explained above).
                   We assign edges not in the tree a value of 1,
                 that is, they send positive news from nodes to descendants. */
-                //assert!(!edge_values.contains(&(dis_node,v)));
-                //assert!(edge_values.insert((dis_node,v),-1)==None);
+
                 edge_values.push((v, current_node, 1));
                 balanced_value += 1;
             }
 
+            //These are previously seen edges not in the spanning tree that we need to account for
             for _ in subG.edges_from(current_node) {
                 //these have already been assigned
                 balanced_value -= 1;
             }
 
             for t in tree_children {
-                assert!(visited[t]);
 
                 balanced_value -= edge_values
                     .iter()
+                    //only count edges in the spanning tree which won't have a positive value
                     .filter(|&ev| ev.0 == current_node && ev.1 == t && ev.2 != 1)
                     .map(|ev| ev.2)
                     .sum::<i64>();
@@ -187,8 +165,6 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             }
 
             edge_values.push((tree_parent, current_node, -balanced_value));
-            //assert!(None==edge_values.insert((tree_parent, dis_node), - balanced_value));
-            //*edge_values.entry( (tree_parent, dis_node)).or_insert(0)  -= balanced_value;
         }
     }
 
@@ -213,7 +189,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         }
     }
 
-    //debug!("G {:?} {}", digits, G,);
+    /*
     let mut check_sums = vec![0; F];
 
     for (p, a) in P.iter().zip(ans.iter()) {
@@ -223,7 +199,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 
     if check_sums.iter().any(|cs| *cs != 0) {
         println!("Check sum failed: {:?} case {}", check_sums, case_no);
-    }
+    }*/
 
     format!(
         "Case #{}: {}\n",
