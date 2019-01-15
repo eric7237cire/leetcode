@@ -136,25 +136,25 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         discovery_order.reverse();
         discovery_order.pop();
 
-        for dis_node in discovery_order {
-            visited.set(dis_node, true);
+        for current_node in discovery_order {
+            visited.set(current_node, true);
 
-            let tree_children: Vec<_> = ST.adj_list(dis_node).collect();
-            let tree_parents: Vec<_> = ST.edges().filter(|e| e.1 == dis_node).collect();
+            let tree_children: Vec<_> = ST.adj_list(current_node).collect();
+            let tree_parents: Vec<_> = ST.edges().filter(|e| e.1 == current_node).collect();
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0].0;
 
             let non_tree_edges_ancestor: Vec<_> = subG
                 .edges()
-                .filter(|&edge| edge.1 == dis_node)
+                .filter(|&edge| edge.1 == current_node)
                 .map(|edge| edge.0)
                 .collect();
             let non_tree_edges_descendent: Vec<_> =
-                subG.adj_list(dis_node).filter(|&n| visited[n]).collect();
+                subG.adj_list(current_node).filter(|&n| visited[n]).collect();
 
             debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
                        non_tree_edges_ancestor,
-                       dis_node);
+                       current_node);
 
             //this->parent edge is not in the tree, was initially assigned val. of 1
             let mut balanced_value: i64 = 0;
@@ -166,7 +166,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
                 that is, they send positive news from nodes to descendants. */
                 //assert!(!edge_values.contains(&(dis_node,v)));
                 //assert!(edge_values.insert((dis_node,v),-1)==None);
-                edge_values.push((v, dis_node, 1));
+                edge_values.push((v, current_node, 1));
                 balanced_value += 1;
             }
 
@@ -180,13 +180,13 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 
                 balanced_value -= edge_values
                     .iter()
-                    .filter(|&ev| ev.0 == dis_node && ev.1 == t && ev.2 != 1)
+                    .filter(|&ev| ev.0 == current_node && ev.1 == t && ev.2 != 1)
                     .map(|ev| ev.2)
                     .sum::<i64>();
                 //.get( &(dis_node, t) ).unwrap();
             }
 
-            edge_values.push((tree_parent, dis_node, -balanced_value));
+            edge_values.push((tree_parent, current_node, -balanced_value));
             //assert!(None==edge_values.insert((tree_parent, dis_node), - balanced_value));
             //*edge_values.entry( (tree_parent, dis_node)).or_insert(0)  -= balanced_value;
         }
