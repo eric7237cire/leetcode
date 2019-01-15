@@ -180,7 +180,7 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 
                 balanced_value -= edge_values
                     .iter()
-                    .filter(|&ev| ev.0 == dis_node && ev.1 == t)
+                    .filter(|&ev| ev.0 == dis_node && ev.1 == t && ev.2 != 1)
                     .map(|ev| ev.2)
                     .sum::<i64>();
                 //.get( &(dis_node, t) ).unwrap();
