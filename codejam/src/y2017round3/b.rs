@@ -140,9 +140,9 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             visited.set(current_node, true);
 
             let tree_children: Vec<_> = ST.edges_from(current_node).collect();
-            let tree_parents: Vec<_> = ST.edges().filter(|e| e.1 == current_node).collect();
+            let tree_parents: Vec<_> = ST.edges_to(current_node).collect();
             assert_eq!(tree_parents.len(), 1);
-            let tree_parent = tree_parents[0].0;
+            let tree_parent = tree_parents[0];
 
             let non_tree_edges_ancestor: Vec<_> = subG
                 .edges()

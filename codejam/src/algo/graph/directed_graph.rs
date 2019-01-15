@@ -7,7 +7,8 @@ use std::iter::FromIterator;
 #[derive(Clone)]
 pub struct DiGraph
 {
-    adj_list: Vec<Vec<usize>>,
+    adj_list_from: Vec<Vec<usize>>,
+    adj_list_to: Vec<Vec<usize>>,
     exists: BitVec,
     has_edge: Vec<BitVec>,
 }
@@ -21,7 +22,8 @@ impl DiGraph
     {
         Self {
             //Index is from vector, vector contains edge targes
-            adj_list: Vec::new(),
+            adj_list_from: Vec::new(),
+            adj_list_to: Vec::new(),
 
             //Does vectex exist? index == vertex
             exists: BitVec::new(),
@@ -50,7 +52,7 @@ impl DiGraph
     /// Returns the number of vertices.
     pub fn max_v(&self) -> usize
     {
-        self.adj_list.len()
+        self.adj_list_from.len()
     }
 
     pub fn has_vertex(&self, v: usize) -> bool
@@ -64,9 +66,10 @@ impl DiGraph
     }
     pub fn add_vertex(&mut self, v: usize)
     {
-        for _ in self.adj_list.len()..=v {
+        for _ in self.adj_list_from.len()..=v {
             self.exists.push(false);
-            self.adj_list.push(Vec::new());
+            self.adj_list_from.push(Vec::new());
+            self.adj_list_to.push(Vec::new());
             self.has_edge.push(BitVec::new());
         }
         self.exists.set(v, true);
@@ -93,25 +96,22 @@ impl DiGraph
             self.has_edge[u].grow(v + 1 - has_edge_len, false);
         }
 
-        self.adj_list[u].push(v);
+        self.adj_list_from[u].push(v);
+        self.adj_list_to[v].push(u);
         self.has_edge[u].set(v, true);
     }
 
     pub fn remove_edge(&mut self, u: usize, v: usize)
     {
-        if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {
-            self.adj_list[u].remove(pos);
+        if let Some(pos) = self.adj_list_from[u].iter().position(|n| *n == v) {
+            self.adj_list_from[u].remove(pos);
         }
     }
 
     pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
     {
-        if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {
-            self.adj_list[u].remove(pos);
-        }
-        if let Some(pos) = self.adj_list[v].iter().position(|n| *n == u) {
-            self.adj_list[v].remove(pos);
-        }
+        self.remove_edge(u,v);
+        self.remove_edge(v,u);
     }
 
     pub fn subgraph(&self, nodes: &[usize]) -> DiGraph
@@ -131,19 +131,23 @@ impl DiGraph
 
     pub fn remove_node(&mut self, node: usize)
     {
-        self.adj_list[node].clear();
+        self.adj_list_from[node].clear();
         self.exists.set(node, false);
     }
 
     pub fn edges_from<'a>(&'a self, node: usize) -> impl Iterator<Item = usize> + 'a
     {
-        self.adj_list[node].iter().cloned()
+        self.adj_list_from[node].iter().cloned()
+    }
+    pub fn edges_to<'a>(&'a self, node: usize) -> impl Iterator<Item = usize> + 'a
+    {
+        self.adj_list_to[node].iter().cloned()
     }
 
     pub fn edges<'a>(&'a self) -> impl Iterator<Item = (usize, usize)> + 'a
     {
-        (0..self.adj_list.len())
-            .map(move |u| self.adj_list[u].iter().map(move |v| (u, *v)))
+        (0..self.adj_list_from.len())
+            .map(move |u| self.adj_list_from[u].iter().map(move |v| (u, *v)))
             .flatten()
     }
 }
