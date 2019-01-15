@@ -1,5 +1,5 @@
-use bit_vec::BitVec;
 use crate::algo::graph::DiGraph;
+use bit_vec::BitVec;
 
 impl DiGraph
 {
@@ -38,7 +38,6 @@ impl<'a> Iterator for DfsIterator<'a>
 
         //Code translated/adapted from https://www.geeksforgeeks.org/iterative-depth-first-traversal/
         while let Some(s) = self.stack.pop() {
-
             // Stack may contain same vertex twice. So
             // we need to print the popped item only
             // if it is not visited.

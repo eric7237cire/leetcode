@@ -1,12 +1,13 @@
 use super::super::util::input::*;
-use crate::algo::graph::cycles::simple_cycles;
+//use crate::algo::graph::cycles::simple_cycles;
+//use crate::algo::graph::scc::strongly_connected_components;
 use crate::algo::graph::DiGraph;
-use crate::algo::graph::scc::strongly_connected_components;
+//use std::collections::HashMap;
+use bit_set::BitSet;
+use bit_vec::BitVec;
 //use std::collections::HashMap;
 use std::io::Write;
 use std::time::Instant;
-use bit_vec::BitVec;
-use std::collections::HashMap;
 
 /*
 
@@ -32,7 +33,7 @@ pub fn solve_all_cases()
             })
             .collect::<Vec<_>>();
 
-        print!("{}", solve(case, &G, &P));
+        print!("{}", solve(case, &G, &P, F));
     }
 
     let duration = now.elapsed();
@@ -44,40 +45,54 @@ pub fn solve_all_cases()
     );
 }
 
-fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
+fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
 {
-    debug!("Solving case {}", case_no);
+    debug!("\n\n\nSolving case {}", case_no);
 
-    let mut G = G.clone();
+    let mut g_undirected = G.clone();
+    for (u, v) in g_undirected.edges().collect::<Vec<_>>() {
+        if g_undirected.has_edge(v, u) && v < u {
+            g_undirected.add_edge_dups_ok(v, u);
+            g_undirected.add_edge_dups_ok(u, v);
+        } else {
+            g_undirected.add_edge(v, u);
+        }
+    }
     //add reverse edges
 
+    //let cycles = simple_cycles(&G);
 
-    let cycles = simple_cycles(&G);
+    //let connected_components = strongly_connected_components(&G);
 
-    let connected_components = strongly_connected_components(&G);
+    //Cycles are\n{:?}\ncc's are\n{:?}\n"
+    debug!(
+        "P is\n{:?}\nGraph is\n{:?}\n",
+        P,
+        g_undirected.edges().collect::<Vec<_>>(),
+       // cycles,
+       // connected_components
+    );
 
-    debug!("P is\n{:?}\nGraph is\n{:?}\nCycles are\n{:?}\ncc's are\n{:?}\n",
-           P,
-           G.edges().collect::<Vec<_>>(), cycles, connected_components);
+    let mut edge_values: Vec<(usize, usize, i64)> = Vec::new();
 
-    let mut edge_values:Vec< (usize,usize, i64)> = Vec::new();
+    let mut bfs_visited = BitSet::new();
 
-    for cc in connected_components.iter() {
-        let mut subG = G.subgraph(&cc);
-        for (u, v) in subG.edges().collect::<Vec<_>>() {
-            if subG.has_edge(v,u) && v < u {
-                subG.add_edge_dups_ok(v, u);
-                subG.add_edge_dups_ok(u, v);
-            }
-            else {subG.add_edge(v, u);}
+    for f in 1..=F {
+        if bfs_visited.contains(f) {
+            continue;
         }
+
+        let cc = g_undirected.bfs(f).collect::<Vec<_>>();
+        bfs_visited.extend(cc.clone());
+
+        let mut subG = g_undirected.subgraph(&cc);
+        //for (u, v) in subG.edges().collect::<Vec<_>>() {}
         debug!("CC {:?}\nsubG {:?}", cc, subG.edges().collect::<Vec<_>>());
 
         //spanning tree
         let mut ST = DiGraph::new();
 
-        let mut visited = BitVec::from_elem(subG.max_v()+1, false);
-
+        let mut visited = BitVec::from_elem(subG.max_v() + 1, false);
 
         let mut discovery_order = Vec::new();
 
@@ -87,9 +102,11 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
             subG.remove_undirected_edge(st_edge.0, st_edge.1);
         }
 
-        debug!("For {:?} spanning tree is {:?}",
-            subG.edges().collect::<Vec<_>>(), ST.edges().collect::<Vec<_>>());
-
+        debug!(
+            "For {:?} spanning tree is {:?}",
+            subG.edges().collect::<Vec<_>>(),
+            ST.edges().collect::<Vec<_>>()
+        );
 
         visited.clear();
         debug!("Discovery order is {:?} ", discovery_order);
@@ -98,23 +115,21 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
         discovery_order.pop();
 
         for dis_node in discovery_order {
-
-
             visited.set(dis_node, true);
 
-            let tree_children:Vec<_> = ST.adj_list(dis_node).collect();
-            let tree_parents:Vec<_> = ST.edges().filter(|e| e.1 == dis_node).collect();
+            let tree_children: Vec<_> = ST.adj_list(dis_node).collect();
+            let tree_parents: Vec<_> = ST.edges().filter(|e| e.1 == dis_node).collect();
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0].0;
 
-            let non_tree_edges:Vec<_> = subG.adj_list(dis_node).filter(|&n| !visited[n]).collect();
+            let non_tree_edges: Vec<_> = subG.adj_list(dis_node).filter(|&n| !visited[n]).collect();
 
             debug!("Looking at tree children {:?} tree parent {}\nnon tree dges {:?}\nfor current node {}", tree_children, tree_parent,
-                   non_tree_edges,
-                   dis_node);
+                       non_tree_edges,
+                       dis_node);
 
             //this->parent edge is not in the tree, was initially assigned val. of 1
-            let mut balanced_value:i64 = 0;
+            let mut balanced_value: i64 = 0;
             //ancestor nodes
             for v in non_tree_edges {
                 /*Direct all edges in root-to-leaf direction
@@ -127,61 +142,55 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>) -> String
                 balanced_value += 1;
             }
 
-
-
             for t in tree_children {
                 assert!(visited[t]);
 
-                balanced_value -= edge_values.iter().filter( |&ev|
-                                                                 ev.0 == dis_node && ev.1 == t)
-                    .map( |ev| ev.2)
+                balanced_value -= edge_values
+                    .iter()
+                    .filter(|&ev| ev.0 == dis_node && ev.1 == t)
+                    .map(|ev| ev.2)
                     .sum::<i64>();
-                                                                 //.get( &(dis_node, t) ).unwrap();
-
+                //.get( &(dis_node, t) ).unwrap();
             }
 
-            edge_values.push( (tree_parent, dis_node, -balanced_value));
+            edge_values.push((tree_parent, dis_node, -balanced_value));
             //assert!(None==edge_values.insert((tree_parent, dis_node), - balanced_value));
             //*edge_values.entry( (tree_parent, dis_node)).or_insert(0)  -= balanced_value;
-
-
         }
-
-        debug!("Edge values are {:?}", edge_values);
     }
 
+    debug!("Edge values are {:?}", edge_values);
 
-   /* let ans = P.iter().map( |&fe| {
-        let mut sum = 0;
-        if let Some(pos) = news_values.get(&fe) {
-            sum += pos;
-            news_values.remove(&fe);
-        }
-        let other_edge = (fe.1, fe.0);
-        if !P.contains(&other_edge) {
-            if let Some(neg) = news_values.get(&other_edge) {
-                sum -= neg;
-            }
-            news_values.remove(&other_edge);
-        }
-        sum
-    }).collect::<Vec<_>>();
-
-
-
-    if ans.contains(&"0".to_string()) {
+    if edge_values.iter().any(|ev| ev.2 == 0) {
         return format!("Case #{}: IMPOSSIBLE\n", case_no);
+    }
+
+    let mut ans: Vec<i64> = Vec::new();
+    for fe in P {
+        if let Some(pos) = edge_values.iter().position(|&e| e.0 == fe.0 && e.1 == fe.1) {
+            ans.push(edge_values[pos].2);
+            edge_values.remove(pos);
+            continue;
+        } else if let Some(pos) = edge_values.iter().position(|&e| e.0 == fe.1 && e.1 == fe.0) {
+            ans.push(-edge_values[pos].2);
+            edge_values.remove(pos);
+            continue;
+        } else {
+            return format!("Case #{}: IMPOSSIBLE\n", case_no);
+        }
     }
 
     //debug!("G {:?} {}", digits, G,);
 
-    if news_values.is_empty() {
-        format!("Case #{}: {}\n", case_no, ans.join(" "))
-    } else {
-    */
-        format!("Case #{}: IMPOSSIBLE\n", case_no)
+    format!(
+        "Case #{}: {}\n",
+        case_no,
+        ans.iter()
+            .map(|a| a.to_string())
+            .collect::<Vec<_>>()
+            .join(" ")
+    )
 }
-
 
 fn dfs(discovery_order: &mut Vec<usize>, ST: &mut DiGraph, subG: &DiGraph, u: usize)
 {
@@ -193,6 +202,5 @@ fn dfs(discovery_order: &mut Vec<usize>, ST: &mut DiGraph, subG: &DiGraph, u: us
 
             dfs(discovery_order, ST, subG, v);
         }
-
     }
 }

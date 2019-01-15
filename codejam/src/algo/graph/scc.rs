@@ -271,9 +271,7 @@ mod test_scc
     fn test_scc_6()
     {
         //use std::iter::FromIterator;
-        let pairs: Vec<(usize, usize)> = vec![
-            (1, 2), (1, 3), (2, 3), (2, 1), (3, 1), (3, 2)
-        ];
+        let pairs: Vec<(usize, usize)> = vec![(1, 2), (1, 3), (2, 3), (2, 1), (3, 1), (3, 2)];
 
         let sccs: Vec<Vec<usize>> = vec![vec![1, 2, 3]];
 

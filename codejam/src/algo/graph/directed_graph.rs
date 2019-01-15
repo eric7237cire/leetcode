@@ -58,7 +58,8 @@ impl DiGraph
         v < self.exists.len() && self.exists[v]
     }
 
-    pub fn has_edge(&self, u:usize, v:usize) -> bool {
+    pub fn has_edge(&self, u: usize, v: usize) -> bool
+    {
         self.has_edge.len() > u && self.has_edge[u].len() > v && self.has_edge[u][v]
     }
     pub fn add_vertex(&mut self, v: usize)
@@ -76,7 +77,7 @@ impl DiGraph
     {
         //disallow duplicate edges
         if !self.has_edge(u, v) {
-            self.add_edge_dups_ok(u,v);
+            self.add_edge_dups_ok(u, v);
         }
     }
 
@@ -90,7 +91,6 @@ impl DiGraph
         //lazily grow adjacency bit matrix
         if has_edge_len < v + 1 {
             self.has_edge[u].grow(v + 1 - has_edge_len, false);
-
         }
 
         self.adj_list[u].push(v);
@@ -99,24 +99,23 @@ impl DiGraph
 
     pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
     {
-        if let Some(pos) = self.adj_list[u].iter().position(|n| *n==v) {
+        if let Some(pos) = self.adj_list[u].iter().position(|n| *n == v) {
             self.adj_list[u].remove(pos);
         }
-        if let Some(pos) = self.adj_list[v].iter().position(|n| *n==u) {
+        if let Some(pos) = self.adj_list[v].iter().position(|n| *n == u) {
             self.adj_list[v].remove(pos);
         }
     }
 
     pub fn subgraph(&self, nodes: &[usize]) -> DiGraph
     {
-        let mut sg:Self = DiGraph::new();
+        let mut sg: Self = DiGraph::new();
         for n in nodes.iter() {
             sg.add_vertex(*n);
         }
-        for uv in self.edges()
-        {
+        for uv in self.edges() {
             if sg.has_vertex(uv.0) && sg.has_vertex(uv.1) {
-                sg.add_edge(uv.0, uv.1);
+                sg.add_edge_dups_ok(uv.0, uv.1);
             }
         }
 
@@ -223,11 +222,8 @@ mod test_directed_graph
         let mut graph: DiGraph = pairs.iter().collect();
         graph.add_vertex(14);
 
-        let sg = graph.subgraph(&vec![1,2,8,14]);
-        assert_eq!(
-            sg.edges().collect::<Vec<_>>(),
-            vec![(1, 2), (2, 8)]
-        );
+        let sg = graph.subgraph(&vec![1, 2, 8, 14]);
+        assert_eq!(sg.edges().collect::<Vec<_>>(), vec![(1, 2), (2, 8)]);
 
         assert!(sg.has_vertex(14));
     }

@@ -33,6 +33,5 @@ fn main()
         init_log();
     }
 
-
     solve_all_cases();
 }
