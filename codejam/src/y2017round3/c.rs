@@ -4,6 +4,7 @@ use crate::algo::graph::disjointset::DisjointSet;
 use std::io::Write;
 use std::time::Instant;
 use std::cmp::min;
+//use std::cmp::max;
 
 /*
 
@@ -98,38 +99,17 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
         })
         .collect();
 
-    let is_free: Vec<_> = camps
+    let waiting_times: Vec<_> = camps
         .iter()
         .map(|camp| {
             //calculate wait time
             let p1 = camp.wait_time(0, 0, &tours) + camp.wait_time(1, 1, &tours);
             let p2 = camp.wait_time(0, 1, &tours) + camp.wait_time(1, 0, &tours);
-            p1 == p2
+            (p1,p2)
         })
         .collect();
 
-    let is_00_better: Vec<_> = camps
-        .iter()
-        .map(|camp| {
-            //calculate wait time
-            let p1 = camp.wait_time(0, 0, &tours) + camp.wait_time(1, 1, &tours);
-            let p2 = camp.wait_time(0, 1, &tours) + camp.wait_time(1, 0, &tours);
-            p1 <= p2
-        })
-        .collect();
-
-    let waiting_time: Vec<_> = camps
-        .iter()
-        .map(|camp| {
-            //calculate wait time
-            let p1 = camp.wait_time(0, 0, &tours) + camp.wait_time(1, 1, &tours);
-            let p2 = camp.wait_time(0, 1, &tours) + camp.wait_time(1, 0, &tours);
-            min(p1, p2)
-        })
-        .collect();
-
-    debug!("Camps: {:?}", camps);
-    debug!("Free: {:?}", is_free);
+    //debug!("Camps: {:?}", camps);
 
     let mut min_time = std::usize::MAX;
 
@@ -145,12 +125,13 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
 
 
         for (camp_index, camp) in camps.iter().enumerate().skip(1) {
-            if is_free[camp_index] {
+            if waiting_times[camp_index].0 == waiting_times[camp_index].1 {
+                //doesn't matter which pairing
                 ds.merge_sets(camp.arrivals[0], camp.arrivals[1]);
                 ds.merge_sets(camp.departures[0], camp.departures[1]);
                 ds.merge_sets(camp.departures[0], camp.arrivals[1]);
             } else {
-                if is_00_better[camp_index] {
+                if waiting_times[camp_index].0 <  waiting_times[camp_index].1 {
                     ds.merge_sets(camp.arrivals[0], camp.departures[0]);
                     ds.merge_sets(camp.arrivals[1], camp.departures[1]);
                 } else {
@@ -160,22 +141,22 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
             }
         }
 
-        debug!("Number of cyles: {}  {} {} tours: {}", ds.number_of_sets(), start_arrival, start_depart, tours.len());
+        debug!("Number of cycles: {}  {} {} tours: {}", ds.number_of_sets(), start_arrival, start_depart, tours.len());
 
         let mut time = 0;
-        time += waiting_time.iter().skip(1).sum::<usize>();
+        time += waiting_times.iter().skip(1).map(|wt| min(wt.0, wt.1)).sum::<usize>();
         time += tours.iter().map( |t| t.duration).sum::<usize>();
         time += 24 * (ds.number_of_sets()-1);
         time += tours[camps[0].departures[start_depart]].leave_time;
         time += camps[0].wait_time(start_arrival^1, start_depart^1, &tours);
 
-        debug!("Waiting times {:?}", waiting_time.iter().collect::<Vec<_>>());
+        /*debug!("Waiting times {:?}", waiting_time.iter().collect::<Vec<_>>());
 
         debug!("Time: {}.  Waiting time: {} Tour durations: {}", time,
-               waiting_time.iter().skip(1).sum::<usize>(),
+               waiting_times.iter().skip(1).sum::<usize>(),
             tours.iter().map( |t| t.duration).sum::<usize>()
 
-        );
+        );*/
 
         min_time = min(time,min_time);
     }

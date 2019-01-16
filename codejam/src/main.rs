@@ -27,12 +27,8 @@ use self::util::log::init_log;
 
 fn main()
 {
-    //Init logging
-    //if false
-    // cfg!(feature = "debug_print")
-    {
-        init_log();
-    }
+
+    init_log();
 
     solve_all_cases();
 }
