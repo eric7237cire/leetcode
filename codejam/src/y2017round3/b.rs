@@ -134,17 +134,16 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
         discovery_order.pop();
 
         for current_node in discovery_order {
-
             let tree_children: Vec<_> = ST.edges_from(current_node).collect();
             let tree_parents: Vec<_> = ST.edges_to(current_node).collect();
             assert_eq!(tree_parents.len(), 1);
             let tree_parent = tree_parents[0];
 
-
             let mut balanced_value: i64 = 0;
 
             //These are edges not in the spanning tree that we assign 1 to
-            for v in subG.edges_to(current_node) { //non_tree_edges_ancestor {
+            for v in subG.edges_to(current_node) {
+                //non_tree_edges_ancestor {
                 /*Direct all edges in root-to-leaf direction
                  (we reverse or split edges after solving, as explained above).
                   We assign edges not in the tree a value of 1,
@@ -161,7 +160,6 @@ fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
             }
 
             for t in tree_children {
-
                 balanced_value -= edge_values
                     .iter()
                     //only count edges in the spanning tree which won't have a positive value

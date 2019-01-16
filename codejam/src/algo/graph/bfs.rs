@@ -75,7 +75,7 @@ mod test
         assert_eq!(bfs_search[3], 1);
 
         bfs_search.sort();
-        assert_eq!(bfs_search, vec![0, 1,2,3]);
+        assert_eq!(bfs_search, vec![0, 1, 2, 3]);
     }
 
     #[test]
@@ -94,6 +94,6 @@ mod test
         assert_eq!(bfs_search[4], 1);
 
         bfs_search.sort();
-        assert_eq!(bfs_search, vec![0, 1,2,3, 4]);
+        assert_eq!(bfs_search, vec![0, 1, 2, 3, 4]);
     }
 }

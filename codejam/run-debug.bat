@@ -23,7 +23,7 @@ rem cargo build && cat .\src\y2017round1B\A-small-practice.in | .\target\debug\r
 rem cargo build && cat .\src\y2017round1B\A-large-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round1B\A-large-practice.out 
 
 rem cargo build && cat .\src\y2017round1B\B-test.in | .\target\debug\rust-algorithm-problems.exe
-set RUST_BACKTRACE=1
+
 rem cargo build && cat .\src\y2017round1B\B-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round1B\B-small-practice.out
 rem cargo build && cat .\src\y2017round1B\B-large-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round1B\B-large-practice.out
 
@@ -56,5 +56,7 @@ rem cargo build && cat .\src\y2017round2\D-large-practice.in | .\target\debug\ru
 rem cargo build && cat .\src\y2017round3\A-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\A-small-practice.out
 rem cargo build && cat .\src\y2017round3\A-large-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\A-large-practice.out
 
-cargo build && cat .\src\y2017round3\B-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\B-small-practice.out
-cargo build && cat .\src\y2017round3\B-large-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\B-large-practice.out
+rem cargo build && cat .\src\y2017round3\B-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\B-small-practice.out
+rem cargo build && cat .\src\y2017round3\B-large-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\B-large-practice.out
+set RUST_BACKTRACE=0
+cargo build && cat .\src\y2017round3\C-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017round3\C-small-practice.out

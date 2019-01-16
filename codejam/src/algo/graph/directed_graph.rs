@@ -113,8 +113,8 @@ impl DiGraph
 
     pub fn remove_undirected_edge(&mut self, u: usize, v: usize)
     {
-        self.remove_edge(u,v);
-        self.remove_edge(v,u);
+        self.remove_edge(u, v);
+        self.remove_edge(v, u);
     }
 
     pub fn subgraph(&self, nodes: &[usize]) -> DiGraph
