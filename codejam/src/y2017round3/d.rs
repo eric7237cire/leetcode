@@ -64,6 +64,16 @@ fn calc_sum(inf_value:usize, width: usize, height: usize, D: usize, modulo: usiz
     square_sum
 }
 
+
+fn calc_sum_2_influencers(top_left_inf_value:usize, bottom_right_inf_value:usize, width: usize, height: usize, D: usize, modulo: usize) -> usize
+{
+    let top_row_sum = D * sum_closed_range(width-1) + top_left_inf_value * width;
+    //each row adds D*width more to each cell
+    let square_sum = height * top_row_sum + D * width * sum_closed_range(height-1);
+
+    square_sum
+}
+
 ///
 /// Top left, top right, bottom right, bottom left
 fn find_grid_sum(corners: &[usize], width: usize, height: usize, D: usize, modulo: usize) -> usize
@@ -187,6 +197,35 @@ mod test_round3_d
         g.iter_loc().map(|lv| lv.1).sum()
     }
 
+    fn find_grid_sum_naive_two_influencer(
+        corners: [usize;2],
+        width: usize,
+        height: usize,
+        D: usize,
+        modulo: usize,
+    ) -> usize
+    {
+        let mut g: Grid<usize> = Grid::new( height, width);
+
+        let corner_coords = vec![ IntCoord2d(0,0), IntCoord2d(height-1,width-1)];
+
+        for (coord, val) in corner_coords.iter().zip(corners.iter()) {
+            g[*coord] = *val;
+        }
+
+        g.transform(|(coord, val)| {
+            let max_values = corner_coords.iter().zip(corners.iter()).map( |(cc,val)| val + cc.distance(&coord) * D);
+            *val = max_values.min().unwrap();
+
+            //println!("Set val {} loc {}", val, coord);
+        });
+
+        println!("Grid\n{:#.6?}\n corners {:?}\nvalues {:?}\nD {:?}", g, corner_coords, corners, D);
+        // for
+
+        g.iter_loc().map(|lv| lv.1).sum()
+    }
+
     #[test]
     fn test_grid_sum()
     {
@@ -199,9 +238,10 @@ mod test_round3_d
             let D = 10; //grid_values.sample(&mut rng);
             let mut corner_values:Vec<_> = (0..4).map(|_| grid_values.sample(&mut rng)).collect();
             let mut grid_width = grid_dims.sample(&mut rng);
-            let grid_height = grid_dims.sample(&mut rng);
+            let mut grid_height = grid_dims.sample(&mut rng);
 
             grid_width = 10;
+            grid_height = 7;
             corner_values[2] = 12;
             corner_values[1] = 65;
 
@@ -211,8 +251,13 @@ mod test_round3_d
             //let sum2 = find_grid_sum(&corner_values, grid_width,grid_height, D, usize::MAX);
 
             println!("Sum1 {} Sum2 {}", sum1, sum2);
-
             assert_eq!(sum1, sum2);
+
+            let sum3 = find_grid_sum_naive_two_influencer([5, 7], grid_width,grid_height, D, usize::MAX);
+            let sum4 = calc_sum_2_influencers(5,7,grid_width,grid_height, D, usize::MAX);
+
+            println!("Sum3 {} Sum4 {}", sum3, sum4);
+            assert_eq!(sum3, sum4);
         }
 
 
