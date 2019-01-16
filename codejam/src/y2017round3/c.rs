@@ -119,8 +119,7 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
 
         let mut ds = DisjointSet::new(tours.len());
 
-        //ds.merge_sets(camps[0].arrivals[start_arrival], camps[0].departures[start_depart]);
-
+        //we will need to pass through the base camp with the non final arrival/departure
         ds.merge_sets(camps[0].arrivals[start_arrival^1], camps[0].departures[start_depart^1]);
 
 
@@ -149,14 +148,6 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
         time += 24 * (ds.number_of_sets()-1);
         time += tours[camps[0].departures[start_depart]].leave_time;
         time += camps[0].wait_time(start_arrival^1, start_depart^1, &tours);
-
-        /*debug!("Waiting times {:?}", waiting_time.iter().collect::<Vec<_>>());
-
-        debug!("Time: {}.  Waiting time: {} Tour durations: {}", time,
-               waiting_times.iter().skip(1).sum::<usize>(),
-            tours.iter().map( |t| t.duration).sum::<usize>()
-
-        );*/
 
         min_time = min(time,min_time);
     }
