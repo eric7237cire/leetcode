@@ -65,8 +65,14 @@ fn calc_sum(inf_value:usize, width: usize, height: usize, D: usize, modulo: usiz
 }
 
 
+///assume top/left and bottom/right
 fn calc_sum_2_influencers(top_left_inf_value:usize, bottom_right_inf_value:usize, width: usize, height: usize, D: usize, modulo: usize) -> usize
 {
+    //we need to find the manhatten distance where they are equal.
+    //this will be distance from the top/left
+    let (md, rem)  = div_rem(D * (width+height-2) + bottom_right_inf_value - top_left_inf_value, 2*D);
+    println!("Manhatten Distance is {} {}", md, rem);
+
     let top_row_sum = D * sum_closed_range(width-1) + top_left_inf_value * width;
     //each row adds D*width more to each cell
     let square_sum = height * top_row_sum + D * width * sum_closed_range(height-1);
