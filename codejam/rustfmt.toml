@@ -1,2 +1,4 @@
 brace_style = "AlwaysNextLine"
-#control_brace_style = "AlwaysNextLine"
+fn_single_line = false
+newline_style = "Unix"
+# control_brace_style = "AlwaysNextLine"

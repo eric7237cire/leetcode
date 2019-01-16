@@ -1,9 +1,9 @@
 use super::super::util::input::*;
 
 use crate::algo::graph::disjointset::DisjointSet;
+use std::cmp::min;
 use std::io::Write;
 use std::time::Instant;
-use std::cmp::min;
 //use std::cmp::max;
 
 /*
@@ -19,11 +19,7 @@ pub fn solve_all_cases()
     for case in 1..=t {
         let C = reader.read_int();
 
-        let tours = (0..2 * C)
-            .map(|_| reader.read_tuple_3())
-            .collect::<Vec<_>>();
-
-        print!("{}", solve(case, C, &tours));
+        print!("{}", solve(case, C,));
     }
 
     let duration = now.elapsed();
@@ -34,91 +30,77 @@ pub fn solve_all_cases()
         secs
     );
 }
-fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> String
+fn solve(case_no: u32, C: usize) -> String
 {
     debug!("\n\n\nSolving case {}", case_no);
 
-
-
-    format!("Case #{}: {}\n", case_no)
+    format!("Case #{}: \n", case_no)
 }
 
 ///
 /// Top left, top right, bottom right, bottom left
-fn find_grid_sum( corners: &[usize], width: usize, height: usize, D: usize, modulo: usize) -> usize
+fn find_grid_sum(corners: &[usize], width: usize, height: usize, D: usize, modulo: usize) -> usize
 {
-
+    8
 }
 
+//cargo test round3_d -- --nocapture
 #[cfg(test)]
-mod test_round3
+mod test_round3_d
 {
     use super::*;
+    use crate::util::grid::Grid;
+    use crate::util::grid::GridCoord;
+    use crate::util::grid::*;
+    //use rand::distributions::{ Range};
+    use rand::{Rng, StdRng, SeedableRng};
+    use rand::distributions::{Distribution, Uniform};
+    //use rand::rand_core::SeedableRng;
+    use std::usize;
 
-    fn find_grid_sum_naive( corners: &[usize], width: usize, height: usize, D: usize, modulo: usize) -> usize
+    fn find_grid_sum_naive(
+        corners: &[usize],
+        width: usize,
+        height: usize,
+        D: usize,
+        modulo: usize,
+    ) -> usize
     {
-        let g = Grid::new();
+        let g: Grid<usize> = Grid::new(width, height);
+
+        let corner_coords = (0..=3).map(|i|
+            IntCoord2d::<usize>(if
+                      i < 2 { 0 } else { height - 1 },
+                      if i == 0 || i == 3 { 0 } else { width - 1 },
+            ));
+
+        println!("Grid\n{:#.6?}\n corners {:?}", g, corner_coords);
+        // for
+        8
     }
 
     #[test]
-    fn test_merging()
+    fn test_grid_sum()
     {
-        let mut ds = DisjointSet::new(4);
-        ds.merge_sets(3, 1);
 
-        assert_eq!(3, ds.number_of_sets());
+        let mut rng: StdRng = SeedableRng::seed_from_u64(42);
 
-        ds.merge_sets(0,3);
+        let grid_values = Uniform::from(3..50usize);
+        let grid_dims = Uniform::from(3..20usize);
+        for _ in 0..5 {
+            let D = grid_values.sample(&mut rng);
+            let corner_values:Vec<_> = (0..4).map(|_| grid_values.sample(&mut rng)).collect();
+            let grid_width = grid_dims.sample(&mut rng);
+            let grid_height = grid_dims.sample(&mut rng);
 
-        assert_eq!(2, ds.number_of_sets());
+            let sum1 = find_grid_sum_naive(&corner_values, grid_width,grid_height, D, usize::MAX);
+            let sum2 = find_grid_sum(&corner_values, grid_width,grid_height, D, usize::MAX);
 
-        ds.merge_sets(1,2);
+            assert_eq!(sum1, sum2);
+        }
 
-        assert_eq!(1, ds.number_of_sets());
+
+
     }
 
-    /*---- Test suite ----*/
-    #[test]
-    fn test_is_free()
-    {
-        let tours = vec![
-            Tour {
-                start_camp: 1,
-                stop_camp: 0,
-                leave_time: 9,
-                duration: 2,
-            },
-            Tour {
-                start_camp: 1,
-                stop_camp: 0,
-                leave_time: 20,
-                duration: 3,
-            },
-            Tour {
-                start_camp: 0,
-                stop_camp: 1,
-                leave_time: 17,
-                duration: 3,
-            },
-            Tour {
-                start_camp: 0,
-                stop_camp: 1,
-                leave_time: 8,
-                duration: 3,
-            },
-        ];
-
-        let camp = Camp {
-            arrivals: vec![0, 1],
-            departures: vec![2, 3],
-        };
-
-        assert_eq!(6, camp.wait_time(0, 0, &tours));
-
-        //arrive 23:00, leave 8:00
-        assert_eq!(9, camp.wait_time(1, 1, &tours));
-
-        assert_eq!(18, camp.wait_time(1, 0, &tours));
-        assert_eq!(21, camp.wait_time(0, 1, &tours));
-    }
 }

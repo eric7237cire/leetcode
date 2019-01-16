@@ -6,10 +6,7 @@ use log4rs::encode::pattern::PatternEncoder;
 
 pub fn init_log()
 {
-
-
     //simple_logging::log_to_file("log/output.log", ::log::LevelFilter::Debug).unwrap();
-
 
     let logfile = FileAppender::builder()
         .append(false)
@@ -27,5 +24,4 @@ pub fn init_log()
         .unwrap();
 
     let _handler = log4rs::init_config(config).unwrap();
-
 }

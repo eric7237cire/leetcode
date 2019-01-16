@@ -27,7 +27,6 @@ use self::util::log::init_log;
 
 fn main()
 {
-
     init_log();
 
     solve_all_cases();

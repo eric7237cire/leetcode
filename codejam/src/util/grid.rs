@@ -26,37 +26,6 @@ where
     T: GridCoordTrait;
 
 pub type GridCoord = IntCoord2d<usize>;
-
-/*
-impl <F> From<IntCoord2d<F>> for GridCoord {
-    fn from(coord: IntCoord2d<F>) -> Self {
-        IntCoord2d::<usize>(cast::<F,_>(coord.0).unwrap(),
-                            cast::<F,_>(coord.1).unwrap())
-    }
-}*/
-
-impl From<IntCoord2d<i64>> for GridCoord
-{
-    fn from(coord: IntCoord2d<i64>) -> Self
-    {
-        IntCoord2d::<usize>(coord.0 as usize, coord.1 as usize)
-    }
-}
-/*
-impl From<IntCoord2d<usize>> for GridCoord {
-    fn from(coord: IntCoord2d<usize>) -> Self {
-        coord
-    }
-}*/
-
-impl<N: GridCoordTrait> IntCoord2d<N>
-{
-    pub fn convert<M: GridCoordTrait>(&self) -> IntCoord2d<M>
-    {
-        IntCoord2d::<M>(cast::<N, M>(self.0).unwrap(), cast::<N, M>(self.1).unwrap())
-    }
-}
-
 pub type GridRowColVec = IntCoord2d<i64>;
 
 //pub struct GridConsts {}
@@ -191,41 +160,81 @@ where
 {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result
     {
+        //if formatter.alternate() {
+
+        let spacing = match f.precision() {
+            Some(precision) => precision,
+            _ => 4
+        };
+
+        let row_label_width = 5;
+
+        //headers
+        write!(f, "{:>width$} ", "", width=row_label_width).unwrap();
+
+        for c in 0..self.C {
+            write!(f, "{:>width$} |", format!("{}C", c), width=spacing-1).unwrap();
+        }
+        writeln!(f, ).unwrap();
+
+        write!(f, "{:width$}+", "", width=row_label_width).unwrap();
+
+        for c in 0..self.C {
+            write!(f, "{}+", "-".repeat(spacing), ).unwrap();
+        }
+        writeln!(f, "").unwrap();
+
         for r in 0..self.R {
+
+            write!(f, "{:>width$} |", format!("R{}", r), width=row_label_width-1).unwrap();
+
             for c in 0..self.C {
-                if let Err(err) = write!(f, "{}", self[(r, c)]) {
-                    return Err(err);
-                }
+                write!(f, "{:>width$} |", self[(r, c)], width=spacing-1).unwrap();
             }
-            if let Err(err) = writeln!(f) {
-                return Err(err);
+            writeln!(f).unwrap();
+
+            write!(f, "{:width$}+", "", width=row_label_width).unwrap();
+
+            for c in 0..self.C {
+                write!(f, "{}+", "-".repeat(spacing), ).unwrap();
             }
+            writeln!(f, "").unwrap();
         }
         write!(f, "")
     }
 }
 
-#[cfg(test)]
-mod tests
-{
-    use self::super::constants::*;
-    use self::super::*;
+/////////////////////////////
+/// Grid coordinate methods & trait implementations
 
-    #[test]
-    fn test_add()
+impl<N: GridCoordTrait> IntCoord2d<N>
+{
+    pub fn convert<M: GridCoordTrait>(&self) -> IntCoord2d<M>
     {
-        assert_eq!(IntCoord2d::<u8>(0, 2), IntCoord2d::<u8>(0, 3) + WEST);
+        IntCoord2d::<M>(cast::<N, M>(self.0).unwrap(), cast::<N, M>(self.1).unwrap())
     }
 
-    #[test]
-    fn test_get_value()
+    pub fn distance(&self, rhs: &Self) -> N
     {
-        let mut grid: Grid<char> = Grid::new(2, 2);
-        grid[(0, 0)] = 'a';
-        grid[(1, 0)] = 'b';
-        grid[(1, 1)] = 'd';
+        let r = if self.0 > rhs.0 {
+            self.0 - rhs.0
+        } else {
+            rhs.0 - self.0
+        };
+        let c = if self.1 > rhs.1 {
+            self.1 - rhs.1
+        } else {
+            rhs.1 - self.1
+        };
+        r + c
+    }
+}
 
-        assert_eq!(Some(&'d'), grid.get_value(IntCoord2d::<i16>(1, 1)));
+impl From<IntCoord2d<i64>> for GridCoord
+{
+    fn from(coord: IntCoord2d<i64>) -> Self
+    {
+        IntCoord2d::<usize>(coord.0 as usize, coord.1 as usize)
     }
 }
 
@@ -275,5 +284,50 @@ impl<N: GridCoordTrait> Display for IntCoord2d<N>
     fn fmt(&self, f: &mut Formatter) -> fmt::Result
     {
         write!(f, "(R{}, C{})", self.0, self.1)
+    }
+}
+
+#[cfg(test)]
+mod tests
+{
+    use self::super::constants::*;
+    use self::super::*;
+
+    use std::{u64,i64};
+
+
+    #[test]
+    fn test_add()
+    {
+        assert_eq!(IntCoord2d::<u8>(0, 2), IntCoord2d::<u8>(0, 3) + WEST);
+    }
+
+    #[test]
+    fn test_get_value()
+    {
+        let mut grid: Grid<char> = Grid::new(2, 2);
+        grid[(0, 0)] = 'a';
+        grid[(1, 0)] = 'b';
+        grid[(1, 1)] = 'd';
+
+        assert_eq!(Some(&'d'), grid.get_value(IntCoord2d::<i16>(1, 1)));
+    }
+
+    #[test]
+    fn test_get_dist()
+    {
+        assert_eq!(
+            IntCoord2d::<u64>(u64::MAX, 1).distance(&IntCoord2d::<u64>(u64::MAX - 3, 10)),
+            12
+        );
+        assert_eq!(
+            IntCoord2d::<u64>(u64::MAX - 4, 5).distance(&IntCoord2d::<u64>(u64::MAX, 4)),
+            5
+        );
+
+        assert_eq!(
+            IntCoord2d::<i64>(i64::MAX - 4, i64::MIN).distance(&IntCoord2d::<i64>(i64::MAX, i64::MIN+5)),
+            9
+        );
     }
 }
