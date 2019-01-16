@@ -66,17 +66,29 @@ mod test_round3_d
         modulo: usize,
     ) -> usize
     {
-        let g: Grid<usize> = Grid::new(width, height);
+        let mut g: Grid<usize> = Grid::new( height, width);
 
-        let corner_coords = (0..=3).map(|i|
+        let corner_coords:Vec<_> = (0..=3).map(|i|
             IntCoord2d::<usize>(if
                       i < 2 { 0 } else { height - 1 },
                       if i == 0 || i == 3 { 0 } else { width - 1 },
-            ));
+            )).collect();
 
-        println!("Grid\n{:#.6?}\n corners {:?}", g, corner_coords);
+        for (coord, val) in corner_coords.iter().zip(corners.iter()) {
+            g[*coord] = *val;
+        }
+
+        g.transform(|(coord, val)| {
+            let max_values = corner_coords.iter().zip(corners.iter()).map( |(cc,val)| val + cc.distance(&coord) * D);
+            *val = max_values.min().unwrap();
+
+            println!("Set val {} loc {}", val, coord);
+        });
+
+        println!("Grid\n{:#.6?}\n corners {:?}\nvalues {:?}\nD {:?}", g, corner_coords, corners, D);
         // for
-        8
+
+        7
     }
 
     #[test]
@@ -88,7 +100,7 @@ mod test_round3_d
         let grid_values = Uniform::from(3..50usize);
         let grid_dims = Uniform::from(3..20usize);
         for _ in 0..5 {
-            let D = grid_values.sample(&mut rng);
+            let D = 10; //grid_values.sample(&mut rng);
             let corner_values:Vec<_> = (0..4).map(|_| grid_values.sample(&mut rng)).collect();
             let grid_width = grid_dims.sample(&mut rng);
             let grid_height = grid_dims.sample(&mut rng);

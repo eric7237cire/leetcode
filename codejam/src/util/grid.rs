@@ -97,7 +97,67 @@ impl<T> Grid<T>
             .filter(move |(_index, value)| predicate(*value))
             .map(move |(index, _value)| IntCoord2d(index / self.C, index % self.C))
     }
+
+    /*
+    pub fn iter_loc<'a>(&'a self) -> impl Iterator<Item = (GridCoord, &T) > + 'a
+    where
+
+        T: PartialEq,
+    {
+        self.data
+            .iter()
+            .enumerate()
+            .map( |(index, value)| (IntCoord2d(index / self.C, index % self.C), value))
+    }*/
+
+    pub fn transform<'a, P>(&'a mut self, transformer: P) -> ()
+    where
+        P: Fn( (GridCoord, &'a mut T) ) -> () + 'a,
+        T: 'a,
+    {
+        //GridMutIterator{grid:self, cur_index:0}
+
+        let C =  self.C;
+
+        for (index, value)  in self.data
+            .iter_mut()
+            .enumerate() {
+        transformer((IntCoord2d(index / C, index % C), value));
+    }
+
+
+    }
 }
+
+//https://www.reddit.com/r/rust/comments/6ffrbs/implementing_a_safe_mutable_iterator/
+
+/*
+struct GridMutIterator<'b, T>
+{
+     grid: &'b mut Grid<T>,
+    cur_index: usize
+}
+
+impl <'a, T> Iterator for GridMutIterator<'a, T> {
+    type Item = (GridCoord, &'a mut T);
+
+    fn next(&mut self) -> Option<(GridCoord, &'a mut T)>
+
+    {
+
+        if self.cur_index >= self.grid.data.len() {
+            return None;
+        }
+
+        let index = self.cur_index;
+        self.cur_index += 1;
+        let coord = IntCoord2d(index / self.grid.C, index % self.grid.C);
+        let v: &'a mut T = self.grid.data.get_mut(index).unwrap();
+        Some( (coord, v ) )
+
+
+    }
+}*/
 
 //get a row
 impl<T> Index<usize> for Grid<T>
