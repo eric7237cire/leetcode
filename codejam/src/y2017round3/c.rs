@@ -139,11 +139,11 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
 
         let mut ds = DisjointSet::new(tours.len());
 
-        ds.merge_sets(camps[0].arrivals[start_arrival], camps[0].departures[start_depart]);
+        //ds.merge_sets(camps[0].arrivals[start_arrival], camps[0].departures[start_depart]);
 
         ds.merge_sets(camps[0].arrivals[start_arrival^1], camps[0].departures[start_depart^1]);
 
-        let mut ds = DisjointSet::new(tours.len());
+
         for (camp_index, camp) in camps.iter().enumerate().skip(1) {
             if is_free[camp_index] {
                 ds.merge_sets(camp.arrivals[0], camp.arrivals[1]);
@@ -160,15 +160,22 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
             }
         }
 
-        debug!("Number of cyles: {}", ds.number_of_sets());
+        debug!("Number of cyles: {}  {} {} tours: {}", ds.number_of_sets(), start_arrival, start_depart, tours.len());
 
         let mut time = 0;
-        time += waiting_time.iter().skip(0).sum::<usize>();
+        time += waiting_time.iter().skip(1).sum::<usize>();
         time += tours.iter().map( |t| t.duration).sum::<usize>();
         time += 24 * (ds.number_of_sets()-1);
-        time += tours[camps[0].departures[start_arrival]].leave_time;
+        time += tours[camps[0].departures[start_depart]].leave_time;
+        time += camps[0].wait_time(start_arrival^1, start_depart^1, &tours);
 
-        debug!("Time: {}", time);
+        debug!("Waiting times {:?}", waiting_time.iter().collect::<Vec<_>>());
+
+        debug!("Time: {}.  Waiting time: {} Tour durations: {}", time,
+               waiting_time.iter().skip(1).sum::<usize>(),
+            tours.iter().map( |t| t.duration).sum::<usize>()
+
+        );
 
         min_time = min(time,min_time);
     }
@@ -180,6 +187,23 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
 mod test_round3
 {
     use super::*;
+
+    #[test]
+    fn test_merging()
+    {
+        let mut ds = DisjointSet::new(4);
+        ds.merge_sets(3, 1);
+
+        assert_eq!(3, ds.number_of_sets());
+
+        ds.merge_sets(0,3);
+
+        assert_eq!(2, ds.number_of_sets());
+
+        ds.merge_sets(1,2);
+
+        assert_eq!(1, ds.number_of_sets());
+    }
 
     /*---- Test suite ----*/
     #[test]

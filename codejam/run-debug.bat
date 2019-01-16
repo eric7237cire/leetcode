@@ -1,5 +1,6 @@
 @echo off 
-rd /s /q "D:\git\rust-algorithm-problems\codejam\log"
+rem rd /s /q "D:\git\rust-algorithm-problems\codejam\log"
+echo "Reset" > "D:\git\rust-algorithm-problems\codejam\log\output.log"
 rem cargo build && cat .\src\y2017qual\A-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017qual\A-small-practice.out 
 rem cargo build && cat .\src\y2017qual\A-large-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017qual\A-large-practice.out 
 rem cargo build && cat .\src\y2017qual\B-small-practice.in | .\target\debug\rust-algorithm-problems.exe > .\src\y2017qual\B-small-practice.out
