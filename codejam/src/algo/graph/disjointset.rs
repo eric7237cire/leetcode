@@ -122,7 +122,7 @@ impl DisjointSet
     // Otherwise they belong in the same set, nothing is changed and the method returns false. Note that the arguments are orderless.
     pub fn merge_sets(&mut self, elemindex0: usize, elemindex1: usize) -> bool
     {
-        debug!("Merging {} and {}", elemindex0, elemindex1);
+        //debug!("Merging {} and {}", elemindex0, elemindex1);
 
         // Get representatives
         let mut repr0: usize = self.get_repr(elemindex0);
