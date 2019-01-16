@@ -11,4 +11,5 @@ rem cargo build --release && cat .\src\y2017round2\C-large-practice.in | .\targe
 rem cargo build --release && cat .\src\y2017round2\D-small-practice.in | .\target\release\codejam.exe > .\src\y2017round2\D-small-practice.out
 rem cargo build --release && cat .\src\y2017round2\D-large-practice.in | .\target\release\codejam.exe > .\src\y2017round2\D-large-practice.out
 
+cargo build --release && cat .\src\y2017round3\C-small-practice.in | .\target\release\rust-algorithm-problems.exe > .\src\y2017round3\C-small-practice.out
 cargo build --release && cat .\src\y2017round3\C-large-practice.in | .\target\release\rust-algorithm-problems.exe > .\src\y2017round3\C-large-practice.out

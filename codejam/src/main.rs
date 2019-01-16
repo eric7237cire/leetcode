@@ -4,7 +4,7 @@
 //use self::y2017round1B::c::solve_all_cases;
 //use self::y2017round1C::a::solve_all_cases;
 //use self::y2017round1C::c::solve_all_cases;
-use self::y2017round3::c::solve_all_cases;
+use self::y2017round3::d::solve_all_cases;
 
 mod util;
 
