@@ -98,7 +98,7 @@ impl<T> Grid<T>
             .map(move |(index, _value)| IntCoord2d(index / self.C, index % self.C))
     }
 
-    /*
+
     pub fn iter_loc<'a>(&'a self) -> impl Iterator<Item = (GridCoord, &T) > + 'a
     where
 
@@ -107,8 +107,8 @@ impl<T> Grid<T>
         self.data
             .iter()
             .enumerate()
-            .map( |(index, value)| (IntCoord2d(index / self.C, index % self.C), value))
-    }*/
+            .map( move|(index, value)| (IntCoord2d(index / self.C, index % self.C), value))
+    }
 
     pub fn transform<'a, P>(&'a mut self, transformer: P) -> ()
     where
@@ -159,14 +159,14 @@ impl <'a, T> Iterator for GridMutIterator<'a, T> {
     }
 }*/
 
-//get a row
+//get a cell
 impl<T> Index<usize> for Grid<T>
 {
-    type Output = [T];
+    type Output = T;
 
-    fn index(&'_ self, row_index: usize) -> &'_ [T]
+    fn index(&'_ self, index: usize) -> &'_ T
     {
-        &self.data[row_index * self.C..(row_index + self.C)]
+        &self.data[index]
     }
 }
 //get a cell
@@ -213,6 +213,14 @@ impl<T> IndexMut<(usize, usize)> for Grid<T>
         &mut self.data[row_col_index.0 * self.C + row_col_index.1]
     }
 }
+impl<T> IndexMut<usize> for Grid<T>
+{
+    fn index_mut(&'_ mut self, index: usize) -> &'_ mut T
+    {
+        &mut self.data[index]
+    }
+}
+
 
 impl<T> Debug for Grid<T>
 where
@@ -233,7 +241,7 @@ where
         write!(f, "{:>width$} ", "", width=row_label_width).unwrap();
 
         for c in 0..self.C {
-            write!(f, "{:>width$} |", format!("{}C", c), width=spacing-1).unwrap();
+            write!(f, "{:>width$} |", format!("C{}", c), width=spacing-1).unwrap();
         }
         writeln!(f, ).unwrap();
 
