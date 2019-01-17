@@ -1,4 +1,5 @@
 {
     "files.autoSave": "onFocusChange",
-    "editor.autoClosingBrackets": false,
+    "editor.autoClosingBrackets": "never",
+    "debug.allowBreakpointsEverywhere": true,
 }

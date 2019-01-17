@@ -6,6 +6,7 @@
 //use self::y2017round1C::a::solve_all_cases;
 //use self::y2017round1C::c::solve_all_cases;
 use self::y2017round3::d::solve_all_cases;
+use self::y2017round3::d::test_round3_d::test_grid_sum;
 
 mod util;
 
@@ -30,5 +31,6 @@ fn main()
 {
     init_log();
 
-    solve_all_cases();
+    //solve_all_cases();
+    test_grid_sum();
 }

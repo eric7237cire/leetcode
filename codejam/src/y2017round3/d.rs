@@ -55,12 +55,19 @@ fn sum_closed_range(stop: usize) -> usize
     stop * (stop+1) / 2
 }
 
+///1 + 2^2 + 3^3 + ...
+fn sum_sq_closed_range(stop: usize) -> usize
+{
+    stop * (stop+1) * (2*stop+1)/ 6
+}
+
 fn calc_sum(inf_value:usize, width: usize, height: usize, D: usize, modulo: usize) -> usize
 {
     let top_row_sum = D * sum_closed_range(width-1) + inf_value * width;
     //each row adds D*width more to each cell
     let square_sum = height * top_row_sum + D * width * sum_closed_range(height-1);
 
+    println!("Calculated sum top left: {} width: {} height: {} D: {} == {}", inf_value, width, height, D,square_sum);
     square_sum
 }
 
@@ -68,16 +75,109 @@ fn calc_sum(inf_value:usize, width: usize, height: usize, D: usize, modulo: usiz
 ///assume top/left and bottom/right
 fn calc_sum_2_influencers(top_left_inf_value:usize, bottom_right_inf_value:usize, width: usize, height: usize, D: usize, modulo: usize) -> usize
 {
-    //we need to find the manhatten distance where they are equal.
-    //this will be distance from the top/left
-    let (md, rem)  = div_rem(D * (width+height-2) + bottom_right_inf_value - top_left_inf_value, 2*D);
-    println!("Manhatten Distance is {} {}", md, rem);
+    /* we need to find the manhatten distance where they are equal.
+      this will be distance from the top/left
+      In the grid below, the manhattan distance is the distance to diagonal.
 
-    let top_row_sum = D * sum_closed_range(width-1) + top_left_inf_value * width;
-    //each row adds D*width more to each cell
-    let square_sum = height * top_row_sum + D * width * sum_closed_range(height-1);
+     This formula is derived by
 
-    square_sum
+     TL + MD = BR + (H + W - 2 - M) * D
+
+     where
+     TL -> value of top left node
+     BR -> value of bottom right
+     M -> manhattan distance (row + col diffs) starting from left corner
+     D -> max change per cell
+     W -> grid width
+     H -> grid height
+
+     Since we want them to meet, we need M steps from the top left, and H+W-2-M steps from the bottom right
+     */
+    let (top_left_manhat_dist, rem)  = div_rem(D * (width+height-2) + bottom_right_inf_value - top_left_inf_value, 2*D);
+    println!("Manhatten Distance is {} {}", top_left_manhat_dist, rem);
+
+    //the sphere of influence starting from the bottom right corner, -1 since it doesn't overlap with TL's influence
+    let br_manhat_distance = height+width-2-top_left_manhat_dist-1;
+
+    let mut top_rect_height = 0;
+    let mut bot_rect_height = 0;
+    let mut left_rect_width = 0;
+    let mut right_rect_width = 0;
+    let mut total_sum = 0;
+    let mut triangle_start_row = 0;
+
+    /*
+         C0 |   C1 |   C2 |   C3 |   C4 |   C5 |   C6 |   C7 |   C8 |   C9 |
+     +------+------+------+------+------+------+------+------+------+------+
+  R0 | (TL) |   15 |   25 |   35 |   B  |   55 |   65 |   75 |   77 |   A  |
+     +------+------+------+------+------+------+------+------+------+------+
+  R1 |   15 |   25 |   35 |    B |   55 |   65 |   75 |   77 |    A | Arev |
+     +------+------+------+------+------+------+------+------+------+------+
+  R2 |   25 |   35 |   B  |   55 |   65 |   75 |   77 |    A | Arev |   47 |
+     +------+------+------+------+------+------+------+------+------+------+
+  R3 |   35 |   B  |   55 |   65 |   75 |   77 |    A | Arev |   47 |   37 |
+     +------+------+------+------+------+------+------+------+------+------+
+  R4 |    B |   15 |   25 |   35 |   45 |   A  | Arev |   75 |   77 |   C  |
+     +------+------+------+------+------+------+------+------+------+------+
+  R5 |   15 |   25 |   35 |   45 |    A | Arev |   75 |   77 |   C  |   57 |
+     +------+------+------+------+------+------+------+------+------+------+
+  R6 |   25 |   35 |   45 |   A  | Arev |   75 |   77 |    C |   57 |   47 |
+     +------+------+------+------+------+------+------+------+------+------+
+  R7 |   35 |   45 |    A | Arev |   75 |   77 |    C |   57 |   47 | (BR) |
+     +------+------+------+------+------+------+------+------+------+------+
+
+*/
+
+    //Do we have a top rectangle (in ex. diag C would be [R0..R3]
+    if top_left_manhat_dist >= width {
+        top_rect_height = top_left_manhat_dist-width+1;
+        total_sum = calc_sum(top_left_inf_value, width, top_rect_height, D, modulo);
+
+    }
+
+    //Do we have a bottom rectangle (in ex, diag B would be [R5..R7]
+    if top_left_manhat_dist < height {
+        bot_rect_height = top_left_manhat_dist - height - 1;
+        total_sum += calc_sum(bottom_right_inf_value + (bot_rect_height+width-2 * D), width, bot_rect_height, D, modulo);
+    }
+
+    //Either we have a left or right rectangle
+
+    //Left retangle (in ex, diag C would be [C0..C5]
+    if top_left_manhat_dist >= height {
+        left_rect_width = top_left_manhat_dist - height + 1;
+        total_sum += calc_sum(top_left_inf_value, left_rect_width, height - top_rect_height - bot_rect_height, D, modulo);
+    }
+
+    //Right rectangle (in ex, diag B would be [C5..C9]
+    if br_manhat_distance >= height {
+        //one col is for the reverse of the triangle (see A-rev)
+        //(width - 1) - (M - 1)
+        right_rect_width = br_manhat_distance - height + 1;
+        //stop 1 row short of BR's diagonal
+        total_sum += calc_sum(bottom_right_inf_value, right_rect_width, height - top_rect_height - bot_rect_height, D, modulo);
+    }
+
+    //Now the actual diagonal/triangle
+    let top_left_triangle_height = height - bot_rect_height - top_rect_height;
+    //-1 is to take into account we have 2 columns in the jagged part
+    let top_left_triangle_width = width - left_rect_width - right_rect_width - 1;
+    assert_eq!(top_left_triangle_width, top_left_triangle_height);
+
+    let top_left_triangle_seed = top_left_inf_value + (left_rect_width+top_rect_height) * D;
+    let top_left_triangle_sum = sum_sq_closed_range(top_left_triangle_height) * D + sum_closed_range(top_left_triangle_height) * top_left_triangle_seed;
+    total_sum += top_left_triangle_sum;
+
+    
+    let bottom_right_triangle_height = min(br_manhat_distance+1, height);
+    let bottom_right_triangle_width = min(br_manhat_distance+1-right_rect_width, width-right_rect_width);
+    assert_eq!(bottom_right_triangle_height, bottom_right_triangle_width);
+    let bottom_right_triangle_seed = bottom_right_inf_value + (right_rect_width*D) + (bot_rect_height*D);
+    let bottom_right_triangle_sum = sum_sq_closed_range(bottom_right_triangle_height) * D + sum_closed_range(bottom_right_triangle_height) * bottom_right_triangle_seed;;
+    total_sum += bottom_right_triangle_sum;
+
+    
+    total_sum
 }
 
 ///
@@ -127,8 +227,8 @@ fn find_grid_sum(corners: &[usize], width: usize, height: usize, D: usize, modul
 }
 
 //cargo test round3_d -- --nocapture
-#[cfg(test)]
-mod test_round3_d
+//#[cfg(test)]
+pub mod test_round3_d
 {
     use super::*;
     use crate::util::grid::Grid;
@@ -232,10 +332,11 @@ mod test_round3_d
         g.iter_loc().map(|lv| lv.1).sum()
     }
 
-    #[test]
-    fn test_grid_sum()
+    //#[test]
+    pub fn test_grid_sum()
     {
 
+        println!("Starting...");
         let mut rng: StdRng = SeedableRng::seed_from_u64(42);
 
         let grid_values = Uniform::from(3..50usize);
