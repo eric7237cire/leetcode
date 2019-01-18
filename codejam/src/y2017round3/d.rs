@@ -6,26 +6,42 @@ use crate::util::grid::constants::DIRECTIONS;
 use crate::util::grid::GridCoord;
 use crate::util::grid::IntCoord2d;
 use num_integer::div_rem;
+use std::path::Path;
 use std::cmp::min;
 use std::io::Write;
 use std::ops::Range;
 use std::time::Instant;
+use std::fs::File;
+use std::io;
 //use std::cmp::max;
+
 
 /*
 
 */
-pub fn solve_all_cases()
+pub fn solve_all_cases() -> io::Result<()>
 {
     let now = Instant::now();
 
-    let mut reader = InputReader::new();
+    let sol_path = Path::new(r"D:\git\rust-algorithm-problems\codejam\src");
+    let round_path = sol_path.join(r"y2017round3");
+
+    let mut reader =  InputReader { s: String::new(),
+       i: Input::file( round_path.join(r"D-small-practice.in").to_str().unwrap()).unwrap()}; 
     let t = reader.read_int();
 
-    for case in 1..=t {
-        let C = reader.read_int();
+    let mut buffer = File::create(round_path.join(r"D-small-practice.out").to_str().unwrap()).unwrap();
 
-        print!("{}", solve(case, C,));
+    for case in 1..=t {
+        let i1 = reader.read_num_line();
+        let height=i1[0];
+        let width=i1[1];
+        let num_fixed = i1[2];
+        let D = i1[3];
+
+        let fixed_values : Vec<_> = (0..num_fixed).map(|_| reader.read_tuple_3()).collect();
+
+        write!(&mut buffer, "{}", solve(case, width, height, D, &fixed_values[..]));
     }
 
     let duration = now.elapsed();
@@ -35,10 +51,20 @@ pub fn solve_all_cases()
         "\nElapsed time {:.2} second(s)\n",
         secs
     );
+
+    Ok(())
 }
-fn solve(case_no: u32, C: usize) -> String
+fn solve(case_no: u32, width:usize, height:usize, D: usize, fixed_values: &[(i64,i64,usize)]) -> String
 {
     debug!("\n\n\nSolving case {}", case_no);
+    //R C B
+    for fv1 in fixed_values.iter() {
+        for fv2 in fixed_values.iter() {
+            if !is_valid(fv1.2, fv2.2, (1+ (fv1.0-fv2.0).abs() + (fv1.1-fv2.1).abs()) as usize, D) {
+                return format!("Case #{}: IMPOSSIBLE\n", case_no);
+            }
+        }
+    } 
 
     format!("Case #{}: \n", case_no)
 }
@@ -76,7 +102,7 @@ fn find_intersection(start: usize, stop: usize, length: usize, D: usize) -> Opti
 /// [Start, Start+D, Start+2D, Start+3D,..., Stop] in a list of length elements
 fn is_valid(start: usize, stop: usize, length: usize, D: usize) -> bool
 {
-    if length < 2 {
+    if length < 1 {
         return false;
     }
     let max_diff = (length - 1) * D;
@@ -689,7 +715,7 @@ pub mod test_round3_d
         Some(g.iter_loc().map(|lv| lv.1).sum())
     }
 
-    // #[test]
+    #[test]
     pub fn test_grid_sum()
     {
         println!("Starting...");
@@ -732,7 +758,7 @@ pub mod test_round3_d
             assert_eq!(sum1, sum2);
         }
     }
-    //#[test]
+    #[test]
     pub fn test_2inf_grid_sum()
     {
         println!("Starting...");
