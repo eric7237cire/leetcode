@@ -98,34 +98,28 @@ impl<T> Grid<T>
             .map(move |(index, _value)| IntCoord2d(index / self.C, index % self.C))
     }
 
-
-    pub fn iter_loc<'a>(&'a self) -> impl Iterator<Item = (GridCoord, &T) > + 'a
+    pub fn iter_loc<'a>(&'a self) -> impl Iterator<Item = (GridCoord, &T)> + 'a
     where
-
         T: PartialEq,
     {
         self.data
             .iter()
             .enumerate()
-            .map( move|(index, value)| (IntCoord2d(index / self.C, index % self.C), value))
+            .map(move |(index, value)| (IntCoord2d(index / self.C, index % self.C), value))
     }
 
     pub fn transform<'a, P>(&'a mut self, transformer: P) -> ()
     where
-        P: Fn( (GridCoord, &'a mut T) ) -> () + 'a,
+        P: Fn((GridCoord, &'a mut T)) -> () + 'a,
         T: 'a,
     {
         //GridMutIterator{grid:self, cur_index:0}
 
-        let C =  self.C;
+        let C = self.C;
 
-        for (index, value)  in self.data
-            .iter_mut()
-            .enumerate() {
-        transformer((IntCoord2d(index / C, index % C), value));
-    }
-
-
+        for (index, value) in self.data.iter_mut().enumerate() {
+            transformer((IntCoord2d(index / C, index % C), value));
+        }
     }
 }
 
@@ -221,7 +215,6 @@ impl<T> IndexMut<usize> for Grid<T>
     }
 }
 
-
 impl<T> Debug for Grid<T>
 where
     T: Display,
@@ -232,39 +225,44 @@ where
 
         let spacing = match f.precision() {
             Some(precision) => precision,
-            _ => 4
+            _ => 4,
         };
 
         let row_label_width = 5;
 
         //headers
-        write!(f, "{:>width$} ", "", width=row_label_width).unwrap();
+        write!(f, "{:>width$} ", "", width = row_label_width).unwrap();
 
         for c in 0..self.C {
-            write!(f, "{:>width$} |", format!("C{}", c), width=spacing-1).unwrap();
+            write!(f, "{:>width$} |", format!("C{}", c), width = spacing - 1).unwrap();
         }
-        writeln!(f, ).unwrap();
+        writeln!(f,).unwrap();
 
-        write!(f, "{:width$}+", "", width=row_label_width).unwrap();
+        write!(f, "{:width$}+", "", width = row_label_width).unwrap();
 
         for c in 0..self.C {
-            write!(f, "{}+", "-".repeat(spacing), ).unwrap();
+            write!(f, "{}+", "-".repeat(spacing),).unwrap();
         }
         writeln!(f, "").unwrap();
 
         for r in 0..self.R {
-
-            write!(f, "{:>width$} |", format!("R{}", r), width=row_label_width-1).unwrap();
+            write!(
+                f,
+                "{:>width$} |",
+                format!("R{}", r),
+                width = row_label_width - 1
+            )
+            .unwrap();
 
             for c in 0..self.C {
-                write!(f, "{:>width$} |", self[(r, c)], width=spacing-1).unwrap();
+                write!(f, "{:>width$} |", self[(r, c)], width = spacing - 1).unwrap();
             }
             writeln!(f).unwrap();
 
-            write!(f, "{:width$}+", "", width=row_label_width).unwrap();
+            write!(f, "{:width$}+", "", width = row_label_width).unwrap();
 
             for c in 0..self.C {
-                write!(f, "{}+", "-".repeat(spacing), ).unwrap();
+                write!(f, "{}+", "-".repeat(spacing),).unwrap();
             }
             writeln!(f, "").unwrap();
         }
@@ -361,8 +359,7 @@ mod tests
     use self::super::constants::*;
     use self::super::*;
 
-    use std::{u64,i64};
-
+    use std::{i64, u64};
 
     #[test]
     fn test_add()
@@ -394,7 +391,8 @@ mod tests
         );
 
         assert_eq!(
-            IntCoord2d::<i64>(i64::MAX - 4, i64::MIN).distance(&IntCoord2d::<i64>(i64::MAX, i64::MIN+5)),
+            IntCoord2d::<i64>(i64::MAX - 4, i64::MIN)
+                .distance(&IntCoord2d::<i64>(i64::MAX, i64::MIN + 5)),
             9
         );
     }

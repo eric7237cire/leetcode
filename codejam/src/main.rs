@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(warnings)]
+//#![feature(range_contains)]
 //use self::y2017qual::d::solve_all_cases;
 //use self::y2017round1B::c::solve_all_cases;
 //use self::y2017round1C::a::solve_all_cases;
 //use self::y2017round1C::c::solve_all_cases;
 use self::y2017round3::d::solve_all_cases;
-use self::y2017round3::d::test_round3_d::test_grid_sum;
+use self::y2017round3::d::test_round3_d::*;
 
 mod util;
 
@@ -31,6 +32,7 @@ fn main()
 {
     init_log();
 
+    // test_2inf_grid_sum();
     //solve_all_cases();
     test_grid_sum();
 }
