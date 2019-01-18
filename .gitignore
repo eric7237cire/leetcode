@@ -2,3 +2,5 @@
 *.exe
 target
 *.o
+.idea/workspace.xml
+.idea/encodings.xml
