@@ -63,14 +63,26 @@ fn find_intersection_with_remainder(
 /// `2id = stop + D(len-1) - start`
 /// length-1 D increments in length, assumed that start is at 0 and stop is len-1
 /// 0..1..2; len=3; 2 increments
-fn find_intersection(start: usize, stop: usize, length: usize, D: usize) -> usize
+fn find_intersection(start: usize, stop: usize, length: usize, D: usize) -> Option<usize>
 {
-    if length == 2 {
-        return 1;
+    if !is_valid(start, stop, length, D) {
+        return None;
     }
     let ret = ((length - 1) * D + stop - start) / (2 * D);
     assert!(ret <= length);
-    ret
+    Some(ret)
+}
+
+/// [Start, Start+D, Start+2D, Start+3D,..., Stop] in a list of length elements
+fn is_valid(start: usize, stop: usize, length: usize, D: usize) -> bool
+{
+    if length < 2 {
+        return false;
+    }
+    let max_diff = (length - 1) * D;
+    let diff = (start as i64 - stop as i64).abs() as usize;
+
+    return diff <= max_diff;
 }
 
 ///Sum 0 to stop
@@ -97,7 +109,7 @@ fn calc_rectangle_sum(
     //each row adds D*width more to each cell
     let square_sum = height * top_row_sum + D * width * sum_closed_range(height - 1);
 
-    println!(
+    debug!(
         "Calculated sum top left: {} width: {} height: {} D: {} == {}",
         seed_value, width, height, D, square_sum
     );
@@ -123,8 +135,10 @@ fn calc_sum_2_influencers(
     modulo: usize,
 ) -> Option<usize>
 {
-    println!("Calculating diag.  Seeds: {:?} width: {} height: {}",
-    seed_values, width,height);
+    debug!(
+        "Calculating diag.  Seeds: {:?} width: {} height: {}",
+        seed_values, width, height
+    );
 
     let top_left_inf_value = seed_values[0];
     let bottom_right_inf_value = seed_values[1];
@@ -173,7 +187,7 @@ fn calc_sum_2_influencers(
         D * (width + height - 2) + bottom_right_inf_value - top_left_inf_value,
         2 * D,
     );
-    println!("Manhatten Distance is {} {}", top_left_manhat_dist, rem);
+    debug!("Manhatten Distance is {} {}", top_left_manhat_dist, rem);
 
     //the sphere of influence starting from the bottom right corner, -1 since it doesn't overlap with TL's influence
     let br_manhat_distance = height + width - 2 - top_left_manhat_dist - 1;
@@ -219,7 +233,7 @@ fn calc_sum_2_influencers(
         bot_rect_height = height - 1 - top_left_manhat_dist - 1;
         total_sum += calc_rectangle_sum(bottom_right_inf_value, width, bot_rect_height, D, modulo);
     }
-    
+
     //Left retangle (in ex, diag C would be [C0..C5]; note it is sliced off by the top/bottom rectangles
     if top_left_manhat_dist >= height {
         left_rect_width = top_left_manhat_dist - height + 1;
@@ -316,17 +330,51 @@ fn calc_grid_sum_4_influencers(
     the frontier will always be 2 rows/2cols.  Even if the intersection really is 1 row/col
     its convenient to seperate each sub square cleanly to not have to deal with duplicate sums
     */
-    let top_lr_col = find_intersection(corner_values[TOP_LEFT], corner_values[TOP_RIGHT], width, D);
-    let bottom_lr_col = find_intersection(corner_values[BOTTOM_LEFT], corner_values[BOTTOM_RIGHT], width, D);
-    let left_tb_row = find_intersection(corner_values[TOP_LEFT], corner_values[BOTTOM_LEFT], height, D);
-    let right_tb_row = find_intersection(corner_values[TOP_RIGHT], corner_values[BOTTOM_RIGHT], height, D);
+    let top_lr_col = if let Some(a) =
+        find_intersection(corner_values[TOP_LEFT], corner_values[TOP_RIGHT], width, D)
+    {
+        a
+    } else {
+        let b = find_intersection(corner_values[TOP_LEFT], corner_values[TOP_RIGHT], width, D);
+        return None;
+    };
+    let bottom_lr_col = if let Some(a) = find_intersection(
+        corner_values[BOTTOM_LEFT],
+        corner_values[BOTTOM_RIGHT],
+        width,
+        D,
+    ) {
+        a
+    } else {
+        return None;
+    };
+    let left_tb_row = if let Some(a) = find_intersection(
+        corner_values[TOP_LEFT],
+        corner_values[BOTTOM_LEFT],
+        height,
+        D,
+    ) {
+        a
+    } else {
+        return None;
+    };
+    let right_tb_row = if let Some(a) = find_intersection(
+        corner_values[TOP_RIGHT],
+        corner_values[BOTTOM_RIGHT],
+        height,
+        D,
+    ) {
+        a
+    } else {
+        return None;
+    };
 
-    if top_lr_col >= width-1 {
+    /*
+    if let (Some(top_lr_col), Some(bottom_lr_col), Some(left_tb_row), Some(right_tb_row)) = (
+        top_lr_col, bottom_lr_col, left_tb_row,right_tb_row) {
+    } else {
         return None;
-    }
-    if right_tb_row >= height-1 {
-        return None;
-    }
+    }*/
 
     let mut rows = vec![left_tb_row, right_tb_row];
     let mut cols = vec![top_lr_col, bottom_lr_col];
@@ -353,7 +401,13 @@ fn calc_grid_sum_4_influencers(
     );
 
     // [ 0, col[0] ]
-    let ss1 = calc_rectangle_sum(corner_values[TOP_LEFT], top_lr_col+1, 1 + rows[0], D, modulo);
+    let ss1 = calc_rectangle_sum(
+        corner_values[TOP_LEFT],
+        top_lr_col + 1,
+        1 + rows[0],
+        D,
+        modulo,
+    );
 
     //col[0]+1 to col[1]
     /*let ss2 = if cols[1] > cols[0] {
@@ -376,7 +430,7 @@ fn calc_grid_sum_4_influencers(
         modulo,
     );
 
-    let top_sum = ss1+ss3;
+    let top_sum = ss1 + ss3;
     assert_eq!(Some(top_sum), check_top_sum);
 
     //[rows[0]+1 .. rows[1]]
@@ -385,7 +439,7 @@ fn calc_grid_sum_4_influencers(
         width,
         0..width,
         height,
-        rows[0] + 1..rows[1]+1,
+        rows[0] + 1..rows[1] + 1,
         D,
         modulo,
     );
@@ -397,33 +451,26 @@ fn calc_grid_sum_4_influencers(
     //so height = rows[1] - rows[0]
     if rows[1] > rows[0] {
         //[0..cols[0]]
-    //[cols[0]+1..cols[1]]
-    let ss5 =  {
-        let seed_values = if left_tb_row == rows[1] {
-            [
-                corner_values[TOP_LEFT] + D * (rows[0]+1),
-                corner_values[BOTTOM_RIGHT] + D * (height-rows[1]-1),
-            ]
-        } else {
-            [
-                corner_values[TOP_RIGHT] + D * (rows[0]+1) ,
-                corner_values[BOTTOM_LEFT] +  D * (height - rows[1]-1),
-            ]
+        //[cols[0]+1..cols[1]]
+        let ss5 = {
+            let seed_values = if left_tb_row == rows[1] {
+                [
+                    corner_values[TOP_LEFT] + D * (rows[0] + 1),
+                    corner_values[BOTTOM_RIGHT] + D * (height - rows[1] - 1),
+                ]
+            } else {
+                [
+                    corner_values[TOP_RIGHT] + D * (rows[0] + 1),
+                    corner_values[BOTTOM_LEFT] + D * (height - rows[1] - 1),
+                ]
+            };
+            calc_sum_2_influencers(&seed_values, width, rows[1] - rows[0], D, modulo).unwrap()
         };
-        calc_sum_2_influencers(
-            &seed_values,
-            width,
-            rows[1] - rows[0] ,
-            D,
-            modulo,
-        ).unwrap()
-    }; 
-    //[cols[1]+1..width-1]
-    
-    mid_sum = ss5;
+        //[cols[1]+1..width-1]
+
+        mid_sum = ss5;
     };
-    
-    
+
     assert_eq!(Some(mid_sum), check_mid_sum);
 
     //[rows[1]+1 .. height-1]
@@ -432,26 +479,30 @@ fn calc_grid_sum_4_influencers(
         width,
         0..width,
         height,
-        rows[1]+1..height,
+        rows[1] + 1..height,
         D,
         modulo,
     );
 
-    let ss7 = calc_rectangle_sum(corner_values[BOTTOM_LEFT], 
-    bottom_lr_col+1, height-rows[1]-1, D, modulo);
+    let ss7 = calc_rectangle_sum(
+        corner_values[BOTTOM_LEFT],
+        bottom_lr_col + 1,
+        height - rows[1] - 1,
+        D,
+        modulo,
+    );
 
-    
     let ss9 = calc_rectangle_sum(
         corner_values[BOTTOM_RIGHT],
         //[col[1] + 1..width]
         width - bottom_lr_col - 1,
         //row 0 has height 1
-        height- rows[1]-1,
+        height - rows[1] - 1,
         D,
         modulo,
     );
 
-    let bottom_sum = ss7+ss9;
+    let bottom_sum = ss7 + ss9;
     assert_eq!(Some(bottom_sum), check_bottom_sum);
     /*
     let ss4 = calc_sum(if top_right_col==col_cut_offs[2] { corner_with_val[0] } else {corner_with_val[2]},
@@ -465,7 +516,7 @@ fn calc_grid_sum_4_influencers(
     let ss9 = calc_sum(corner_with_val[2], IntCoord2d(row_cut_offs[3],0), IntCoord2d(height-1, col_cut_offs[1]));
 
     ss1+ss2+ss3+ss4+ss6+ss7+ss8+ss9*/
-    Some(top_sum+mid_sum+bottom_sum)
+    Some(top_sum + mid_sum + bottom_sum)
 }
 
 //cargo test round3_d -- --nocapture
@@ -482,7 +533,6 @@ pub mod test_round3_d
     //use rand::rand_core::SeedableRng;
     use std::usize;
 
-    
     ///
     /// Assume inf is in top/left corner.  each grid cell gets D added to it
 
@@ -503,10 +553,10 @@ pub mod test_round3_d
         g.transform(|(coord, val)| {
             *val = inf_value + corner_coord.distance(&coord) * D;
 
-            //println!("Set val {} loc {}", val, coord);
+            //debug!("Set val {} loc {}", val, coord);
         });
 
-        println!("Grid\n{:#.6?}\nD {:?}", g, D);
+        debug!("Grid\n{:#.6?}\nD {:?}", g, D);
         // for
 
         g.iter_loc().map(|lv| lv.1).sum()
@@ -526,7 +576,7 @@ pub mod test_round3_d
         if width * height <= 1 {
             return None;
         }
-        if width < 2 || height <2 {
+        if width < 2 || height < 2 {
             return None;
         }
 
@@ -552,14 +602,14 @@ pub mod test_round3_d
                 .map(|(cc, val)| val + cc.distance(&coord) * D);
             *val = max_values.min().unwrap();
 
-            //println!("Set val {} loc {}", val, coord);
+            //debug!("Set val {} loc {}", val, coord);
         });
 
         for (coord, val) in corner_coords.iter().zip(corners.iter()) {
             g[*coord] = *val;
         }
 
-        println!(
+        debug!(
             "Grid\n{:#.6?}\n corners {:?}\nvalues {:?}\n \
              D {:?}\n Width range {:?} Height Range {:?}",
             g, corner_coords, corners, D, width_range, height_range
@@ -616,14 +666,14 @@ pub mod test_round3_d
                 .map(|(cc, val)| val + cc.distance(&coord) * D);
             *val = max_values.min().unwrap();
 
-            //println!("Set val {} loc {}", val, coord);
+            //debug!("Set val {} loc {}", val, coord);
         });
 
         for (coord, val) in corner_coords.iter().zip(corners.iter()) {
             g[*coord] = *val;
         }
 
-        //println!("Grid\n{:#.6?}\n corners {:?}\nvalues {:?}\nD {:?}", g, corner_coords, corners, D);
+        //debug!("Grid\n{:#.6?}\n corners {:?}\nvalues {:?}\nD {:?}", g, corner_coords, corners, D);
 
         for (loc, v1) in g.iter_loc() {
             let loc: IntCoord2d<i64> = loc.convert();
@@ -661,12 +711,15 @@ pub mod test_round3_d
             corner_values[0] = 48;
             D = 21;*/
 
-            let sum1 =
-                find_grid_sum_naive_ranges(&corner_values[..], grid_width, 
+            let sum1 = find_grid_sum_naive_ranges(
+                &corner_values[..],
+                grid_width,
                 0..grid_width,
-                grid_height, 
+                grid_height,
                 0..grid_height,
-                D, usize::MAX);
+                D,
+                usize::MAX,
+            );
             let sum2 = calc_grid_sum_4_influencers(
                 &corner_values[..],
                 grid_width,
@@ -675,7 +728,7 @@ pub mod test_round3_d
                 usize::MAX,
             );
 
-            println!("Sum1 {:?} Sum2 {:?}", sum1, sum2);
+            debug!("Sum1 {:?} Sum2 {:?}", sum1, sum2);
             assert_eq!(sum1, sum2);
         }
     }
@@ -712,7 +765,7 @@ pub mod test_round3_d
             );
             let sum2 = calc_rectangle_sum(corner_values[0], grid_width, grid_height, D, usize::MAX);
 
-            println!("Sum1 {} Sum2 {}", sum1, sum2);
+            debug!("Sum1 {} Sum2 {}", sum1, sum2);
             assert_eq!(sum1, sum2);
 
             let sum3 = find_grid_sum_naive_two_influencer(
@@ -730,7 +783,7 @@ pub mod test_round3_d
                 usize::MAX,
             );
 
-            println!("Sum3 {:?} Sum4 {:?}", sum3, sum4);
+            debug!("Sum3 {:?} Sum4 {:?}", sum3, sum4);
             assert_eq!(sum3, sum4);
         }
     }
