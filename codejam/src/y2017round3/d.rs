@@ -13,6 +13,8 @@ use std::ops::Range;
 use std::time::Instant;
 use std::fs::File;
 use std::io;
+use std::collections::BTreeSet;
+
 //use std::cmp::max;
 
 
@@ -65,6 +67,16 @@ fn solve(case_no: u32, width:usize, height:usize, D: usize, fixed_values: &[(i64
             }
         }
     } 
+    let mut interesting_rows: BTreeSet<usize> = [0,height-1].iter().cloned().collect();
+    let mut interesting_cols: BTreeSet<usize> = [0,width-1].iter().cloned().collect();
+
+    for &(row,col,value) in fixed_values.iter() {
+        interesting_rows.insert( row as usize);
+        interesting_cols.insert(col as usize);
+    }
+
+
+
 
     format!("Case #{}: \n", case_no)
 }
