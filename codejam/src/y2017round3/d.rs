@@ -202,7 +202,7 @@ fn solve(
 
             //remove double counted row
             //if row < grid.R - 1 {
-            //grid_interior_sums += MODULO;    
+            grid_interior_sums += MODULO;    
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[BOTTOM_LEFT], corner_values[BOTTOM_RIGHT]],
                 i_n_cols,
@@ -214,7 +214,7 @@ fn solve(
             // }
             //remove double counted col
             //if col < grid.C - 1 {
-            //grid_interior_sums += MODULO;   
+            grid_interior_sums += MODULO;   
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[TOP_RIGHT], corner_values[BOTTOM_RIGHT]],
                 1,
@@ -222,7 +222,7 @@ fn solve(
                 D,
                 MODULO,
             )
-            .unwrap();
+            .unwrap() % MODULO;
             // }
 
             // if row < grid.R - 1 && col < grid.C -1 {
@@ -249,6 +249,7 @@ fn solve(
         grid_interior_sums += i_sum;
         //remove double counted col
         if row < grid.R - 1 {
+            grid_interior_sums += MODULO;
             grid_interior_sums -= corner_values[1];
         }
     }
@@ -270,13 +271,14 @@ fn solve(
         grid_interior_sums += i_sum;
         //remove double counted col
         if col < grid.C - 1 {
+            grid_interior_sums += MODULO;
             grid_interior_sums -= corner_values[1];
         }
     }
 
     //remove double counted
     if grid.R > 1 && grid.C > 1 {
-        grid_interior_sums -= grid[ (grid.R-1, grid.C-1) ];
+        grid_interior_sums -= MODULO+ grid[ (grid.R-1, grid.C-1) ];
     }
 
     /*
@@ -293,7 +295,7 @@ fn solve(
         .sum::<usize>();*/
 
     // - grid_int_cols_sum - grid_int_rows_sum
-    format!("Case #{}: {}\n", case_no, (grid_interior_sums) % MODULO)
+    format!("Case #{}: {}\n", case_no, grid_interior_sums % MODULO)
 }
 
 fn find_intersection_with_remainder(
@@ -359,7 +361,7 @@ fn calc_rectangle_sum(
     modulo: usize,
 ) -> usize
 {
-    let top_row_sum = (D * sum_closed_range(width - 1) + seed_value * width) % modulo;
+    let top_row_sum = mul_mod(D, sum_closed_range(width - 1),modulo) + mul_mod(seed_value, width,modulo);
     //each row adds D*width more to each cell
     let square_sum = mul_mod(height, top_row_sum,modulo)  + 
     mul_mod(D * width, sum_closed_range(height - 1),modulo );
@@ -368,7 +370,7 @@ fn calc_rectangle_sum(
         "Calculated sum top left: {} width: {} height: {} D: {} == {}",
         seed_value, width, height, D, square_sum
     );
-    square_sum
+    square_sum % modulo
 }
 
 fn calc_triangle_sum(seed_value: usize, triangle_len: usize, D: usize, modulo: usize) -> usize
@@ -377,10 +379,10 @@ fn calc_triangle_sum(seed_value: usize, triangle_len: usize, D: usize, modulo: u
     This serials is equal to D(sum (1 to num squares)^2) - D(sum 1 to num squares)
     (1² + 2² + 3² + 4² + ...) - (1+2+3+4) = 0 + 2D + 3*2D + 4*3D  which is what we want
     */
-    (sum_sq_closed_range(triangle_len) - sum_closed_range(triangle_len)) * D
-        + sum_closed_range(triangle_len) * seed_value
-     /*    sub_mod(sum_sq_to_n(triangle_len,modulo), sum_0_to_n(triangle_len,modulo),modulo) * D
-        + sum_0_to_n(triangle_len,modulo) * seed_value*/
+    /*(sum_sq_closed_range(triangle_len) - sum_closed_range(triangle_len)) * D
+        + sum_closed_range(triangle_len) * seed_value*/
+         sub_mod(sum_sq_to_n(triangle_len,modulo), sum_0_to_n(triangle_len,modulo),modulo) * D
+        + sum_0_to_n(triangle_len,modulo) * seed_value
    /* sub_mod( sum_sq_to_n(triangle_len, modulo), sum_closed_range(triangle_len), modulo) * D
         + sum_sq_to_n(triangle_len, modulo) * seed_value*/
 }
@@ -559,8 +561,8 @@ fn calc_sum_2_influencers(
 
     total_sum += bottom_right_triangle_sum;
 
-    Some(total_sum )
-    //Some(total_sum % modulo)
+    //Some(total_sum )
+    Some(total_sum % modulo )
 }
 
 mod constants
@@ -727,7 +729,7 @@ fn calc_grid_sum_4_influencers(
                     corner_values[BOTTOM_LEFT] + D * (height - rows[1] - 1),
                 ]
             };
-            calc_sum_2_influencers(&seed_values, width, rows[1] - rows[0], D, modulo).unwrap()
+            calc_sum_2_influencers(&seed_values, width, rows[1] - rows[0], D, modulo).unwrap() 
         };
         //[cols[1]+1..width-1]
 
@@ -785,8 +787,8 @@ fn calc_grid_sum_4_influencers(
     let ss9 = calc_sum(corner_with_val[2], IntCoord2d(row_cut_offs[3],0), IntCoord2d(height-1, col_cut_offs[1]));
 
     ss1+ss2+ss3+ss4+ss6+ss7+ss8+ss9*/
-    //Some( (top_sum + mid_sum + bottom_sum) % modulo)
-    Some( (top_sum + mid_sum + bottom_sum) )
+    Some( (top_sum + mid_sum + bottom_sum) % modulo)
+    //Some( (top_sum + mid_sum + bottom_sum) )
 }
 
 //cargo test round3_d -- --nocapture
