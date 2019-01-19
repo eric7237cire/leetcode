@@ -1,10 +1,9 @@
-use super::super::util::input::*;
+use crate::util::codejam::run_cases;
 use indexmap::IndexSet;
 use num_integer::binomial;
 use permutohedron::LexicalPermutation;
 use std::collections::HashMap;
 use std::io::Write;
-use std::time::Instant;
 
 /*
 permutations with repeated elements
@@ -13,24 +12,19 @@ recursion
 */
 pub fn solve_all_cases()
 {
-    let now = Instant::now();
+    run_cases(
+        &["A-small-practice", "A-large-practice"],
+        "y2017round3",
+        |reader, buffer| {
+            let mut memo = Memo::new();
+            let t = reader.read_int();
 
-    let mut reader = InputReader::new();
-    let t = reader.read_int();
+            for case in 1..=t {
+                let G : &str= reader.read_string();
 
-    let mut memo = Memo::new();
-    for case in 1..=t {
-        let G = reader.read_string();
-
-        print!("{}", solve(case, &G, &mut memo));
-    }
-
-    let duration = now.elapsed();
-    let secs = f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
-    let _ = writeln!(
-        ::std::io::stderr(),
-        "\nElapsed time {:.2} second(s)\n",
-        secs
+                write!(buffer, "{}", solve(case, &G, &mut memo)).unwrap();
+            }
+        },
     );
 }
 

@@ -1,5 +1,4 @@
 use self::constants::*;
-use super::super::util::input::*;
 use crate::algo::large_nums::*;
 use crate::util::codejam::run_cases;
 use crate::util::grid::Grid;
@@ -7,7 +6,6 @@ use itertools::Itertools;
 use num_integer::div_rem;
 use std::cmp::min;
 use std::collections::HashSet;
-use std::fs::File;
 use std::io::Write;
 
 /*
@@ -22,7 +20,7 @@ pub fn solve_all_cases()
     run_cases(
         &["D-small-practice", "D-large-practice"],
         "y2017round3",
-        |reader: &mut InputReader, buffer: &mut File| {
+        |reader, buffer| {
             let t = reader.read_int();
             for case in 1..=t {
                 let i1 = reader.read_num_line();

@@ -40,7 +40,7 @@ where
             f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
         let _ = writeln!(
             ::std::io::stderr(),
-            "\nElapsed time {:.2} second(s) for {} in {}\n",
+            "Elapsed time {:.2} second(s) for {} in {}",
             secs,
             file_base_name,
             package_name

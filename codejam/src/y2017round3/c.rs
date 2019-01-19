@@ -1,11 +1,7 @@
-use crate::util::codejam::run_cases;
-use crate::util::input::*;
-
 use crate::algo::graph::disjointset::DisjointSet;
+use crate::util::codejam::run_cases;
 use std::cmp::min;
-use std::fs::File;
 use std::io::Write;
-//use std::cmp::max;
 
 /*
 Union find / disjoint sets
@@ -16,7 +12,7 @@ pub fn solve_all_cases()
     run_cases(
         &["C-small-practice", "C-large-practice"],
         "y2017round3",
-        |reader: &mut InputReader, buffer: &mut File| {
+        |reader, buffer| {
             let t = reader.read_int();
 
             for case in 1..=t {
