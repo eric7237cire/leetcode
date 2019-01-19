@@ -104,14 +104,10 @@ impl<'a> InputReader<'a>
         )
     }
 
-    pub fn read_tuple_3<T, U, V>(&mut self) -> (T, U, V)
+    pub fn read_tuple_3<T>(&mut self) -> (T,T,T)
     where
         T: std::str::FromStr,
-        <T as std::str::FromStr>::Err: std::fmt::Debug,
-        U: std::str::FromStr,
-        <U as std::str::FromStr>::Err: std::fmt::Debug,
-        V: std::str::FromStr,
-        <V as std::str::FromStr>::Err: std::fmt::Debug,
+        <T as std::str::FromStr>::Err: std::fmt::Debug,       
     {
         self.s.clear();
         self.i.read_line(&mut self.s).unwrap();
@@ -119,8 +115,8 @@ impl<'a> InputReader<'a>
         let mut sw = self.s.split_whitespace();
         (
             sw.next().unwrap().parse::<T>().unwrap(),
-            sw.next().unwrap().parse::<U>().unwrap(),
-            sw.next().unwrap().parse::<V>().unwrap(),
+            sw.next().unwrap().parse::<T>().unwrap(),
+            sw.next().unwrap().parse::<T>().unwrap(),
         )
     }
 

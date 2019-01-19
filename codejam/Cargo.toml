@@ -6,10 +6,10 @@ edition = "2018"
 
 # See https://github.com/alexcrichton/cargo-vendor if overrides are wanted
 [dependencies]
-log4rs ="*"
+#log4rs ="*"
 log = {version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 itertools = "*"
-num = "*"
+#num = "*"
 bimap = "0.1"
 bit-vec = "*"
 bit-set = "*"
@@ -17,5 +17,6 @@ threadpool = "*"
 indexmap = "*"
 permutohedron = "*"
 num-integer = "*"
+num-traits = "*"
 rand = "*"
 

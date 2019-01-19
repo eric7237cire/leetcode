@@ -1,4 +1,5 @@
-use num::{cast, Integer, NumCast};
+use num_integer::{Integer};
+use num_traits::{cast, NumCast};
 use std::cmp::PartialEq;
 use std::default::Default;
 use std::fmt;

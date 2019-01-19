@@ -1,9 +1,10 @@
+use std::collections::HashSet;
 use super::super::util::input::*;
-use crate::y2017round3::d::test_round3_d::find_grid_sum_naive_ranges;
+//use crate::y2017round3::d::test_round3_d::find_grid_sum_naive_ranges;
 
 use crate::algo::graph::disjointset::DisjointSet;
 use crate::util::grid::constants::DIRECTIONS;
-use crate::util::grid::GridCoord;
+use crate::util::grid::{GridCoord,Grid};
 use crate::util::grid::IntCoord2d;
 use num_integer::div_rem;
 use std::path::Path;
@@ -14,7 +15,8 @@ use std::time::Instant;
 use std::fs::File;
 use std::io;
 use std::collections::BTreeSet;
-
+use itertools::Itertools;
+use self::constants::*;
 //use std::cmp::max;
 
 
@@ -41,9 +43,13 @@ pub fn solve_all_cases() -> io::Result<()>
         let num_fixed = i1[2];
         let D = i1[3];
 
-        let fixed_values : Vec<_> = (0..num_fixed).map(|_| reader.read_tuple_3()).collect();
+        let fixed_values : Vec<_> = (0..num_fixed).map(|_| reader.read_tuple_3::<usize>())
+        .map(| (r,c,v)| (r-1,c-1,v))
+        .collect();
 
         write!(&mut buffer, "{}", solve(case, width, height, D, &fixed_values[..]));
+
+        //break;
     }
 
     let duration = now.elapsed();
@@ -56,29 +62,73 @@ pub fn solve_all_cases() -> io::Result<()>
 
     Ok(())
 }
-fn solve(case_no: u32, width:usize, height:usize, D: usize, fixed_values: &[(i64,i64,usize)]) -> String
+
+fn abs_usize(a: usize, b: usize) -> usize
 {
+    (a as i64 - b as i64).abs() as usize
+}
+
+fn solve(case_no: u32, width:usize, height:usize, D: usize, fixed_values: &[(usize,usize,usize)]) -> String
+{
+   // dbg!(fixed_values);
     debug!("\n\n\nSolving case {}", case_no);
     //R C B
     for fv1 in fixed_values.iter() {
         for fv2 in fixed_values.iter() {
-            if !is_valid(fv1.2, fv2.2, (1+ (fv1.0-fv2.0).abs() + (fv1.1-fv2.1).abs()) as usize, D) {
+            if !is_valid(fv1.2, fv2.2, 1+ abs_usize(fv1.0,fv2.0) +abs_usize(fv1.1,fv2.1), D) {
                 return format!("Case #{}: IMPOSSIBLE\n", case_no);
             }
         }
     } 
-    let mut interesting_rows: BTreeSet<usize> = [0,height-1].iter().cloned().collect();
-    let mut interesting_cols: BTreeSet<usize> = [0,width-1].iter().cloned().collect();
 
+    let mut interesting_rows: HashSet<usize> = [0,height-1].iter().cloned().collect();
+    let mut interesting_cols: HashSet<usize> = [0,width-1].iter().cloned().collect();
+    
     for &(row,col,value) in fixed_values.iter() {
-        interesting_rows.insert( row as usize);
-        interesting_cols.insert(col as usize);
+        interesting_rows.insert( row);
+        interesting_cols.insert(col);
     }
 
+    for r in 0..height {
+        interesting_rows.insert(r);
+    }
+    for c in 0..width {
+        interesting_cols.insert(c);
+    }
+
+    let interesting_cols:Vec<usize> = interesting_cols.into_iter().sorted().collect();
+    let interesting_rows:Vec<usize> = interesting_rows.into_iter().sorted().collect();
+
+    let grid_width = interesting_cols.len();
+    let grid_height = interesting_rows.len();
 
 
 
-    format!("Case #{}: \n", case_no)
+   // dbg!(interesting_rows);
+    //dbg!(interesting_rows);
+
+    let mut grid:Grid<usize> = Grid::new(grid_height, grid_width);
+
+    grid.transform( |(gc,val)| {
+        let real_row = interesting_rows[gc.0];
+        let real_col = interesting_cols[gc.1];
+        *val = fixed_values.iter().map( |&(r,c,v)| 
+         v+(abs_usize(r,real_row) + abs_usize(c, real_col))*D).min().unwrap();
+    });
+
+    let grid_sum : usize = grid.iter_loc().map(|(_,v)| v).sum::<usize>() ;
+
+    for (row,real_row) in interesting_rows.iter().enumerate().skip(1) {
+        
+        for (col,real_col) in interesting_cols.iter().enumerate().skip(1) {
+            
+
+        }
+    }
+
+    //eprintln!("Grid\n{:#.6?}\nD {:?}\nsum={}", grid, D,grid_sum);
+
+    format!("Case #{}: {}\n", case_no, grid_sum % 1000000007)
 }
 
 fn find_intersection_with_remainder(
@@ -349,7 +399,7 @@ mod constants
     pub const BOTTOM_LEFT: usize = 3;
 }
 
-use self::constants::*;
+
 
 ///
 /// Top left, top right, bottom right, bottom left
@@ -428,6 +478,7 @@ fn calc_grid_sum_4_influencers(
     // 789
 
     //[0, rows[0]]
+    /*
     let check_top_sum = find_grid_sum_naive_ranges(
         corner_values,
         width,
@@ -436,7 +487,7 @@ fn calc_grid_sum_4_influencers(
         0..1 + rows[0],
         D,
         modulo,
-    );
+    );*/
 
     // [ 0, col[0] ]
     let ss1 = calc_rectangle_sum(
@@ -469,9 +520,10 @@ fn calc_grid_sum_4_influencers(
     );
 
     let top_sum = ss1 + ss3;
-    assert_eq!(Some(top_sum), check_top_sum);
+   // assert_eq!(Some(top_sum), check_top_sum);
 
     //[rows[0]+1 .. rows[1]]
+    /*
     let check_mid_sum = find_grid_sum_naive_ranges(
         corner_values,
         width,
@@ -480,7 +532,7 @@ fn calc_grid_sum_4_influencers(
         rows[0] + 1..rows[1] + 1,
         D,
         modulo,
-    );
+    );*/
 
     let mut mid_sum = 0;
 
@@ -509,9 +561,10 @@ fn calc_grid_sum_4_influencers(
         mid_sum = ss5;
     };
 
-    assert_eq!(Some(mid_sum), check_mid_sum);
+    //assert_eq!(Some(mid_sum), check_mid_sum);
 
     //[rows[1]+1 .. height-1]
+    /*
     let check_bottom_sum = find_grid_sum_naive_ranges(
         corner_values,
         width,
@@ -520,7 +573,7 @@ fn calc_grid_sum_4_influencers(
         rows[1] + 1..height,
         D,
         modulo,
-    );
+    );*/
 
     let ss7 = calc_rectangle_sum(
         corner_values[BOTTOM_LEFT],
@@ -541,7 +594,7 @@ fn calc_grid_sum_4_influencers(
     );
 
     let bottom_sum = ss7 + ss9;
-    assert_eq!(Some(bottom_sum), check_bottom_sum);
+    //assert_eq!(Some(bottom_sum), check_bottom_sum);
     /*
     let ss4 = calc_sum(if top_right_col==col_cut_offs[2] { corner_with_val[0] } else {corner_with_val[2]},
     IntCoord2d(0,col_cut_offs[1]), IntCoord2d(row_cut_offs[1], col_cut_offs[2]));
