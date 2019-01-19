@@ -9,7 +9,7 @@ use log4rs::encode::pattern::PatternEncoder;
 pub fn init_log()
 {
     //simple_logging::log_to_file("log/output.log", ::log::LevelFilter::Debug).unwrap();
-/*
+    /*
     let logfile = FileAppender::builder()
         .append(false)
         .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))

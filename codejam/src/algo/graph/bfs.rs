@@ -86,12 +86,11 @@ mod test
         graph.add_edge(2, 1);
         graph.add_edge(1, 0);
         graph.add_edge(0, 3);
-        graph.add_edge(3, 4);
-        graph.add_edge(4, 0);
+        graph.add_edge(1, 4);
 
         let mut bfs_search = graph.bfs(0).collect::<Vec<_>>();
 
-        assert_eq!(bfs_search[4], 1);
+        assert_eq!(bfs_search[4], 4);
 
         bfs_search.sort();
         assert_eq!(bfs_search, vec![0, 1, 2, 3, 4]);

@@ -1,5 +1,5 @@
-use num_traits::*;
 use num_integer::Integer;
+use num_traits::*;
 
 pub fn int_div_ceil<T>(n1: T, n2: T) -> T
 where

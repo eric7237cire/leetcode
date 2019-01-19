@@ -1,38 +1,47 @@
 use std::io::stdin;
 
 use std::fs::File;
-use std::io::{self, BufRead, Read, BufReader};
+use std::io::{self, BufRead, BufReader, Read};
 
-pub struct Input<'a> {
+pub struct Input<'a>
+{
     source: Box<BufRead + 'a>,
 }
 
-impl<'a> Input<'a> {
-    fn console() -> Input<'a> {
+impl<'a> Input<'a>
+{
+    fn console() -> Input<'a>
+    {
         Input {
             source: Box::new(BufReader::new(io::stdin())),
         }
     }
 
-    pub fn file(path: &str) -> io::Result<Input<'a>> {
+    pub fn file(path: &str) -> io::Result<Input<'a>>
+    {
         File::open(path).map(|file| Input {
             source: Box::new(io::BufReader::new(file)),
         })
     }
 }
 
-impl<'a> Read for Input<'a> {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+impl<'a> Read for Input<'a>
+{
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize>
+    {
         self.source.read(buf)
     }
 }
 
-impl<'a> BufRead for Input<'a> {
-    fn fill_buf(&mut self) -> io::Result<&[u8]> {
+impl<'a> BufRead for Input<'a>
+{
+    fn fill_buf(&mut self) -> io::Result<&[u8]>
+    {
         self.source.fill_buf()
     }
 
-    fn consume(&mut self, amt: usize) {
+    fn consume(&mut self, amt: usize)
+    {
         self.source.consume(amt);
     }
 }
@@ -40,16 +49,17 @@ impl<'a> BufRead for Input<'a> {
 pub struct InputReader<'a>
 {
     pub s: String,
-    pub i: Input<'a>
+    pub i: Input<'a>,
 }
 
 impl<'a> InputReader<'a>
 {
     pub fn new() -> InputReader<'a>
     {
-        InputReader { s: String::new(),
-       i: Input::console()
-         }
+        InputReader {
+            s: String::new(),
+            i: Input::console(),
+        }
     }
 
     pub fn read_num_line<T>(&mut self) -> Vec<T>
@@ -104,10 +114,10 @@ impl<'a> InputReader<'a>
         )
     }
 
-    pub fn read_tuple_3<T>(&mut self) -> (T,T,T)
+    pub fn read_tuple_3<T>(&mut self) -> (T, T, T)
     where
         T: std::str::FromStr,
-        <T as std::str::FromStr>::Err: std::fmt::Debug,       
+        <T as std::str::FromStr>::Err: std::fmt::Debug,
     {
         self.s.clear();
         self.i.read_line(&mut self.s).unwrap();
