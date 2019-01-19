@@ -1,6 +1,7 @@
 use self::constants::*;
 use super::super::util::input::*;
 use crate::algo::large_nums::*;
+use crate::util::codejam::run_cases;
 use crate::util::grid::Grid;
 use itertools::Itertools;
 use num_integer::div_rem;
@@ -8,79 +9,42 @@ use std::cmp::min;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
-use std::time::Instant;
-//use std::Res
-//use std::cmp::max;
 
 /*
-
+Grids
+Modulo arithmetic
+Large numbers
+Math
+Graph / shortest paths in grid
 */
 pub fn solve_all_cases()
 {
-    //test_grid_sum_right_no_inf();
+    run_cases(
+        &["D-small-practice", "D-large-practice"],
+        "y2017round3",
+        |reader: &mut InputReader, buffer: &mut File| {
+            let t = reader.read_int();
+            for case in 1..=t {
+                let i1 = reader.read_num_line();
+                let height = i1[0];
+                let width = i1[1];
+                let num_fixed = i1[2];
+                let D = i1[3];
 
-    let now = Instant::now();
+                let fixed_values: Vec<_> = (0..num_fixed)
+                    .map(|_| reader.read_tuple_3::<usize>())
+                    .map(|(r, c, v)| (r - 1, c - 1, v))
+                    .collect();
 
-    let sol_path = Path::new(r"D:\git\rust-algorithm-problems\codejam\src");
-    let round_path = sol_path.join(r"y2017round3");
-
-    let file_base_names = if cfg!(debug_assertions) {
-        vec!["D-large-practice"]
-    } else {
-        vec!["D-small-practice", "D-large-practice"]
-    };
-
-    for file_base_name in file_base_names {
-        let mut reader = InputReader {
-            s: String::new(),
-            i: Input::file(
-                round_path
-                    .join(format!("{}.in", file_base_name))
-                    .to_str()
-                    .unwrap(),
-            )
-            .unwrap(),
-        };
-        let t = reader.read_int();
-
-        let mut buffer = File::create(
-            round_path
-                .join(format!("{}.out", file_base_name))
-                .to_str()
-                .unwrap(),
-        )
-        .unwrap();
-
-        for case in 1..=t {
-            let i1 = reader.read_num_line();
-            let height = i1[0];
-            let width = i1[1];
-            let num_fixed = i1[2];
-            let D = i1[3];
-
-            let fixed_values: Vec<_> = (0..num_fixed)
-                .map(|_| reader.read_tuple_3::<usize>())
-                .map(|(r, c, v)| (r - 1, c - 1, v))
-                .collect();
-
-            write!(
-                &mut buffer,
-                "{}",
-                solve(case, width, height, D, &fixed_values[..])
-            )
-            .unwrap();
-        }
-
-        let duration = now.elapsed();
-        let secs =
-            f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
-        let _ = writeln!(
-            ::std::io::stderr(),
-            "\nElapsed time {:.2} second(s)\n",
-            secs
-        );
-    }
+                write!(
+                    buffer,
+                    "{}",
+                    solve(case, width, height, D, &fixed_values[..])
+                )
+                .unwrap();
+            }
+        },
+    );
 }
 
 fn abs_diff(a: usize, b: usize) -> usize
@@ -135,25 +99,16 @@ fn solve(
             .unwrap();
     });
 
-    //println!("Grid\n{:#.6?}\nD {:?}\nsum={}", grid, D,grid_sum);
-
     let mut grid_interior_sums = 0;
 
     //Sum top/left part only of each interior grid
     for (row, &real_row) in interesting_rows.iter().enumerate().skip(1) {
         let prev_row = row - 1;
         let prev_real_row = interesting_rows[prev_row];
-        if real_row - prev_real_row == 1 {
-            //continue;
-        }
 
         for (col, &real_col) in interesting_cols.iter().enumerate().skip(1) {
             let prev_col = col - 1;
             let prev_real_col = interesting_cols[prev_col];
-
-            if real_row - prev_real_row == 1 && real_col - prev_real_col == 1 {
-                //continue;
-            }
 
             let i_n_rows = real_row - prev_real_row + 1;
             let i_n_cols = real_col - prev_real_col + 1;
@@ -174,7 +129,6 @@ fn solve(
             grid_interior_sums += corner_values[BOTTOM_RIGHT];
 
             //remove double counted row
-            //if row < grid.R - 1 {
             grid_interior_sums += MODULO;
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[BOTTOM_LEFT], corner_values[BOTTOM_RIGHT]],
@@ -184,9 +138,8 @@ fn solve(
                 MODULO,
             )
             .unwrap();
-            // }
+
             //remove double counted col
-            //if col < grid.C - 1 {
             grid_interior_sums += MODULO;
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[TOP_RIGHT], corner_values[BOTTOM_RIGHT]],
@@ -196,11 +149,6 @@ fn solve(
                 MODULO,
             )
             .unwrap();
-            // }
-
-            // if row < grid.R - 1 && col < grid.C -1 {
-
-            // }
         }
     }
 

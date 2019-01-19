@@ -1,37 +1,34 @@
-use super::super::util::input::*;
+use crate::util::codejam::run_cases;
+use crate::util::input::*;
 
 use crate::algo::graph::disjointset::DisjointSet;
 use std::cmp::min;
+use std::fs::File;
 use std::io::Write;
-use std::time::Instant;
 //use std::cmp::max;
 
 /*
-
+Union find / disjoint sets
+Clock / modular arithmetic
 */
 pub fn solve_all_cases()
 {
-    let now = Instant::now();
+    run_cases(
+        &["C-small-practice", "C-large-practice"],
+        "y2017round3",
+        |reader: &mut InputReader, buffer: &mut File| {
+            let t = reader.read_int();
 
-    let mut reader = InputReader::new();
-    let t = reader.read_int();
+            for case in 1..=t {
+                let C = reader.read_int();
 
-    for case in 1..=t {
-        let C = reader.read_int();
+                let tours = (0..2 * C)
+                    .map(|_| reader.read_tuple_3())
+                    .collect::<Vec<_>>();
 
-        let tours = (0..2 * C)
-            .map(|_| reader.read_tuple_3())
-            .collect::<Vec<_>>();
-
-        print!("{}", solve(case, C, &tours));
-    }
-
-    let duration = now.elapsed();
-    let secs = f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
-    let _ = writeln!(
-        ::std::io::stderr(),
-        "\nElapsed time {:.2} second(s)\n",
-        secs
+                write!(buffer, "{}", solve(case, C, &tours)).unwrap();
+            }
+        },
     );
 }
 #[derive(Debug)]
