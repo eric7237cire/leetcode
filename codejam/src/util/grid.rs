@@ -109,7 +109,7 @@ impl<T> Grid<T>
             .map(move |(index, value)| (IntCoord2d(index / self.C, index % self.C), value))
     }
 
-    pub fn transform<'a, P>(&'a mut self, transformer: P) -> ()
+    pub fn transform<'a, P>(&'a mut self, transformer: P)
     where
         P: Fn((GridCoord, &'a mut T)) -> () + 'a,
         T: 'a,
@@ -241,7 +241,7 @@ where
 
         write!(f, "{:width$}+", "", width = row_label_width).unwrap();
 
-        for c in 0..self.C {
+        for _ in 0..self.C {
             write!(f, "{}+", "-".repeat(spacing),).unwrap();
         }
         writeln!(f, "").unwrap();
@@ -262,7 +262,7 @@ where
 
             write!(f, "{:width$}+", "", width = row_label_width).unwrap();
 
-            for c in 0..self.C {
+            for _ in 0..self.C {
                 write!(f, "{}+", "-".repeat(spacing),).unwrap();
             }
             writeln!(f, "").unwrap();

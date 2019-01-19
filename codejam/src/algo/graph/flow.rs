@@ -280,9 +280,9 @@ mod test
             graph.add_edge(b, sink, 1, 1);
         }
 
-        graph.add_edge(a_start + 0, b_start + 1, 1, 1);
-        graph.add_edge(a_start + 0, b_start + 2, 1, 1);
-        graph.add_edge(a_start + 2, b_start + 0, 1, 1);
+        graph.add_edge(a_start, b_start + 1, 1, 1);
+        graph.add_edge(a_start, b_start + 2, 1, 1);
+        graph.add_edge(a_start + 2, b_start, 1, 1);
         graph.add_edge(a_start + 2, b_start + 3, 1, 1);
         graph.add_edge(a_start + 3, b_start + 2, 1, 1);
         graph.add_edge(a_start + 4, b_start + 2, 1, 1);

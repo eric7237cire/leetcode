@@ -236,7 +236,7 @@ mod test_directed_graph
         let mut graph: DiGraph = pairs.iter().collect();
         graph.add_vertex(14);
 
-        let sg = graph.subgraph(&vec![1, 2, 8, 14]);
+        let sg = graph.subgraph(&[1, 2, 8, 14]);
         assert_eq!(sg.edges().collect::<Vec<_>>(), vec![(1, 2), (2, 8)]);
 
         assert!(sg.has_vertex(14));

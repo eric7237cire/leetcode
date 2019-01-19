@@ -65,7 +65,7 @@ impl Camp
         p1 == p2
     }
 }
-fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> String
+fn solve(case_no: u32, C: usize, tour_input: &[(usize, usize, usize)]) -> String
 {
     debug!("\n\n\nSolving case {}", case_no);
 
@@ -131,14 +131,12 @@ fn solve(case_no: u32, C: usize, tour_input: &Vec<(usize, usize, usize)>) -> Str
                 ds.merge_sets(camp.arrivals[0], camp.arrivals[1]);
                 ds.merge_sets(camp.departures[0], camp.departures[1]);
                 ds.merge_sets(camp.departures[0], camp.arrivals[1]);
+            } else if waiting_times[camp_index].0 < waiting_times[camp_index].1 {
+                ds.merge_sets(camp.arrivals[0], camp.departures[0]);
+                ds.merge_sets(camp.arrivals[1], camp.departures[1]);
             } else {
-                if waiting_times[camp_index].0 < waiting_times[camp_index].1 {
-                    ds.merge_sets(camp.arrivals[0], camp.departures[0]);
-                    ds.merge_sets(camp.arrivals[1], camp.departures[1]);
-                } else {
-                    ds.merge_sets(camp.arrivals[0], camp.departures[1]);
-                    ds.merge_sets(camp.arrivals[1], camp.departures[0]);
-                }
+                ds.merge_sets(camp.arrivals[0], camp.departures[1]);
+                ds.merge_sets(camp.arrivals[1], camp.departures[0]);
             }
         }
 

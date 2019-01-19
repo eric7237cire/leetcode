@@ -108,13 +108,13 @@ impl DisjointSet
     pub fn get_size_of_set(&mut self, elemindex: usize) -> usize
     {
         let repr: usize = self.get_repr(elemindex);
-        return self.nodes[repr].size;
+        self.nodes[repr].size
     }
 
     // Tests whether the given two elements are members of the same set. Note that the arguments are orderless.
     pub fn are_in_same_set(&mut self, elemindex0: usize, elemindex1: usize) -> bool
     {
-        return self.get_repr(elemindex0) == self.get_repr(elemindex1);
+        self.get_repr(elemindex0) == self.get_repr(elemindex1)
     }
 
     // Merges together the sets that the given two elements belong to. This method is also known as "union" in the literature.

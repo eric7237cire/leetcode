@@ -52,7 +52,7 @@ pub fn solve_all_cases()
     );
 }
 
-fn solve(case_no: u32, G: &DiGraph, P: &Vec<(usize, usize)>, F: usize) -> String
+fn solve(case_no: u32, G: &DiGraph, P: &[(usize, usize)], F: usize) -> String
 {
     debug!("\n\n\nSolving case {}", case_no);
 

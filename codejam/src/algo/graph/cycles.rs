@@ -197,20 +197,20 @@ mod test
 
     //https://github.com/networkx/networkx/blob/bf1c7cc9b144767523e5abcf84f949d4223848a0/networkx/algorithms/components/tests/test_strongly_connected.py
 
-    fn is_cyclic_permutation(a: &Vec<usize>, b: &Vec<usize>) -> bool
+    fn is_cyclic_permutation(a: &[usize], b: &[usize]) -> bool
     {
         let n = a.len();
         if b.len() != n {
             return false;
         }
-        let l: Vec<usize> = a.iter().chain(a.iter()).map(|e| *e).collect();
+        let l: Vec<usize> = a.iter().chain(a.iter()).cloned().collect();
 
         for i in 0..n {
-            if &l[i..i + n] == &b[..] {
+            if l[i..i + n] == b[..] {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     #[test]

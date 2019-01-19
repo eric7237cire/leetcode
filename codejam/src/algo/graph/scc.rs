@@ -132,15 +132,11 @@ mod test_scc
         v.sort();
     }
 
-    fn verify_scc(pairs: &Vec<(usize, usize)>, sccs: &Vec<Vec<usize>>)
+    fn verify_scc(pairs: &[(usize, usize)], sccs: &[Vec<usize>])
     {
         verify_scc_extra(pairs, sccs, Vec::new());
     }
-    fn verify_scc_extra(
-        pairs: &Vec<(usize, usize)>,
-        sccs: &Vec<Vec<usize>>,
-        extra_vertex: Vec<usize>,
-    )
+    fn verify_scc_extra(pairs: &[(usize, usize)], sccs: &[Vec<usize>], extra_vertex: Vec<usize>)
     {
         let mut graph = DiGraph::new();
 
@@ -154,7 +150,7 @@ mod test_scc
         let mut ans = strongly_connected_components(&graph);
 
         double_sort(&mut ans);
-        let mut check_ans = sccs.clone();
+        let mut check_ans = sccs.to_vec();
         double_sort(&mut check_ans);
 
         println!("{:?} correct: {:?}", ans, check_ans);

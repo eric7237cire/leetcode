@@ -63,7 +63,7 @@ pub fn sum_sq_to_n(n: usize, modulo: usize) -> usize
     } else {
         c /= 3;
     }
-    return mul_mod(mul_mod(a, b, modulo), c, modulo);
+    mul_mod(mul_mod(a, b, modulo), c, modulo)
 }
 //1+2+...+n
 pub fn sum_0_to_n(n: usize, modulo: usize) -> usize
@@ -76,7 +76,7 @@ pub fn sum_0_to_n(n: usize, modulo: usize) -> usize
         assert!(b % 2 == 0);
         b /= 2;
     }
-    return mul_mod(a, b, modulo);
+    mul_mod(a, b, modulo)
 }
 
 pub fn sub_mod<T>(a: T, b: T, modulo: T) -> T
