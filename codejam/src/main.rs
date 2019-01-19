@@ -21,6 +21,8 @@ mod y2017round3;
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate try_opt;
 //extern crate log4rs;
 extern crate rand;
 

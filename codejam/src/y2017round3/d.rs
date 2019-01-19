@@ -545,78 +545,38 @@ fn calc_grid_sum_4_influencers(
     the frontier will always be 2 rows/2cols.  Even if the intersection really is 1 row/col
     its convenient to seperate each sub square cleanly to not have to deal with duplicate sums
     */
-    let top_lr_col = if let Some(a) =
-        find_intersection(corner_values[TOP_LEFT], corner_values[TOP_RIGHT], width, D)
-    {
-        a
-    } else {
-        return None;
-    };
-    let bottom_lr_col = if let Some(a) = find_intersection(
+    let top_lr_col = try_opt!(find_intersection(
+        corner_values[TOP_LEFT],
+        corner_values[TOP_RIGHT],
+        width,
+        D
+    ));
+    let bottom_lr_col = try_opt!(find_intersection(
         corner_values[BOTTOM_LEFT],
         corner_values[BOTTOM_RIGHT],
         width,
         D,
-    ) {
-        a
-    } else {
-        return None;
-    };
-    let left_tb_row = if let Some(a) = find_intersection(
+    ));
+    let left_tb_row = try_opt!(find_intersection(
         corner_values[TOP_LEFT],
         corner_values[BOTTOM_LEFT],
         height,
         D,
-    ) {
-        a
-    } else {
-        return None;
-    };
-    let right_tb_row = if let Some(a) = find_intersection(
+    ));
+    let right_tb_row = try_opt!(find_intersection(
         corner_values[TOP_RIGHT],
         corner_values[BOTTOM_RIGHT],
         height,
         D,
-    ) {
-        a
-    } else {
-        return None;
-    };
-
-    /*
-    if let (Some(top_lr_col), Some(bottom_lr_col), Some(left_tb_row), Some(right_tb_row)) = (
-        top_lr_col, bottom_lr_col, left_tb_row,right_tb_row) {
-    } else {
-        return None;
-    }*/
+    ));
 
     let mut rows = vec![left_tb_row, right_tb_row];
     let mut cols = vec![top_lr_col, bottom_lr_col];
     rows.sort();
     cols.sort();
 
-    //let corner_coords = vec! [ IntCoord2d(0,0), IntCoord2d(0, width-1), IntCoord2d(height-1, width-1), IntCoord2d(height-1,0)];
-    //let corner_with_val:Vec<(GridCoord,usize)> = corner_coords.iter().zip(corner_values.iter()).map(|t| (*t.0, *t.1)) .collect();
-
-    //top / left - bottom / right pairs
-    // 123,
-    // 456,
-    // 789
-
-    //[0, rows[0]]
-    /*
-    let check_top_sum = find_grid_sum_naive_ranges(
-        corner_values,
-        width,
-        0..width,
-        height,
-        0..1 + rows[0],
-        D,
-        modulo,
-    );*/
-
     // [ 0, top_lr_col ]
-    let ss1 = calc_rectangle_sum_single_influencer(
+    let tl = calc_rectangle_sum_single_influencer(
         corner_values[TOP_LEFT],
         inclusive_range_len(0, top_lr_col),
         inclusive_range_len(0, rows[0]),
@@ -624,17 +584,7 @@ fn calc_grid_sum_4_influencers(
         modulo,
     );
 
-    //col[0]+1 to col[1]
-    /*let ss2 = if cols[1] > cols[0] {
-        let seed_value = if top_lr_col == cols[1] {
-            corner_values[TOP_LEFT] + D * cols[0]
-        } else {
-            corner_values[TOP_RIGHT] + D * (width - cols[1]-1)
-        };
-        calc_rectangle_sum(seed_value, cols[1] - cols[0], 1 + rows[0], D, modulo)
-    } else {0};*/
-
-    let ss3 = if top_lr_col < width - 1 {
+    let tr = if top_lr_col < width - 1 {
         calc_rectangle_sum_single_influencer(
             corner_values[TOP_RIGHT],
             inclusive_range_len(top_lr_col + 1, width - 1),
@@ -646,44 +596,35 @@ fn calc_grid_sum_4_influencers(
         0
     };
 
-    let top_sum = ss1 + ss3;
-    // assert_eq!(Some(top_sum), check_top_sum);
+    let top_sum = tl + tr;
 
     //[rows[0]+1 .. rows[1]]
-    /*
-    let check_mid_sum = find_grid_sum_naive_ranges(
-        corner_values,
-        width,
-        0..width,
-        height,
-        rows[0] + 1..rows[1] + 1,
-        D,
-        modulo,
-    );*/
-
-    let mid_sum = 
-
-    //[rows[0]+1 .. rows[1]]
-    if rows[1] > rows[0] {
+    let mid_sum = if rows[1] > rows[0] {
         //[0..cols[0]]
         //[cols[0]+1..cols[1]]
-        
-            let seed_values = if left_tb_row == rows[1] {
-                [
-                    corner_values[TOP_LEFT] + D * inclusive_range_len(0,rows[0]),
-                    corner_values[BOTTOM_RIGHT] + D * inclusive_range_len(rows[1]+1, height - 1),
-                ]
-            } else {
-                [
-                    corner_values[TOP_RIGHT] + D * inclusive_range_len(0,rows[0]),
-                    corner_values[BOTTOM_LEFT] + D * inclusive_range_len(rows[1]+1, height-1),
-                ]
-            };
-            calc_sum_2_influencers(&seed_values, inclusive_range_len(0, width-1), 
-            inclusive_range_len(rows[0]+1, rows[1]), D, modulo).unwrap()
-        
 
-    } else {0};
+        let seed_values = if left_tb_row == rows[1] {
+            [
+                corner_values[TOP_LEFT] + D * inclusive_range_len(0, rows[0]),
+                corner_values[BOTTOM_RIGHT] + D * inclusive_range_len(rows[1] + 1, height - 1),
+            ]
+        } else {
+            [
+                corner_values[TOP_RIGHT] + D * inclusive_range_len(0, rows[0]),
+                corner_values[BOTTOM_LEFT] + D * inclusive_range_len(rows[1] + 1, height - 1),
+            ]
+        };
+        calc_sum_2_influencers(
+            &seed_values,
+            inclusive_range_len(0, width - 1),
+            inclusive_range_len(rows[0] + 1, rows[1]),
+            D,
+            modulo,
+        )
+        .unwrap()
+    } else {
+        0
+    };
 
     let bottom_sum = if rows[1] < height - 1 {
         let bl = calc_rectangle_sum_single_influencer(
