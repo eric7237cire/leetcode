@@ -196,7 +196,7 @@ fn solve(
             //- corner_values.iter().sum::<usize>();
             grid_interior_sums += i_sum;
 
-            //grid_interior_sums %= MODULO;
+            grid_interior_sums %= MODULO;
 
             grid_interior_sums += corner_values[BOTTOM_RIGHT];
 
@@ -222,7 +222,7 @@ fn solve(
                 D,
                 MODULO,
             )
-            .unwrap() % MODULO;
+            .unwrap() ;
             // }
 
             // if row < grid.R - 1 && col < grid.C -1 {
@@ -250,7 +250,7 @@ fn solve(
         //remove double counted col
         if row < grid.R - 1 {
             grid_interior_sums += MODULO;
-            grid_interior_sums -= corner_values[1];
+            grid_interior_sums -= corner_values[1] % MODULO;
         }
     }
 
@@ -272,13 +272,14 @@ fn solve(
         //remove double counted col
         if col < grid.C - 1 {
             grid_interior_sums += MODULO;
-            grid_interior_sums -= corner_values[1];
+            grid_interior_sums -= corner_values[1] % MODULO;
         }
     }
 
     //remove double counted
     if grid.R > 1 && grid.C > 1 {
-        grid_interior_sums -= MODULO+ grid[ (grid.R-1, grid.C-1) ];
+        grid_interior_sums += MODULO;
+        grid_interior_sums -=  grid[ (grid.R-1, grid.C-1) ] % MODULO;
     }
 
     /*
@@ -382,7 +383,7 @@ fn calc_triangle_sum(seed_value: usize, triangle_len: usize, D: usize, modulo: u
     /*(sum_sq_closed_range(triangle_len) - sum_closed_range(triangle_len)) * D
         + sum_closed_range(triangle_len) * seed_value*/
          sub_mod(sum_sq_to_n(triangle_len,modulo), sum_0_to_n(triangle_len,modulo),modulo) * D
-        + sum_0_to_n(triangle_len,modulo) * seed_value
+        + mul_mod( sum_0_to_n(triangle_len,modulo), seed_value, modulo)
    /* sub_mod( sum_sq_to_n(triangle_len, modulo), sum_closed_range(triangle_len), modulo) * D
         + sum_sq_to_n(triangle_len, modulo) * seed_value*/
 }
