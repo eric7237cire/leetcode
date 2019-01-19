@@ -1,3 +1,5 @@
+use crate::algo::large_nums::*;
+use std::ops::Mul;
 use super::super::util::input::*;
 //use crate::y2017round3::d::test_round3_d::test_grid_sum_right_no_inf;
 use std::collections::HashSet;
@@ -15,7 +17,7 @@ use std::collections::BTreeSet;
 use std::fs::File;
 use std::io;
 use std::io::Write;
-use std::ops::Range;
+use std::ops::{Range,Rem};
 use std::path::Path;
 use std::time::Instant;
 //use std::cmp::max;
@@ -32,14 +34,22 @@ pub fn solve_all_cases() -> io::Result<()>
     let sol_path = Path::new(r"D:\git\rust-algorithm-problems\codejam\src");
     let round_path = sol_path.join(r"y2017round3");
 
+    let file_base_name = if cfg!(debug_assertions) {
+   "D-large-practice"
+    } else {
+        "D-small-practice"
+     
+    };
+    
+
     let mut reader = InputReader {
         s: String::new(),
-        i: Input::file(round_path.join(r"D-small-practice.in").to_str().unwrap()).unwrap(),
+        i: Input::file(round_path.join(format!("{}.in", file_base_name)).to_str().unwrap()).unwrap(),
     };
     let t = reader.read_int();
 
     let mut buffer =
-        File::create(round_path.join(r"D-small-practice.out").to_str().unwrap()).unwrap();
+        File::create(round_path.join(format!("{}.out", file_base_name)).to_str().unwrap()).unwrap();
 
     for case in 1..=t {
         let i1 = reader.read_num_line();
@@ -181,15 +191,18 @@ fn solve(
                 grid[(row, prev_col)],
             ];
             let i_sum: usize =
-                calc_grid_sum_4_influencers(&corner_values, i_n_cols, i_n_rows, D, 100000007)
-                    .unwrap();
+                calc_grid_sum_4_influencers(&corner_values, i_n_cols, i_n_rows, D, MODULO)
+                    .unwrap() ;
             //- corner_values.iter().sum::<usize>();
             grid_interior_sums += i_sum;
+
+            //grid_interior_sums %= MODULO;
 
             grid_interior_sums += corner_values[BOTTOM_RIGHT];
 
             //remove double counted row
             //if row < grid.R - 1 {
+            //grid_interior_sums += MODULO;    
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[BOTTOM_LEFT], corner_values[BOTTOM_RIGHT]],
                 i_n_cols,
@@ -201,6 +214,7 @@ fn solve(
             // }
             //remove double counted col
             //if col < grid.C - 1 {
+            //grid_interior_sums += MODULO;   
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[TOP_RIGHT], corner_values[BOTTOM_RIGHT]],
                 1,
@@ -336,6 +350,7 @@ fn sum_sq_closed_range(stop: usize) -> usize
     stop * (stop + 1) * (2 * stop + 1) / 6
 }
 
+
 fn calc_rectangle_sum(
     seed_value: usize,
     width: usize,
@@ -344,9 +359,10 @@ fn calc_rectangle_sum(
     modulo: usize,
 ) -> usize
 {
-    let top_row_sum = D * sum_closed_range(width - 1) + seed_value * width;
+    let top_row_sum = (D * sum_closed_range(width - 1) + seed_value * width) % modulo;
     //each row adds D*width more to each cell
-    let square_sum = height * top_row_sum + D * width * sum_closed_range(height - 1);
+    let square_sum = mul_mod(height, top_row_sum,modulo)  + 
+    mul_mod(D * width, sum_closed_range(height - 1),modulo );
 
     debug!(
         "Calculated sum top left: {} width: {} height: {} D: {} == {}",
@@ -363,6 +379,10 @@ fn calc_triangle_sum(seed_value: usize, triangle_len: usize, D: usize, modulo: u
     */
     (sum_sq_closed_range(triangle_len) - sum_closed_range(triangle_len)) * D
         + sum_closed_range(triangle_len) * seed_value
+     /*    sub_mod(sum_sq_to_n(triangle_len,modulo), sum_0_to_n(triangle_len,modulo),modulo) * D
+        + sum_0_to_n(triangle_len,modulo) * seed_value*/
+   /* sub_mod( sum_sq_to_n(triangle_len, modulo), sum_closed_range(triangle_len), modulo) * D
+        + sum_sq_to_n(triangle_len, modulo) * seed_value*/
 }
 
 ///assume top/left and bottom/right
@@ -539,7 +559,8 @@ fn calc_sum_2_influencers(
 
     total_sum += bottom_right_triangle_sum;
 
-    Some(total_sum)
+    Some(total_sum )
+    //Some(total_sum % modulo)
 }
 
 mod constants
@@ -764,7 +785,8 @@ fn calc_grid_sum_4_influencers(
     let ss9 = calc_sum(corner_with_val[2], IntCoord2d(row_cut_offs[3],0), IntCoord2d(height-1, col_cut_offs[1]));
 
     ss1+ss2+ss3+ss4+ss6+ss7+ss8+ss9*/
-    Some(top_sum + mid_sum + bottom_sum)
+    //Some( (top_sum + mid_sum + bottom_sum) % modulo)
+    Some( (top_sum + mid_sum + bottom_sum) )
 }
 
 //cargo test round3_d -- --nocapture
