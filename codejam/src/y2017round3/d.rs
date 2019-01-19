@@ -1,11 +1,13 @@
+//use std::option::NoneError;
+use super::super::util::input::*;
 use crate::algo::large_nums::*;
 use std::ops::Mul;
-use super::super::util::input::*;
 //use crate::y2017round3::d::test_round3_d::test_grid_sum_right_no_inf;
 use std::collections::HashSet;
 //use crate::y2017round3::d::test_round3_d::find_grid_sum_naive_ranges;
 
 use self::constants::*;
+use std::error::Error;
 use crate::algo::graph::disjointset::DisjointSet;
 use crate::util::grid::constants::DIRECTIONS;
 use crate::util::grid::IntCoord2d;
@@ -17,15 +19,16 @@ use std::collections::BTreeSet;
 use std::fs::File;
 use std::io;
 use std::io::Write;
-use std::ops::{Range,Rem};
+use std::ops::{Range, Rem};
 use std::path::Path;
 use std::time::Instant;
+//use std::Res
 //use std::cmp::max;
 
 /*
 
 */
-pub fn solve_all_cases() -> io::Result<()>
+pub fn solve_all_cases()
 {
     //test_grid_sum_right_no_inf();
 
@@ -34,57 +37,60 @@ pub fn solve_all_cases() -> io::Result<()>
     let sol_path = Path::new(r"D:\git\rust-algorithm-problems\codejam\src");
     let round_path = sol_path.join(r"y2017round3");
 
-    let file_base_name = if cfg!(debug_assertions) {
-   "D-large-practice"
+    let file_base_names = if cfg!(debug_assertions) {
+        vec!["D-large-practice"]
     } else {
-        "D-small-practice"
-     
+        vec!["D-small-practice", "D-large-practice"]
     };
-    
 
-    let mut reader = InputReader {
-        s: String::new(),
-        i: Input::file(round_path.join(format!("{}.in", file_base_name)).to_str().unwrap()).unwrap(),
-    };
-    let t = reader.read_int();
+    for file_base_name in file_base_names {
+        let mut reader = InputReader {
+            s: String::new(),
+            i: Input::file(
+                round_path
+                    .join(format!("{}.in", file_base_name))
+                    .to_str().unwrap(),
+            )
+            .unwrap(),
+        };
+        let t = reader.read_int();
 
-    let mut buffer =
-        File::create(round_path.join(format!("{}.out", file_base_name)).to_str().unwrap()).unwrap();
+        let mut buffer = File::create(
+            round_path
+                .join(format!("{}.out", file_base_name))
+                .to_str()
+                .unwrap(),
+        )
+        .unwrap();
 
-    for case in 1..=t {
-        let i1 = reader.read_num_line();
-        let height = i1[0];
-        let width = i1[1];
-        let num_fixed = i1[2];
-        let D = i1[3];
+        for case in 1..=t {
+            let i1 = reader.read_num_line();
+            let height = i1[0];
+            let width = i1[1];
+            let num_fixed = i1[2];
+            let D = i1[3];
 
-        let fixed_values: Vec<_> = (0..num_fixed)
-            .map(|_| reader.read_tuple_3::<usize>())
-            .map(|(r, c, v)| (r - 1, c - 1, v))
-            .collect();
+            let fixed_values: Vec<_> = (0..num_fixed)
+                .map(|_| reader.read_tuple_3::<usize>())
+                .map(|(r, c, v)| (r - 1, c - 1, v))
+                .collect();
 
-        if case != 11 {
-            //continue;
+            write!(
+                &mut buffer,
+                "{}",
+                solve(case, width, height, D, &fixed_values[..])
+            );
         }
 
-        write!(
-            &mut buffer,
-            "{}",
-            solve(case, width, height, D, &fixed_values[..])
+        let duration = now.elapsed();
+        let secs =
+            f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
+        let _ = writeln!(
+            ::std::io::stderr(),
+            "\nElapsed time {:.2} second(s)\n",
+            secs
         );
-
-        //break;
     }
-
-    let duration = now.elapsed();
-    let secs = f64::from(duration.as_secs() as u32) + f64::from(duration.subsec_nanos()) / 1e9f64;
-    let _ = writeln!(
-        ::std::io::stderr(),
-        "\nElapsed time {:.2} second(s)\n",
-        secs
-    );
-
-    Ok(())
 }
 
 fn abs_diff(a: usize, b: usize) -> usize
@@ -106,15 +112,14 @@ fn solve(
     fixed_values: &[(usize, usize, usize)],
 ) -> String
 {
-    // dbg!(fixed_values);
-    debug!("\n\n\nSolving case {}", case_no);
-    //R C B
-    for fv1 in fixed_values.iter() {
-        for fv2 in fixed_values.iter() {
+    //println!("Solving case {}", case_no);
+    
+    for &(r1,c1,val1) in fixed_values.iter() {
+        for &(r2,c2,val2) in fixed_values.iter() {
             if !is_valid(
-                fv1.2,
-                fv2.2,
-                1 + abs_diff(fv1.0, fv2.0) + abs_diff(fv1.1, fv2.1),
+                val1,
+                val2,
+                1 + abs_diff(r1,r2) + abs_diff(c1,c2),
                 D,
             ) {
                 return format!("Case #{}: IMPOSSIBLE\n", case_no);
@@ -130,26 +135,10 @@ fn solve(
         interesting_cols.insert(col);
     }
 
-    /*
-    for r in 0..height {
-        interesting_rows.insert(r);
-    }
-    for c in 0..width {
-        interesting_cols.insert(c);
-    }*/
-
     let interesting_cols: Vec<usize> = interesting_cols.into_iter().sorted().collect();
     let interesting_rows: Vec<usize> = interesting_rows.into_iter().sorted().collect();
 
-    //dbg!(interesting_rows.iter());
-
-    let grid_width = interesting_cols.len();
-    let grid_height = interesting_rows.len();
-
-    // dbg!(interesting_rows);
-    //dbg!(interesting_rows);
-
-    let mut grid: Grid<usize> = Grid::new(grid_height, grid_width);
+    let mut grid: Grid<usize> = Grid::new(interesting_rows.len(), interesting_cols.len());
 
     grid.transform(|(gc, val)| {
         let real_row = interesting_rows[gc.0];
@@ -191,8 +180,7 @@ fn solve(
                 grid[(row, prev_col)],
             ];
             let i_sum: usize =
-                calc_grid_sum_4_influencers(&corner_values, i_n_cols, i_n_rows, D, MODULO)
-                    .unwrap() ;
+                calc_grid_sum_4_influencers(&corner_values, i_n_cols, i_n_rows, D, MODULO).unwrap();
             //- corner_values.iter().sum::<usize>();
             grid_interior_sums += i_sum;
 
@@ -202,7 +190,7 @@ fn solve(
 
             //remove double counted row
             //if row < grid.R - 1 {
-            grid_interior_sums += MODULO;    
+            grid_interior_sums += MODULO;
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[BOTTOM_LEFT], corner_values[BOTTOM_RIGHT]],
                 i_n_cols,
@@ -214,7 +202,7 @@ fn solve(
             // }
             //remove double counted col
             //if col < grid.C - 1 {
-            grid_interior_sums += MODULO;   
+            grid_interior_sums += MODULO;
             grid_interior_sums -= calc_sum_2_influencers(
                 &[corner_values[TOP_RIGHT], corner_values[BOTTOM_RIGHT]],
                 1,
@@ -222,11 +210,11 @@ fn solve(
                 D,
                 MODULO,
             )
-            .unwrap() ;
+            .unwrap();
             // }
 
             // if row < grid.R - 1 && col < grid.C -1 {
-            
+
             // }
         }
     }
@@ -235,11 +223,10 @@ fn solve(
 
     //add in the rightmost col
     for (row, &real_row) in interesting_rows.iter().enumerate().skip(1) {
-
         let prev_row = row - 1;
         let prev_real_row = interesting_rows[prev_row];
-        
-        let i_n_rows = real_row-prev_real_row+1;
+
+        let i_n_rows = real_row - prev_real_row + 1;
         let i_n_cols = 1;
 
         let corner_values = [grid[(prev_row, grid.C - 1)], grid[(row, grid.C - 1)]];
@@ -254,8 +241,6 @@ fn solve(
         }
     }
 
-    //dbg!(interesting_cols.iter());
-
     //add in bottom row
     for (col, &real_col) in interesting_cols.iter().enumerate().skip(1) {
         let prev_col = col - 1;
@@ -267,7 +252,7 @@ fn solve(
         let corner_values = [grid[(grid.R - 1, prev_col)], grid[(grid.R - 1, col)]];
         let i_sum: usize =
             calc_sum_2_influencers(&corner_values, i_n_cols, i_n_rows, D, MODULO).unwrap();
-        //- corner_values.iter().sum::<usize>();
+
         grid_interior_sums += i_sum;
         //remove double counted col
         if col < grid.C - 1 {
@@ -276,41 +261,13 @@ fn solve(
         }
     }
 
-    //remove double counted
+    //remove double counted square
     if grid.R > 1 && grid.C > 1 {
         grid_interior_sums += MODULO;
-        grid_interior_sums -=  grid[ (grid.R-1, grid.C-1) ] % MODULO;
+        grid_interior_sums -= grid[(grid.R - 1, grid.C - 1)] % MODULO;
     }
 
-    /*
-    let grid_int_rows_sum: usize = grid
-        .iter_loc()
-        .filter(|(loc, _)| loc.0 > 0 && loc.0 < grid.R - 1)
-        .map(|(_, v)| v)
-        .sum::<usize>();
-
-    let grid_int_cols_sum: usize = grid
-        .iter_loc()
-        .filter(|(loc, _)| loc.1 > 0 && loc.1 < grid.C - 1)
-        .map(|(_, v)| v)
-        .sum::<usize>();*/
-
-    // - grid_int_cols_sum - grid_int_rows_sum
     format!("Case #{}: {}\n", case_no, grid_interior_sums % MODULO)
-}
-
-fn find_intersection_with_remainder(
-    start: usize,
-    stop: usize,
-    length: usize,
-    D: usize,
-) -> (usize, usize)
-{
-    let (inter, rem) = div_rem((length * D - D + stop - start), 2 * D);
-    let start_inf = inter as usize;
-    let stop_info = inter + if rem > 0 { 1 } else { 0 };
-
-    (start_inf, stop_info)
 }
 
 /// Finds linear intersection between
@@ -347,14 +304,10 @@ fn sum_closed_range(stop: usize) -> usize
     stop * (stop + 1) / 2
 }
 
-///1 + 2^2 + 3^3 + ...
-fn sum_sq_closed_range(stop: usize) -> usize
-{
-    stop * (stop + 1) * (2 * stop + 1) / 6
-}
-
-
-fn calc_rectangle_sum(
+///
+/// Calculates sum of a grid where a corner starts with seed value
+/// and each cell is max(D+min(adj. cell value))
+fn calc_rectangle_sum_single_influencer(
     seed_value: usize,
     width: usize,
     height: usize,
@@ -362,10 +315,14 @@ fn calc_rectangle_sum(
     modulo: usize,
 ) -> usize
 {
-    let top_row_sum = mul_mod(D, sum_closed_range(width - 1),modulo) + mul_mod(seed_value, width,modulo);
+    //Top row is 
+    //seed + D+seed + 2D+seed + (width-1)*D*seed
+    //which is  (sum 1 to width-1) * D + seed * width
+    let top_row_sum =
+        mul_mod(D, sum_closed_range(width - 1), modulo) + mul_mod(seed_value, width, modulo);
     //each row adds D*width more to each cell
-    let square_sum = mul_mod(height, top_row_sum,modulo)  + 
-    mul_mod(D * width, sum_closed_range(height - 1),modulo );
+    let square_sum = mul_mod(height, top_row_sum, modulo)
+        + mul_mod(D * width, sum_closed_range(height - 1), modulo);
 
     debug!(
         "Calculated sum top left: {} width: {} height: {} D: {} == {}",
@@ -381,11 +338,15 @@ fn calc_triangle_sum(seed_value: usize, triangle_len: usize, D: usize, modulo: u
     (1² + 2² + 3² + 4² + ...) - (1+2+3+4) = 0 + 2D + 3*2D + 4*3D  which is what we want
     */
     /*(sum_sq_closed_range(triangle_len) - sum_closed_range(triangle_len)) * D
-        + sum_closed_range(triangle_len) * seed_value*/
-         sub_mod(sum_sq_to_n(triangle_len,modulo), sum_0_to_n(triangle_len,modulo),modulo) * D
-        + mul_mod( sum_0_to_n(triangle_len,modulo), seed_value, modulo)
-   /* sub_mod( sum_sq_to_n(triangle_len, modulo), sum_closed_range(triangle_len), modulo) * D
-        + sum_sq_to_n(triangle_len, modulo) * seed_value*/
+    + sum_closed_range(triangle_len) * seed_value*/
+    sub_mod(
+        sum_sq_to_n(triangle_len, modulo),
+        sum_0_to_n(triangle_len, modulo),
+        modulo,
+    ) * D
+        + mul_mod(sum_0_to_n(triangle_len, modulo), seed_value, modulo)
+    /* sub_mod( sum_sq_to_n(triangle_len, modulo), sum_closed_range(triangle_len), modulo) * D
+    + sum_sq_to_n(triangle_len, modulo) * seed_value*/
 }
 
 ///assume top/left and bottom/right
@@ -415,7 +376,7 @@ fn calc_sum_2_influencers(
         return None;
     }
     if diff == max_diff {
-        return Some(calc_rectangle_sum(
+        return Some(calc_rectangle_sum_single_influencer(
             min(top_left_inf_value, bottom_right_inf_value),
             width,
             height,
@@ -486,21 +447,21 @@ fn calc_sum_2_influencers(
     //Do we have a top rectangle (in ex. diag C would be [R0..R3]
     if top_left_manhat_dist >= width {
         top_rect_height = top_left_manhat_dist - width + 1;
-        total_sum = calc_rectangle_sum(top_left_inf_value, width, top_rect_height, D, modulo);
+        total_sum = calc_rectangle_sum_single_influencer(top_left_inf_value, width, top_rect_height, D, modulo);
     }
 
     //Do we have a bottom rectangle (in ex, diag B would be [R5..R7]
     if height > 2 && top_left_manhat_dist < height - 2 {
         //In ex above, if man. hat dist is 4, then we want [R6..R7], so 8(height) -1 (start on top row) - 4(man hat dist) -1 (br. diagonal)
         bot_rect_height = height - 1 - top_left_manhat_dist - 1;
-        total_sum += calc_rectangle_sum(bottom_right_inf_value, width, bot_rect_height, D, modulo);
+        total_sum += calc_rectangle_sum_single_influencer(bottom_right_inf_value, width, bot_rect_height, D, modulo);
     }
 
     //Left retangle (in ex, diag C would be [C0..C5]; note it is sliced off by the top/bottom rectangles
     if top_left_manhat_dist >= height {
         left_rect_width = top_left_manhat_dist - height + 1;
         let seed_value = top_left_inf_value + D * top_rect_height;
-        total_sum += calc_rectangle_sum(
+        total_sum += calc_rectangle_sum_single_influencer(
             seed_value,
             left_rect_width,
             height - top_rect_height - bot_rect_height,
@@ -516,7 +477,7 @@ fn calc_sum_2_influencers(
         right_rect_width = br_manhat_distance - height + 1;
         let seed_value = bottom_right_inf_value + D * bot_rect_height;
         //stop 1 row short of BR's diagonal
-        total_sum += calc_rectangle_sum(
+        total_sum += calc_rectangle_sum_single_influencer(
             seed_value,
             right_rect_width,
             height - top_rect_height - bot_rect_height,
@@ -563,7 +524,7 @@ fn calc_sum_2_influencers(
     total_sum += bottom_right_triangle_sum;
 
     //Some(total_sum )
-    Some(total_sum % modulo )
+    Some(total_sum % modulo)
 }
 
 mod constants
@@ -665,7 +626,7 @@ fn calc_grid_sum_4_influencers(
     );*/
 
     // [ 0, top_lr_col ]
-    let ss1 = calc_rectangle_sum(
+    let ss1 = calc_rectangle_sum_single_influencer(
         corner_values[TOP_LEFT],
         inclusive_range_len(0, top_lr_col),
         inclusive_range_len(0, rows[0]),
@@ -684,7 +645,7 @@ fn calc_grid_sum_4_influencers(
     } else {0};*/
 
     let ss3 = if top_lr_col < width - 1 {
-        calc_rectangle_sum(
+        calc_rectangle_sum_single_influencer(
             corner_values[TOP_RIGHT],
             inclusive_range_len(top_lr_col + 1, width - 1),
             inclusive_range_len(0, rows[0]),
@@ -730,7 +691,7 @@ fn calc_grid_sum_4_influencers(
                     corner_values[BOTTOM_LEFT] + D * (height - rows[1] - 1),
                 ]
             };
-            calc_sum_2_influencers(&seed_values, width, rows[1] - rows[0], D, modulo).unwrap() 
+            calc_sum_2_influencers(&seed_values, width, rows[1] - rows[0], D, modulo).unwrap()
         };
         //[cols[1]+1..width-1]
 
@@ -752,7 +713,7 @@ fn calc_grid_sum_4_influencers(
     );*/
 
     let bottom_sum = if rows[1] < height - 1 {
-        let ss7 = calc_rectangle_sum(
+        let ss7 = calc_rectangle_sum_single_influencer(
             corner_values[BOTTOM_LEFT],
             inclusive_range_len(0, bottom_lr_col),
             inclusive_range_len(rows[1] + 1, height - 1),
@@ -761,7 +722,7 @@ fn calc_grid_sum_4_influencers(
         );
 
         let ss9 = if bottom_lr_col < width - 1 {
-            calc_rectangle_sum(
+            calc_rectangle_sum_single_influencer(
                 corner_values[BOTTOM_RIGHT],
                 inclusive_range_len(bottom_lr_col + 1, width - 1),
                 inclusive_range_len(rows[1] + 1, height - 1),
@@ -788,7 +749,7 @@ fn calc_grid_sum_4_influencers(
     let ss9 = calc_sum(corner_with_val[2], IntCoord2d(row_cut_offs[3],0), IntCoord2d(height-1, col_cut_offs[1]));
 
     ss1+ss2+ss3+ss4+ss6+ss7+ss8+ss9*/
-    Some( (top_sum + mid_sum + bottom_sum) % modulo)
+    Some((top_sum + mid_sum + bottom_sum) % modulo)
     //Some( (top_sum + mid_sum + bottom_sum) )
 }
 
@@ -1071,7 +1032,7 @@ pub mod test_round3_d
                 D,
                 usize::MAX,
             );
-            let sum2 = calc_rectangle_sum(corner_values[0], grid_width, grid_height, D, usize::MAX);
+            let sum2 = calc_rectangle_sum_single_influencer(corner_values[0], grid_width, grid_height, D, usize::MAX);
 
             debug!("Sum1 {} Sum2 {}", sum1, sum2);
             assert_eq!(sum1, sum2);

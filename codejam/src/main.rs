@@ -1,8 +1,6 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(warnings)]
-//#![feature(slice_patterns)]
-//#![feature(range_contains)]
 //use self::y2017qual::d::solve_all_cases;
 //use self::y2017round1B::c::solve_all_cases;
 //use self::y2017round1C::a::solve_all_cases;
