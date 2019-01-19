@@ -244,7 +244,7 @@ where
         for _ in 0..self.C {
             write!(f, "{}+", "-".repeat(spacing),).unwrap();
         }
-        writeln!(f, "").unwrap();
+        writeln!(f).unwrap();
 
         for r in 0..self.R {
             write!(
@@ -265,7 +265,7 @@ where
             for _ in 0..self.C {
                 write!(f, "{}+", "-".repeat(spacing),).unwrap();
             }
-            writeln!(f, "").unwrap();
+            writeln!(f).unwrap();
         }
         write!(f, "")
     }

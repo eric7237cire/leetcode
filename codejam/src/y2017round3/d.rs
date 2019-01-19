@@ -351,9 +351,7 @@ fn calc_sum_2_influencers(
     //First check validity
     let max_diff = (height + width - 2) * D;
     let diff = (top_left_inf_value as i64 - bottom_right_inf_value as i64).abs() as usize;
-    if width * height <= 0 {
-        return None;
-    }
+
     if diff > max_diff {
         return None;
     }
@@ -428,7 +426,7 @@ fn calc_sum_2_influencers(
     //Do we have a top rectangle (in ex. diag C would be [R0..R3]
     if top_left_manhat_dist >= width {
         top_rect_height = top_left_manhat_dist - width + 1;
-        total_sum = calc_rectangle_sum_single_influencer(
+        total_sum += calc_rectangle_sum_single_influencer(
             top_left_inf_value,
             width,
             top_rect_height,
@@ -663,49 +661,32 @@ fn calc_grid_sum_4_influencers(
         modulo,
     );*/
 
-    let mut mid_sum = 0;
+    let mid_sum = 
 
     //[rows[0]+1 .. rows[1]]
-    //height = rows[1] - (rows[0] + 1) + 1
-    //so height = rows[1] - rows[0]
     if rows[1] > rows[0] {
         //[0..cols[0]]
         //[cols[0]+1..cols[1]]
-        let ss5 = {
+        
             let seed_values = if left_tb_row == rows[1] {
                 [
-                    corner_values[TOP_LEFT] + D * (rows[0] + 1),
-                    corner_values[BOTTOM_RIGHT] + D * (height - rows[1] - 1),
+                    corner_values[TOP_LEFT] + D * inclusive_range_len(0,rows[0]),
+                    corner_values[BOTTOM_RIGHT] + D * inclusive_range_len(rows[1]+1, height - 1),
                 ]
             } else {
                 [
-                    corner_values[TOP_RIGHT] + D * (rows[0] + 1),
-                    corner_values[BOTTOM_LEFT] + D * (height - rows[1] - 1),
+                    corner_values[TOP_RIGHT] + D * inclusive_range_len(0,rows[0]),
+                    corner_values[BOTTOM_LEFT] + D * inclusive_range_len(rows[1]+1, height-1),
                 ]
             };
-            calc_sum_2_influencers(&seed_values, width, rows[1] - rows[0], D, modulo).unwrap()
-        };
-        //[cols[1]+1..width-1]
+            calc_sum_2_influencers(&seed_values, inclusive_range_len(0, width-1), 
+            inclusive_range_len(rows[0]+1, rows[1]), D, modulo).unwrap()
+        
 
-        mid_sum = ss5;
-    };
-
-    //assert_eq!(Some(mid_sum), check_mid_sum);
-
-    //[rows[1]+1 .. height-1]
-    /*
-    let check_bottom_sum = find_grid_sum_naive_ranges(
-        corner_values,
-        width,
-        0..width,
-        height,
-        rows[1] + 1..height,
-        D,
-        modulo,
-    );*/
+    } else {0};
 
     let bottom_sum = if rows[1] < height - 1 {
-        let ss7 = calc_rectangle_sum_single_influencer(
+        let bl = calc_rectangle_sum_single_influencer(
             corner_values[BOTTOM_LEFT],
             inclusive_range_len(0, bottom_lr_col),
             inclusive_range_len(rows[1] + 1, height - 1),
@@ -713,7 +694,7 @@ fn calc_grid_sum_4_influencers(
             modulo,
         );
 
-        let ss9 = if bottom_lr_col < width - 1 {
+        let br = if bottom_lr_col < width - 1 {
             calc_rectangle_sum_single_influencer(
                 corner_values[BOTTOM_RIGHT],
                 inclusive_range_len(bottom_lr_col + 1, width - 1),
@@ -724,25 +705,12 @@ fn calc_grid_sum_4_influencers(
         } else {
             0
         };
-        ss7 + ss9
+        bl + br
     } else {
         0
     };
-    //assert_eq!(Some(bottom_sum), check_bottom_sum);
-    /*
-    let ss4 = calc_sum(if top_right_col==col_cut_offs[2] { corner_with_val[0] } else {corner_with_val[2]},
-    IntCoord2d(0,col_cut_offs[1]), IntCoord2d(row_cut_offs[1], col_cut_offs[2]));
 
-    let ss6 = calc_sum(if bottom_right_col==col_cut_offs[2] { corner_with_val[0] } else { corner_with_val[2]}, IntCoord2d(0,col_cut_offs[2]), IntCoord2d(row_cut_offs[1], col_cut_offs[3]));
-
-    let ss7 = calc_sum(corner_with_val[1], IntCoord2d(0,col_cut_offs[2]), IntCoord2d(row_cut_offs[1], col_cut_offs[3]));
-    let ss8 = calc_sum( if right_bottom_row == row_cut_offs[2] { corner_with_val[1] } else {corner_with_val[2]},
-    IntCoord2d(row_cut_offs[1], col_cut_offs[3]), IntCoord2d(row_cut_offs[2], col_cut_offs[3]));
-    let ss9 = calc_sum(corner_with_val[2], IntCoord2d(row_cut_offs[3],0), IntCoord2d(height-1, col_cut_offs[1]));
-
-    ss1+ss2+ss3+ss4+ss6+ss7+ss8+ss9*/
     Some((top_sum + mid_sum + bottom_sum) % modulo)
-    //Some( (top_sum + mid_sum + bottom_sum) )
 }
 
 //cargo test round3_d -- --nocapture

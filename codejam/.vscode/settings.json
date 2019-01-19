@@ -2,4 +2,5 @@
     "files.autoSave": "onFocusChange",
     "editor.autoClosingBrackets": "never",
     "debug.allowBreakpointsEverywhere": true,
+    "rust.clippy_preference": "on",
 }
