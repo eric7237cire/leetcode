@@ -2,7 +2,7 @@
 pub use self::directed_graph::DiGraph;
 pub use self::edge_graph::Graph;
 pub mod flow;
-
+pub mod flow2;
 pub mod bfs;
 pub mod cycles;
 mod dfs;
