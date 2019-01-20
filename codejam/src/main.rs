@@ -35,13 +35,13 @@ use self::util::log::init_log;
 fn main()
 {
     init_log();
-    y2017round2::c::solve_all_cases();
-    y2017round2::d::solve_all_cases();
+    //y2017round2::c::solve_all_cases();
+    // y2017round2::d::solve_all_cases();
 
     /*y2017round3::a::solve_all_cases();
     y2017round3::b::solve_all_cases();
     y2017round3::c::solve_all_cases();
     y2017round3::d::solve_all_cases();*/
 
-    //y2017round4::a::solve_all_cases();
+    y2017round4::a::solve_all_cases();
 }

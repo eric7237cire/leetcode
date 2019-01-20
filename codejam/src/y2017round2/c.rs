@@ -13,38 +13,36 @@ use crate::algo::graph::Graph;
 use crate::util::grid::constants::*;
 use crate::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
 
+use crate::util::codejam::run_cases;
 use bimap::BiMap;
 use std::default::Default;
 use std::fmt;
-use std::io::Write;
 use std::fmt::{Display, Formatter};
-use crate::util::codejam::run_cases;
+use std::io::Write;
 
 pub fn solve_all_cases()
 {
     run_cases(
-        &[
-            "C-small-practice",
-             "C-large-practice"
-        ],
+        &["C-small-practice", "C-large-practice"],
         "y2017round2",
         |reader, buffer| {
-    let t = reader.read_int();
+            let t = reader.read_int();
 
-    for case in 1..=t {
-        let (R, C) = reader.read_tuple_2::<usize, usize>();
-        let mut grid: Grid<Tile> = Grid::new(R, C);
-        for r in 0..R {
-            let row = reader.read_chars(C);
-            for (c, t) in row.iter().enumerate() {
-                grid[(r, c)] = Tile::from(*t);
+            for case in 1..=t {
+                let (R, C) = reader.read_tuple_2::<usize, usize>();
+                let mut grid: Grid<Tile> = Grid::new(R, C);
+                for r in 0..R {
+                    let row = reader.read_chars(C);
+                    for (c, t) in row.iter().enumerate() {
+                        grid[(r, c)] = Tile::from(*t);
+                    }
+                }
+
+                //if case != 31 {continue;}
+                write!(buffer, "{}", solve(case, &mut grid)).unwrap();
             }
-        }
-
-        //if case != 31 {continue;}
-        write!(buffer,"{}", solve(case, &mut grid)).unwrap();
-    }
-        });
+        },
+    );
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

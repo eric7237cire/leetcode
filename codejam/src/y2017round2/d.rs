@@ -324,12 +324,9 @@ fn solve<'a>(case_no: u32, grid: &mut Grid<Tile>, M_soldier_limit: usize) -> Str
 
         let turrets_in_M = M.iter().map(|&(_s, t)| t).collect::<Vec<_>>();
         //find an edge (s,t') where t' is not in m
-        let st_prime = Gprime
-            .iter()
-            .filter(|&(_s, t)| !turrets_in_M.contains(t))
-            .next();
+        let st_prime = Gprime.iter().find(|&(_s, t)| !turrets_in_M.contains(t));
 
-        if !st_prime.is_none() {
+        if st_prime.is_some() {
             let &(s, t) = st_prime.unwrap();
             debug!("Found (s,t') s={} t'={}", s, t - S);
             ans += &format!("{} {}\n", s + 1, t - S + 1);
