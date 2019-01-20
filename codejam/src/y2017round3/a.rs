@@ -20,7 +20,7 @@ pub fn solve_all_cases()
             let t = reader.read_int();
 
             for case in 1..=t {
-                let G : &str= reader.read_string();
+                let G: &str = reader.read_string();
 
                 write!(buffer, "{}", solve(case, &G, &mut memo)).unwrap();
             }
