@@ -13,7 +13,7 @@ pub fn solve_all_cases()
     let t = reader.read_int();
 
     for case in 1..=t {
-        let (N, C, M) = reader.read_tuple_3::<u16, u16, u16>();
+        let (N, C, M) = reader.read_tuple_3::<u16>();
         //P B
         let tickets: Vec<_> = (0..M).map(|_| reader.read_tuple_2::<u16, u16>()).collect();
 

@@ -1,6 +1,8 @@
 //! Graph connectivity structures.
 use super::Graph;
 
+/// TODO have 2sat use iterative SCC
+
 /// Helper struct that carries data needed for the depth-first searches in
 /// ConnectivityGraph's constructor.
 struct ConnectivityData
@@ -98,7 +100,7 @@ impl<'a> ConnectivityGraph<'a>
     fn scc(&mut self, u: usize, data: &mut ConnectivityData)
     {
         data.visit(u);
-        for (_, v) in self.graph.adj_list(u) {
+        for v in self.graph.adj_list(u) {
             if data.vis[v] == 0 {
                 self.scc(v, data);
             }
@@ -146,7 +148,7 @@ impl<'a> ConnectivityGraph<'a>
     fn bcc(&mut self, u: usize, par: usize, data: &mut ConnectivityData)
     {
         data.visit(u);
-        for (e, v) in self.graph.adj_list(u) {
+        for (e, v) in self.graph.adj_list_with_edges(u) {
             if data.vis[v] == 0 {
                 data.e_stack.push(e);
                 self.bcc(v, e, data);
@@ -187,9 +189,9 @@ impl<'a> ConnectivityGraph<'a>
     /// In an undirected graph, determines whether u is an articulation vertex.
     pub fn is_cut_vertex(&self, u: usize) -> bool
     {
-        if let Some(first_e) = self.graph.first[u] {
+        if let Some(first_e) = self.graph.vertex_to_first_edge[u] {
             self.graph
-                .adj_list(u)
+                .adj_list_with_edges(u)
                 .any(|(e, _)| self.vcc[first_e] != self.vcc[e])
         } else {
             false

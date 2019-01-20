@@ -8,19 +8,27 @@ Simulation, grid, backtracking
 2-satisfiability / 2SAT
 
 */
-use super::super::algo_ebtech::graph::connectivity::ConnectivityGraph;
-use super::super::algo_ebtech::graph::Graph;
-use super::super::util::grid::constants::*;
-use super::super::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
-use super::super::util::input::*;
+use crate::algo::graph::connectivity::ConnectivityGraph;
+use crate::algo::graph::Graph;
+use crate::util::grid::constants::*;
+use crate::util::grid::{Grid, GridCoord, GridRowColVec, IntCoord2d};
+
 use bimap::BiMap;
 use std::default::Default;
 use std::fmt;
+use std::io::Write;
 use std::fmt::{Display, Formatter};
+use crate::util::codejam::run_cases;
 
 pub fn solve_all_cases()
 {
-    let mut reader = InputReader::new();
+    run_cases(
+        &[
+            "C-small-practice",
+             "C-large-practice"
+        ],
+        "y2017round2",
+        |reader, buffer| {
     let t = reader.read_int();
 
     for case in 1..=t {
@@ -34,8 +42,9 @@ pub fn solve_all_cases()
         }
 
         //if case != 31 {continue;}
-        print!("{}", solve(case, &mut grid));
+        write!(buffer,"{}", solve(case, &mut grid)).unwrap();
     }
+        });
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -311,7 +320,7 @@ fn helper(
     }
 
     //short circuit; check lasers less than index
-    for lc in square_choices {
+    /*for lc in square_choices {
         if lc
             .iter()
             .filter(|&c| {
@@ -323,7 +332,7 @@ fn helper(
         {
             return false;
         }
-    }
+    }*/
 
     let laser_data = &laser_traces[current_laser_index];
     //try vertical

@@ -1,8 +1,8 @@
 use crate::util::codejam::run_cases;
+use std::cmp::max;
 use std::collections::HashSet;
 use std::io::Write;
 use std::mem;
-use std::cmp::max;
 
 /*
 permutations with repeated elements
@@ -47,7 +47,13 @@ fn solve(case_no: u32, dice: &Vec<(u32, u16)>) -> String
 
     let mut v_it = all_values.into_iter().peekable();
     while let Some((v, dIdx)) = v_it.next() {
-        println!("Processing v {}/{}.  Lens {}, {}", v, dIdx, sequences.len(), sequences_next.len());
+        println!(
+            "Processing v {}/{}.  Lens {}, {}",
+            v,
+            dIdx,
+            sequences.len(),
+            sequences_next.len()
+        );
         if v > last_value + 1 {
             sequences.clear();
             last_value = v - 1;
@@ -71,8 +77,7 @@ fn solve(case_no: u32, dice: &Vec<(u32, u16)>) -> String
                 last_value = v;
             }
         }
-    } 
-    
+    }
 
     format!("Case #{}: {}\n", case_no, longest)
 }

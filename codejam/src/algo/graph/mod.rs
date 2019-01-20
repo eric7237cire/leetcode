@@ -11,3 +11,4 @@ mod edge_graph;
 pub mod scc;
 
 pub mod disjointset;
+pub mod connectivity;

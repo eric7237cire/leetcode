@@ -3,7 +3,7 @@
 pub struct Graph
 {
     /// Maps a vertex id to the first edge in its adjacency list.  New edges are added to the front
-    vertex_to_first_edge: Vec<Option<usize>>,
+    pub vertex_to_first_edge: Vec<Option<usize>>,
     /// Maps an edge id to the next edge in the same adjacency list.
     /// An edge can only be in 1 adj. list since each edge only has one 'from'
     edge_to_next_edge: Vec<Option<usize>>,
@@ -60,6 +60,15 @@ impl Graph
             graph: self,
             next_e: self.vertex_to_first_edge[u],
         }
+    }
+    /// If we think of each even-numbered vertex as a variable, and its
+    /// odd-numbered successor as its negation, then we can build the
+    /// implication graph corresponding to any 2-CNF formula.
+    /// Note that u||v == !u -> v == !v -> u.
+    pub fn add_two_sat_clause(&mut self, u: usize, v: usize)
+    {
+        self.add_edge(u ^ 1, v);
+        self.add_edge(v ^ 1, u);
     }
 
     pub fn adj_list(&self, u: usize) -> AdjListIterator
