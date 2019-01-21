@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 //#![warn(clippy::all)]
-//#![allow(warnings)]
+#![allow(warnings)]
 //use self::y2017qual::d::solve_all_cases;
 //use self::y2017round1B::c::solve_all_cases;
 //use self::y2017round1C::a::solve_all_cases;
