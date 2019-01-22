@@ -12,12 +12,13 @@ use std::usize;
 
 use std::thread;
 
-const STACK_SIZE: usize = 40 * 1024 * 1024;
-
 /*
-permutations with repeated elements
-digit manipulation
-recursion
+incremental matching
+performance intentive
+heavy duty recursion
+
+Ideas: Parallel DFS?  Faster matching algorithm/implementation?
+Hopcroft–Karp_algorithm?
 */
 pub fn solve_all_cases()
 {
@@ -40,12 +41,12 @@ pub fn solve_all_cases()
                 }
 
                 let child = thread::Builder::new()
-        .stack_size(STACK_SIZE)
-        .spawn(move || solve(case, &dice))
-        .unwrap();
+                    .stack_size(STACK_SIZE)
+                    .spawn(move || solve(case, &dice))
+                    .unwrap();
 
-    // Wait for thread to join
-    let ans = child.join().unwrap();
+                // Wait for thread to join
+                let ans = child.join().unwrap();
 
                 write!(buffer, "{}", ans).unwrap();
             }
@@ -53,36 +54,154 @@ pub fn solve_all_cases()
     );
 }
 
+const STACK_SIZE: usize = 40 * 1024 * 1024;
+
 const NUM_DICE_VALUES: usize = 6;
 const MAX_DICE_VALUE: usize = 1_000_000;
 const MAX_N_DICE: usize = 50_000;
+
+const INVALID_MATCH_i32: i32 = -1;
+
+fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
+{
+    println!("Solving case {}", case_no);
+
+    let mut value_to_dice: Vec<Vec<usize>> = vec![vec![]; MAX_DICE_VALUE + 1];
+    for (didx, dice_values) in dice.iter().enumerate() {
+        for d_value in dice_values.iter() {
+            value_to_dice[*d_value as usize].push(didx);
+        }
+    }
+
+    let n = dice.len();
+
+    let mut matchL = vec![INVALID_MATCH_i32; MAX_DICE_VALUE];
+    let mut matchR = vec![INVALID_MATCH_i32; n];
+
+    let mut queue = vec![0; MAX_DICE_VALUE];
+    let mut back = vec![0; MAX_DICE_VALUE];
+
+    let mut used = BitVec::from_elem(MAX_DICE_VALUE, false);
+    let mut ans = 0;
+    let mut rangeStart = 0;
+    let mut rangeEnd = 0;
+    let mut i = 0;
+    while i < MAX_DICE_VALUE {
+        if value_to_dice[i].len() == 0 {
+            //				System.err.println(i + " NOEDGE");
+            for j in rangeStart..rangeEnd {
+                matchR[matchL[j] as usize] = INVALID_MATCH_i32;
+                matchL[j] = INVALID_MATCH_i32;
+            }
+            rangeStart = i + 1;
+            rangeEnd = i + 1;
+            i+=1;
+            continue;
+        }
+        let mut queueHead = 0;
+        let mut queueTail = 1;
+        queue[0] = i as i32;
+        used.set(i, true);
+        back[i] = INVALID_MATCH_i32;
+        let mut found = false;
+        'bfs: loop {
+            assert!(queue[queueHead] >= 0);
+            let mut cur = queue[queueHead] as usize;
+            queueHead += 1;
+            
+            let mut cedges = &value_to_dice[cur];
+            for j in 0..cedges.len() {
+                let mut next = cedges[j] as usize;
+                if matchR[next] < 0 {
+                    matchR[next] = cur as i32;
+                    while back[cur] >= 0 {
+                        assert!(back[cur] >= 0);
+                        assert!(matchL[cur] >= 0);
+                        let prev = back[cur] as usize;
+                        let pnext = matchL[cur] as usize;
+                        matchL[cur] = next as i32;
+                        matchR[pnext] = prev as i32;
+                        cur = prev;
+                        next = pnext;
+                    }
+                    matchL[cur] = next as i32;
+                    found = true;
+                    break 'bfs;
+                } else if (!used[matchR[next] as usize]) {
+                    used.set(matchR[next] as usize, true);
+                    queue[queueTail] = matchR[next];
+                    queueTail += 1;
+                    
+                    back[matchR[next] as usize] = cur as i32;
+                }
+            }
+            if queueHead == queueTail {
+                break;
+            }
+        }
+        //			System.err.println(Arrays.toString(matchL));
+        //			System.err.println(Arrays.toString(matchR));
+        if (!found) {
+            //				System.err.println(i + " NOFOUND");
+            while (true) {
+                assert_ne!(rangeStart, rangeEnd);
+                matchR[matchL[rangeStart] as usize] = INVALID_MATCH_i32;
+                matchL[rangeStart] = INVALID_MATCH_i32;
+                assert_ne!(rangeStart, rangeEnd);
+                rangeStart += 1;
+                if (used[rangeStart - 1]) {
+                    //						System.err.println("ADJ " + rangeStart);
+                    break;
+                }
+            }
+            i -= 1;
+        } else {
+            //				System.err.println(i + " FOUND");
+            rangeEnd += 1;
+            ans = max(ans, rangeEnd - rangeStart);
+        }
+        for j in 0..queueTail {
+            used.set(queue[j] as usize, false);
+        }
+
+        i+=1;
+    }
+
+    format!("Case #{}: {}\n", case_no, ans)
+}
 
 const INVALID_MATCH: usize = usize::MAX - 1;
 
 struct DfsDice
 {
+    //vis[dice value] = true if already visited
     vis: BitVec,
-    //mat[dice value] = dice index
+    //mat[dice index] = dice value
     mat: Vec<usize>,
     //e[dice value] = vec of dice indexes with that value
-    
 }
 
 impl DfsDice
 {
-    fn dfs(&mut self, i: usize, e: &Vec<Vec<usize>>) -> bool
+    /// Conceptually, the dice values are on the LHS and
+    /// dice indicies are RHS
+    /// mat[dice index] = value is an edge in the matching
+    fn dfs(&mut self, dice_value: usize, e: &Vec<Vec<usize>>) -> bool
     {
-        self.vis.set(i, true);
-        for &j in e[i].iter() {
-            if self.mat[j] == INVALID_MATCH {
-                self.mat[j] = i;
+        self.vis.set(dice_value, true);
+        //Any free matchings?
+        for &dice_index in e[dice_value].iter() {
+            if self.mat[dice_index] == INVALID_MATCH {
+                self.mat[dice_index] = dice_value;
                 return true;
             }
         }
-        //let edges = self.e[i].clone();
-        for &j in e[i].iter() {
-            if !self.vis[self.mat[j]] && self.dfs(self.mat[j], e) {
-                self.mat[j] = i;
+
+        for &dice_index in e[dice_value].iter() {
+            //ignore if matched dice value (LHS) is aready visited
+            //2nd part is to search the already matched value to find an augmenting path
+            if !self.vis[self.mat[dice_index]] && self.dfs(self.mat[dice_index], e) {
+                self.mat[dice_index] = dice_value;
                 return true;
             }
         }
@@ -196,7 +315,8 @@ fn remove_value_from_flow(flow: &mut Flow, value_to_remove: usize)
     //debug_print_flow(flow);
 }
 
-fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
+/// Very elegant DFS solution, a bit slow though ~2 minutes
+fn solve4(case_no: u32, dice: &Vec<Vec<i32>>) -> String
 {
     println!("Solving case {}", case_no);
 
@@ -215,31 +335,29 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
         mat: vec![INVALID_MATCH; MAX_DICE_VALUE + 1],
     };
 
-    let mut l = 1;
-    let mut r = 1;
+    let mut interval_start = 1;
+    let mut interval_stop = 1;
+    //interval is [interval_start, interval_stop)
     let n = dice.len();
     let mut ans = 0;
 
-    while r <= MAX_DICE_VALUE {
-        for i in l..=r {
+    while interval_stop <= MAX_DICE_VALUE {
+        //Anything in the interval is free to be rematched
+        for i in interval_start..=interval_stop {
             dfsDice.vis.set(i, false);
         }
-        if dfsDice.dfs(r, &value_to_dice) {
-            r += 1;
-            ans = max(ans, r - l);
+        if dfsDice.dfs(interval_stop, &value_to_dice) {
+            interval_stop += 1;
+            ans = max(ans, interval_stop - interval_start);
         } else {
             for i in 0..n {
-                if dfsDice.mat[i] == l {
+                if dfsDice.mat[i] == interval_start {
                     dfsDice.mat[i] = INVALID_MATCH;
                 }
             }
-            l += 1;
-            r = max(l, r);
+            interval_start += 1;
+            interval_stop = max(interval_start, interval_stop);
         }
-        //			cout<<l<<" "<<r<<endl;
-        //			for(i = 0; i < n; i++)
-        //				cout<<mat[i]<<" ";
-        //			cout<<endl;
     }
 
     format!("Case #{}: {}\n", case_no, ans)
