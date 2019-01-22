@@ -15,10 +15,15 @@ use std::thread;
 /*
 incremental matching
 performance intentive
-heavy duty recursion
+heavy duty recursion (in slower solutions)
 
 Ideas: Parallel DFS?  Faster matching algorithm/implementation?
 Hopcroft–Karp_algorithm?
+
+Make flow2 faster (which is also BFS but way slower than the solution used)
+
+Found a fast BFS implementation which is currently used in solve from
+one of the contestents
 */
 pub fn solve_all_cases()
 {

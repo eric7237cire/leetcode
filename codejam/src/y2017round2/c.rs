@@ -29,7 +29,7 @@ pub fn solve_all_cases()
             let t = reader.read_int();
 
             for case in 1..=t {
-                let (R, C) = reader.read_tuple_2::<usize, usize>();
+                let (R, C) = reader.read_tuple_2::<usize>();
                 let mut grid: Grid<Tile> = Grid::new(R, C);
                 for r in 0..R {
                     let row = reader.read_chars(C);

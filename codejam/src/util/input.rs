@@ -95,12 +95,11 @@ impl<'a> InputReader<'a>
         self.s.trim().parse::<T>().unwrap()
     }
 
-    pub fn read_tuple_2<T, U>(&mut self) -> (T, U)
+    pub fn read_tuple_2<T>(&mut self) -> (T, T)
     where
         T: std::str::FromStr,
         <T as std::str::FromStr>::Err: std::fmt::Debug,
-        U: std::str::FromStr,
-        <U as std::str::FromStr>::Err: std::fmt::Debug,
+
     {
         self.s.clear();
         self.i.read_line(&mut self.s).unwrap();
@@ -108,7 +107,7 @@ impl<'a> InputReader<'a>
         let mut sw = self.s.split_whitespace();
         (
             sw.next().unwrap().parse::<T>().unwrap(),
-            sw.next().unwrap().parse::<U>().unwrap(),
+            sw.next().unwrap().parse::<T>().unwrap(),
         )
     }
 

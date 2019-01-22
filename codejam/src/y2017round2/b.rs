@@ -15,7 +15,7 @@ pub fn solve_all_cases()
     for case in 1..=t {
         let (N, C, M) = reader.read_tuple_3::<u16>();
         //P B
-        let tickets: Vec<_> = (0..M).map(|_| reader.read_tuple_2::<u16, u16>()).collect();
+        let tickets: Vec<_> = (0..M).map(|_| reader.read_tuple_2::<u16>()).collect();
 
         print!("{}", solve(case, N, C, &tickets));
     }
