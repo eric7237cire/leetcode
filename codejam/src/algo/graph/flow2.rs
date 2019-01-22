@@ -49,6 +49,8 @@ pub struct Flow
 
     pub source: usize,
     pub sink: usize,
+
+    prev: Vec<usize>,
 }
 
 const PREV_SOURCE: usize = usize::MAX - 2;
@@ -56,13 +58,14 @@ const PREV_NONE: usize = usize::MAX - 1;
 
 impl Flow
 {
-    pub fn new(source: usize, sink: usize) -> Self
+    pub fn new(source: usize, sink: usize, est_num_vertices: usize) -> Self
     {
         Self {
             source,
             sink,
-            V: Vec::new(),
-            E: Vec::new(),
+            V: Vec::with_capacity(est_num_vertices),
+            E: Vec::with_capacity(est_num_vertices * 2),
+            prev: Vec::with_capacity(est_num_vertices),
         }
     }
 
@@ -89,6 +92,31 @@ impl Flow
             self.E[edge_idx].residue = 0;
             self.E[edge_idx ^ 1].residue = self.E[edge_idx].cap;
         }
+    }
+
+    pub fn remove_edge(&mut self, edge_idx: usize)
+    {
+        {
+            let mut edge = &mut self.E[edge_idx];
+            edge.residue = 0;
+            edge.cap = 0;
+            edge.ignore = true;
+        }
+        {
+            self.remove_edge_from_vertex(edge_idx, self.E[edge_idx].src);
+            self.remove_edge_from_vertex(edge_idx, self.E[edge_idx].dest);
+        }
+        {
+            let mut edge = &mut self.E[edge_idx ^ 1];
+            edge.residue = 0;
+            edge.cap = 0;
+            edge.ignore = true;
+        }
+    }
+
+    fn remove_edge_from_vertex(&mut self, edge_idx: usize, vertex_idx: usize)
+    {
+        self.V[vertex_idx].retain(|e| *e != edge_idx && *e != edge_idx ^ 1);
     }
 
     pub fn setIgnoreNode(&mut self, nodeIdx: usize, ignore: bool)
@@ -119,9 +147,10 @@ impl Flow
     /*
         prev[ vertex id ] =  the edge id of the edge used to go to previous node
     */
-    fn findAugPathMaxFlow(&self, prev: &Vec<usize>) -> u64
+    fn findAugPathMaxFlow(&self) -> u64
     {
         let mut canPush: u64 = u64::MAX;
+        let prev = &self.prev;
 
         let mut nodeIdx = self.sink;
 
@@ -152,8 +181,9 @@ impl Flow
         return canPush;
     }
 
-    fn updateViaAugPath(&mut self, prev: &Vec<usize>, flowAdded: u64)
+    fn updateViaAugPath(&mut self, flowAdded: u64)
     {
+        let prev = &self.prev;
         let mut nodeIdx = self.sink;
 
         while (prev[nodeIdx] != PREV_SOURCE)
@@ -189,7 +219,8 @@ impl Flow
     pub fn augment(&mut self) -> u64
     {
         let nNodes = self.V.len();
-        let mut prev = vec![PREV_NONE; nNodes];
+        let mut prev = &mut self.prev;
+        prev.resize(nNodes, PREV_NONE);
         let mut seen: BitVec = BitVec::from_elem(nNodes, false);
 
         prev[self.source] = PREV_SOURCE;
@@ -198,7 +229,12 @@ impl Flow
 
         q.push_back(self.source);
         seen.set(self.source, true);
+
+        let mut iteration_count = 0;
+
         while let Some(nodeIdx) = q.pop_front() {
+            iteration_count += 1;
+
             assert!(seen[nodeIdx]);
 
             //if (debug) printf("Popped node %d\n", nodeIdx);
@@ -237,13 +273,17 @@ impl Flow
             //printf("Done\n");
         }
 
+        if iteration_count > 10000 {
+            //println!("Iteration count {}", iteration_count);
+        }
+
         if (seen[self.sink]) {
             debug!("reached sink\n");
 
-            let canPush = self.findAugPathMaxFlow(&prev);
+            let canPush = self.findAugPathMaxFlow();
             assert!(canPush > 0);
 
-            self.updateViaAugPath(&prev, canPush);
+            self.updateViaAugPath(canPush);
 
             return canPush;
         }
@@ -294,7 +334,7 @@ mod test
 
         let source = 0;
         let sink = 5;
-        let mut flow = Flow::new(source, sink);
+        let mut flow = Flow::new(source, sink, 10);
 
         flow.add_edge(0, 1, 10);
         flow.add_edge(0, 2, 10);

@@ -1,12 +1,18 @@
 use crate::algo::graph::flow2::Flow;
 use crate::util::codejam::run_cases;
 use bit_set::BitSet;
+use bit_vec::BitVec;
 use rand::{thread_rng, Rng};
 use std::cmp::max;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::io::Write;
 use std::mem;
+use std::usize;
+
+use std::thread;
+
+const STACK_SIZE: usize = 40 * 1024 * 1024;
 
 /*
 permutations with repeated elements
@@ -16,10 +22,7 @@ recursion
 pub fn solve_all_cases()
 {
     run_cases(
-        &[
-            "A-small-practice",
-            // "A-large-practice"
-        ],
+        &["A-small-practice", "A-large-practice"],
         "y2017round4",
         |reader, buffer| {
             let t = reader.read_int();
@@ -33,81 +36,59 @@ pub fn solve_all_cases()
                     .collect();
 
                 if case != 3 {
-                    continue;
+                    // continue;
                 }
 
-                write!(buffer, "{}", solve(case, &dice)).unwrap();
+                let child = thread::Builder::new()
+        .stack_size(STACK_SIZE)
+        .spawn(move || solve(case, &dice))
+        .unwrap();
+
+    // Wait for thread to join
+    let ans = child.join().unwrap();
+
+                write!(buffer, "{}", ans).unwrap();
             }
         },
     );
 }
 
 const NUM_DICE_VALUES: usize = 6;
-const MAX_DICE_VALUE: usize = 1_000_001;
+const MAX_DICE_VALUE: usize = 1_000_000;
 const MAX_N_DICE: usize = 50_000;
-/*
-fn bfs(v: i32 was: &mut Vec<i32>,  pb: &mut Vec<i32>, pa: &mut Vec<i32>, value_to_dice: &Vec<Vec<usize>>, iter: i32) -> bool{
 
+const INVALID_MATCH: usize = usize::MAX - 1;
 
-        // Mark all the vertices as not visited
-        let mut visited = Bitset::new();
-
-        //# Create a queue for BFS
-
-        let mut queue: VecDeque<usize> = VecDeque::new();
-
-        //# Mark the source node as visited and enqueue it
-        queue.append(s)
-        visited[s] = True
-
-        # Standard BFS Loop
-        while queue:
-            u = queue.popleft()
-
-            # Get all adjacent vertices's of the dequeued vertex u
-            # If a adjacent has not been visited, then mark it
-            # visited and enqueue it
-            for ind, val in enumerate(self.graph[u]):
-                if (visited[ind] == False) and (val > 0):
-                    queue.append(ind)
-                    visited[ind] = True
-                    parent[ind] = u
-
-        # If we reached sink in BFS starting from source, then return
-        # true, else false
-        return visited[t]
-*/
-fn dfs(
-    v: i32,
-    was: &mut Vec<i32>,
-    pb: &mut Vec<i32>,
-    pa: &mut Vec<i32>,
-    value_to_dice: &Vec<Vec<usize>>,
-    iter: i32,
-) -> bool
+struct DfsDice
 {
-    //pb is dice value=>dice index
-    //pa is dice index=>dice value
-    was[v as usize] = iter;
+    vis: BitVec,
+    //mat[dice value] = dice index
+    mat: Vec<usize>,
+    //e[dice value] = vec of dice indexes with that value
+    
+}
 
-    //free matching
-    for &j in value_to_dice[v as usize].iter() {
-        if pb[j as usize] == -1 {
-            pa[v as usize] = j as i32;
-            pb[j as usize] = v;
-            return true;
-        }
-    }
-    for &j in value_to_dice[v as usize].iter() {
-        if was[pb[j] as usize] != iter {
-            if dfs(pb[j], was, pb, pa, value_to_dice, iter) {
-                pa[v as usize] = j as i32;
-                pb[j as usize] = v;
+impl DfsDice
+{
+    fn dfs(&mut self, i: usize, e: &Vec<Vec<usize>>) -> bool
+    {
+        self.vis.set(i, true);
+        for &j in e[i].iter() {
+            if self.mat[j] == INVALID_MATCH {
+                self.mat[j] = i;
                 return true;
             }
         }
+        //let edges = self.e[i].clone();
+        for &j in e[i].iter() {
+            if !self.vis[self.mat[j]] && self.dfs(self.mat[j], e) {
+                self.mat[j] = i;
+                return true;
+            }
+        }
+
+        return false;
     }
-    return false;
 }
 
 fn add_value_to_flow(flow: &mut Flow, value_to_add: usize, value_to_dice: &Vec<Vec<usize>>)
@@ -119,7 +100,7 @@ fn add_value_to_flow(flow: &mut Flow, value_to_add: usize, value_to_dice: &Vec<V
 
     debug!("After adding value {}", value_to_add);
 
-    debug_print_flow(flow);
+    //debug_print_flow(flow);
 }
 
 fn debug_print_flow(flow: &Flow)
@@ -148,7 +129,7 @@ fn remove_value_from_flow(flow: &mut Flow, value_to_remove: usize)
     //find the matching dice index
     let matching_edge_index: usize = flow.V[value_to_remove]
         .iter()
-        .find(| &&edge_index | {
+        .find(|&&edge_index| {
             edge_index % 2 == 0 && flow.E[edge_index].cap > 0 && flow.E[edge_index].residue == 0
         })
         .map(|ei| *ei)
@@ -198,33 +179,76 @@ fn remove_value_from_flow(flow: &mut Flow, value_to_remove: usize)
         );
     }
 
-    for &edge_idx in flow.V[value_to_remove].iter() {
+    let edges_to_remove: Vec<_> = flow.V[value_to_remove].iter().cloned().collect();
+    for edge_idx in edges_to_remove {
         //deleting the edge, this value no longer can be matched
-        {
-            let flow_rev_edge = &mut flow.E[edge_idx ^ 1];
-            flow_rev_edge.cap = 0;
-            flow_rev_edge.residue = 0;
-        }
-        {
-            let flow_edge = &mut flow.E[edge_idx];
-            flow_edge.cap = 0;
-            flow_edge.residue = 0;
+        flow.remove_edge(edge_idx);
 
-            //this is the source->left hand side edge
-            if edge_idx % 2 == 1 {
-                assert_eq!(flow_edge.dest, flow.source);
-                continue;
-            }
+        //this is the source->left hand side edge
+        if edge_idx % 2 == 1 {
+            assert_eq!(flow.E[edge_idx].dest, flow.source);
         }
     }
+    flow.V[value_to_remove].clear();
 
     debug!("After removing value {}", value_to_remove);
 
-    debug_print_flow(flow);
+    //debug_print_flow(flow);
 }
 
 fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
 {
+    println!("Solving case {}", case_no);
+
+    let mut value_to_dice: Vec<Vec<usize>> = vec![vec![]; MAX_DICE_VALUE + 1];
+    for (didx, dice_values) in dice.iter().enumerate() {
+        for d_value in dice_values.iter() {
+            value_to_dice[*d_value as usize].push(didx);
+        }
+    }
+
+    //node schema
+    //dice indexes are (MAX_DICE_VALUE + N_MAX]
+    let mut dfsDice = DfsDice {
+        //e: value_to_dice,
+        vis: BitVec::from_elem(MAX_DICE_VALUE + 1, false),
+        mat: vec![INVALID_MATCH; MAX_DICE_VALUE + 1],
+    };
+
+    let mut l = 1;
+    let mut r = 1;
+    let n = dice.len();
+    let mut ans = 0;
+
+    while r <= MAX_DICE_VALUE {
+        for i in l..=r {
+            dfsDice.vis.set(i, false);
+        }
+        if dfsDice.dfs(r, &value_to_dice) {
+            r += 1;
+            ans = max(ans, r - l);
+        } else {
+            for i in 0..n {
+                if dfsDice.mat[i] == l {
+                    dfsDice.mat[i] = INVALID_MATCH;
+                }
+            }
+            l += 1;
+            r = max(l, r);
+        }
+        //			cout<<l<<" "<<r<<endl;
+        //			for(i = 0; i < n; i++)
+        //				cout<<mat[i]<<" ";
+        //			cout<<endl;
+    }
+
+    format!("Case #{}: {}\n", case_no, ans)
+}
+
+/// My solution, too slow for large, the augment takes too long
+fn solve3(case_no: u32, dice: &Vec<Vec<i32>>) -> String
+{
+    println!("Solving case {}", case_no);
     let mut unique_dice_values: Vec<i32> = Vec::new();
 
     let mut value_to_dice: Vec<Vec<usize>> = vec![vec![]; MAX_DICE_VALUE + 1];
@@ -245,7 +269,7 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
     let source = MAX_DICE_VALUE + MAX_N_DICE + 1;
     let sink = MAX_DICE_VALUE + MAX_N_DICE + 2;
 
-    let mut flow = Flow::new(source, sink);
+    let mut flow = Flow::new(source, sink, sink + 1);
 
     //inclusive range
     let mut interval_start = unique_dice_values[0] as usize;
@@ -274,7 +298,24 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
     1 2 3 4 5 6
     1 4 2 6 5 3
         */
+
+    let mut counter = 0;
+
     while let Some(val) = it.next() {
+        counter += 1;
+        if counter % 100 == 0 {
+            println!(
+                "Loop count {}.  Num graph edges {} Sink edges: {} Source edges: {} 
+            Interval start {} stop {}
+            ",
+                counter,
+                flow.E.len(),
+                flow.V[flow.sink].len(),
+                flow.V[flow.source].len(),
+                interval_start,
+                interval_stop
+            );
+        }
         let val = val as usize;
         add_value_to_flow(&mut flow, val, &value_to_dice);
 
@@ -305,53 +346,6 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
 
         ans = max(ans, interval_stop - interval_start + 1);
         last_val = val;
-    }
-
-    format!("Case #{}: {}\n", case_no, ans)
-}
-
-fn solve2(case_no: u32, dice: &Vec<Vec<i32>>) -> String
-{
-    let mut value_to_dice: Vec<Vec<usize>> = vec![vec![]; MAX_DICE_VALUE + 1];
-    for (didx, d) in dice.iter().enumerate() {
-        for d_pos in 0..NUM_DICE_VALUES {
-            value_to_dice[d[d_pos] as usize].push(didx);
-        }
-    }
-
-    for vec in value_to_dice.iter_mut() {
-        thread_rng().shuffle(vec);
-    }
-
-    let mut pa: Vec<i32> = vec![-1; MAX_DICE_VALUE];
-    let mut was: Vec<i32> = vec![-1; MAX_DICE_VALUE];
-    let mut pb: Vec<i32> = vec![-1; dice.len()];
-
-    let mut ans = 0;
-    let mut rr = 0i32;
-    let mut iter = 0i32;
-    for ll in 1..MAX_DICE_VALUE {
-        rr = max(rr, ll as i32 - 1);
-        loop {
-            iter += 1;
-            if dfs(
-                rr as i32 + 1,
-                &mut was,
-                &mut pb,
-                &mut pa,
-                &value_to_dice,
-                iter,
-            ) {
-                rr += 1;
-            } else {
-                break;
-            }
-        }
-        ans = max(ans, rr - ll as i32 + 1);
-        if pa[ll] != -1 {
-            pb[pa[ll as usize] as usize] = -1;
-            pa[ll] = -1;
-        }
     }
 
     format!("Case #{}: {}\n", case_no, ans)
