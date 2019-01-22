@@ -13,6 +13,10 @@ use std::usize;
 use std::thread;
 use byteorder::{NativeEndian,WriteBytesExt,ByteOrder};
 use hamming::weight;
+use num_bigint::BigInt;
+use num_rational::{BigRational, Ratio};
+use num_integer::Integer;
+use std::ops::{Add, Sub, Mul, Div};
 
 /*
 Dynamic programming, min/max
@@ -29,12 +33,12 @@ pub fn solve_all_cases()
             let t = reader.read_int();
 
             for case in 1..=t {
-                let (S,C) = reader.read_tuple_2::<u16>();
+                let (S,C) = reader.read_tuple_2::<i16>();
 
                 let cards = (0..C).map(|_| {
                     let mut sw = reader.read_string().split_whitespace();
                     (sw.next().unwrap().parse::<char>().unwrap(),
-                     sw.next().unwrap().parse::<u16>().unwrap())
+                     sw.next().unwrap().parse::<i16>().unwrap())
                 }).collect();
 
                 write!(buffer, "{}", solve(case, &cards, S)).unwrap();
@@ -43,17 +47,58 @@ pub fn solve_all_cases()
     );
 }
 
-fn solve(case_no: u32, cards: &Vec<(char, u16)>, S: u16) -> String
+#[derive(Clone)]
+struct MemoData
+{
+    high: BigRational,
+    low: BigRational,
+}
+
+fn apply_op<T>(card: &(char, T), num: &BigRational) -> BigRational
+where T: Integer,
+ Ratio<BigInt> : Add<T, Output=Ratio<BigInt>>,
+ Ratio<BigInt> : Sub<T, Output=Ratio<BigInt>>,
+ Ratio<BigInt> : Mul<T, Output=Ratio<BigInt>>,
+ Ratio<BigInt> : Div<T, Output=Ratio<BigInt>>
+{
+    let num = *num;
+    if card.0 == '+' {
+        num + card.1
+    } else if card.0 == '-' {
+        num - card.1
+    } else if card.0 == '*' {
+        num * card.1
+    } else if card.0 == '/' {
+        num / card.1
+    } else {
+        assert!(false);
+        num
+    }
+}
+
+fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
 {
     let mut bits = vec![ vec![0u16;0]; 16] ;
 
-    for i in 0..1u16<<15 {
+    for i in 0..1u16<<cards.len() {
         let mut bytes : [u8; 2] = [0;2];
         NativeEndian::write_u16(&mut bytes, i);
 
         let pop_count = weight(&bytes);
 
         bits[pop_count as usize].push(i);
+    }
+
+    let mut memo : Vec<Vec<Option<MemoData>>> = vec![ vec![None; 2]; 1<<15];
+
+    let seed = BigInt::from(S);
+
+    let s2 = seed + 46i16;
+
+    for ( c_idx, c) in cards.iter().enumerate()
+    {
+        let n = apply_op(c, &seed);
+        memo[ 1 << c_idx ] = MemoData {high: n, low: n};
     }
 
     println!("Solving case {}", case_no);
