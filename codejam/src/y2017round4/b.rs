@@ -16,6 +16,7 @@ use hamming::weight;
 use num_bigint::BigInt;
 use num_rational::{BigRational, Ratio};
 use num_integer::Integer;
+use num_traits::FromPrimitive;
 use std::ops::{Add, Sub, Mul, Div};
 
 /*
@@ -54,25 +55,21 @@ struct MemoData
     low: BigRational,
 }
 
-fn apply_op<T>(card: &(char, T), num: &BigRational) -> BigRational
-where T: Integer,
- Ratio<BigInt> : Add<T, Output=Ratio<BigInt>>,
- Ratio<BigInt> : Sub<T, Output=Ratio<BigInt>>,
- Ratio<BigInt> : Mul<T, Output=Ratio<BigInt>>,
- Ratio<BigInt> : Div<T, Output=Ratio<BigInt>>
+fn apply_op(card: &(char, BigRational), num: &BigRational) -> BigRational
+
 {
-    let num = *num;
+    let num = num.clone();
     if card.0 == '+' {
-        num + card.1
+       num + &card.1
     } else if card.0 == '-' {
-        num - card.1
+        num - &card.1
     } else if card.0 == '*' {
-        num * card.1
+        num * &card.1
     } else if card.0 == '/' {
-        num / card.1
+        num / &card.1
     } else {
         assert!(false);
-        num
+        num * BigRational::from_i8(1).unwrap()
     }
 }
 
@@ -89,16 +86,18 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
         bits[pop_count as usize].push(i);
     }
 
-    let mut memo : Vec<Vec<Option<MemoData>>> = vec![ vec![None; 2]; 1<<15];
+    let cards:Vec<(char,BigRational)> = 
+    cards.into_iter().map( |&(c,n)| (c, BigRational::from(
+        BigInt::from(n)))).collect();
 
-    let seed = BigInt::from(S);
+    let mut memo : Vec<Option<MemoData>> = vec![ None; 1<<cards.len()];
 
-    let s2 = seed + 46i16;
+    let seed = BigRational::from(BigInt::from(S));
 
     for ( c_idx, c) in cards.iter().enumerate()
     {
         let n = apply_op(c, &seed);
-        memo[ 1 << c_idx ] = MemoData {high: n, low: n};
+        memo[ 1 << c_idx ] = Some(MemoData {high: n.clone(), low: n.clone()});
     }
 
     println!("Solving case {}", case_no);
