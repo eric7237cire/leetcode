@@ -75,34 +75,39 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
 
     let n = dice.len();
 
+    //matchL[dice value] 
     let mut matchL = vec![INVALID_MATCH_i32; MAX_DICE_VALUE];
+    
+    //matchR[dice index]
     let mut matchR = vec![INVALID_MATCH_i32; n];
 
+    //Storing values
     let mut queue = vec![0; MAX_DICE_VALUE];
     let mut back = vec![0; MAX_DICE_VALUE];
 
     let mut used = BitVec::from_elem(MAX_DICE_VALUE, false);
     let mut ans = 0;
     let mut rangeStart = 0;
+    //looks like [rangeStart, rangeEnd)
     let mut rangeEnd = 0;
-    let mut i = 0;
-    while i < MAX_DICE_VALUE {
-        if value_to_dice[i].len() == 0 {
+    let mut cur_dice_value_i = 0;
+    while cur_dice_value_i < MAX_DICE_VALUE {
+        if value_to_dice[cur_dice_value_i].len() == 0 {
             //				System.err.println(i + " NOEDGE");
             for j in rangeStart..rangeEnd {
                 matchR[matchL[j] as usize] = INVALID_MATCH_i32;
                 matchL[j] = INVALID_MATCH_i32;
             }
-            rangeStart = i + 1;
-            rangeEnd = i + 1;
-            i+=1;
+            rangeStart = cur_dice_value_i + 1;
+            rangeEnd = cur_dice_value_i + 1;
+            cur_dice_value_i+=1;
             continue;
         }
         let mut queueHead = 0;
         let mut queueTail = 1;
-        queue[0] = i as i32;
-        used.set(i, true);
-        back[i] = INVALID_MATCH_i32;
+        queue[0] = cur_dice_value_i as i32;
+        used.set(cur_dice_value_i, true);
+        back[cur_dice_value_i] = INVALID_MATCH_i32;
         let mut found = false;
         'bfs: loop {
             assert!(queue[queueHead] >= 0);
@@ -111,28 +116,31 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
             
             let mut cedges = &value_to_dice[cur];
             for j in 0..cedges.len() {
-                let mut next = cedges[j] as usize;
-                if matchR[next] < 0 {
-                    matchR[next] = cur as i32;
+                let mut next_dice_index = cedges[j] as usize;
+                //Found a non matched dice index
+                if matchR[next_dice_index] < 0 {
+                    matchR[next_dice_index] = cur as i32;
+                    //Applying the augmenting path
                     while back[cur] >= 0 {
                         assert!(back[cur] >= 0);
                         assert!(matchL[cur] >= 0);
                         let prev = back[cur] as usize;
                         let pnext = matchL[cur] as usize;
-                        matchL[cur] = next as i32;
+                        matchL[cur] = next_dice_index as i32;
                         matchR[pnext] = prev as i32;
                         cur = prev;
-                        next = pnext;
+                        next_dice_index = pnext;
                     }
-                    matchL[cur] = next as i32;
+                    matchL[cur] = next_dice_index as i32;
                     found = true;
                     break 'bfs;
-                } else if (!used[matchR[next] as usize]) {
-                    used.set(matchR[next] as usize, true);
-                    queue[queueTail] = matchR[next];
+                } else if (!used[matchR[next_dice_index] as usize]) {
+                    //Need to find a new matching for this value, put its dice value on queue
+                    used.set(matchR[next_dice_index] as usize, true);
+                    queue[queueTail] = matchR[next_dice_index];
                     queueTail += 1;
                     
-                    back[matchR[next] as usize] = cur as i32;
+                    back[matchR[next_dice_index] as usize] = cur as i32;
                 }
             }
             if queueHead == queueTail {
@@ -145,26 +153,31 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
             //				System.err.println(i + " NOFOUND");
             while (true) {
                 assert_ne!(rangeStart, rangeEnd);
+                //Reset dice index 
                 matchR[matchL[rangeStart] as usize] = INVALID_MATCH_i32;
                 matchL[rangeStart] = INVALID_MATCH_i32;
                 assert_ne!(rangeStart, rangeEnd);
                 rangeStart += 1;
+
+                //Not sure what this is for
                 if (used[rangeStart - 1]) {
                     //						System.err.println("ADJ " + rangeStart);
                     break;
                 }
             }
-            i -= 1;
+            cur_dice_value_i -= 1;
         } else {
             //				System.err.println(i + " FOUND");
             rangeEnd += 1;
             ans = max(ans, rangeEnd - rangeStart);
         }
+
+        //Reset all dice values in queue
         for j in 0..queueTail {
             used.set(queue[j] as usize, false);
         }
 
-        i+=1;
+        cur_dice_value_i+=1;
     }
 
     format!("Case #{}: {}\n", case_no, ans)
