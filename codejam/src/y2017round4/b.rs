@@ -15,7 +15,7 @@ use hamming::weight;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_rational::{BigRational, Ratio};
-use num_traits::{FromPrimitive, Signed};
+use num_traits::{FromPrimitive, Signed, Zero};
 use std::ops::{Add, Div, Mul, Sub};
 use std::thread;
 
@@ -77,9 +77,36 @@ fn apply_op(card: &(char, BigRational), num: &BigRational) -> BigRational
 fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
 {
     println!("Solving {}", case_no);
-    
+
     let mut bits = vec![vec![0u16; 0]; 16];
 
+    
+
+    let mut cards: Vec<(char, BigRational)> = cards
+        .into_iter()
+        .map(|&(c, n)| (c, BigRational::from(BigInt::from(n))))
+        .collect();
+
+    let add_card : BigRational = cards.iter().filter( |(op, val)| (*op == '+' && val >= &BigRational::zero()) || 
+    (*op == '-' && val <= &BigRational::zero()) ).fold( BigRational::zero(), |acc, (op,val)| &acc + val.abs());
+    
+    let sub_card : BigRational = cards.iter().filter( |(op, val)| (*op == '+' && val < &BigRational::zero()) || 
+    (*op == '-' && val > &BigRational::zero()) ).fold( BigRational::zero(), |acc, (op,val)| &acc + val.abs());
+
+    cards.retain( |(op, val) | *op != '+' && *op != '-' );
+
+    if add_card != BigRational::zero() {
+        cards.push( ('+', add_card) );
+    }
+    if sub_card != BigRational::zero() {
+        cards.push( ('-', sub_card) );
+    }
+
+    if cards.len() == 0 {
+        return format!("Case #{}: 0 1\n", case_no);
+    }
+
+    //create subsets for each pop_count
     for i in 0..1u16 << cards.len() {
         let mut bytes: [u8; 2] = [0; 2];
         NativeEndian::write_u16(&mut bytes, i);
@@ -88,11 +115,6 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
 
         bits[pop_count as usize].push(i);
     }
-
-    let cards: Vec<(char, BigRational)> = cards
-        .into_iter()
-        .map(|&(c, n)| (c, BigRational::from(BigInt::from(n))))
-        .collect();
 
     let mut memo: Vec<Option<MemoData>> = vec![None; 1 << cards.len()];
 
