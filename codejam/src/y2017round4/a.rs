@@ -80,9 +80,9 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
 
     let n = dice.len();
 
-    //matchL[dice value] 
+    //matchL[dice value]
     let mut matchL = vec![INVALID_MATCH_i32; MAX_DICE_VALUE];
-    
+
     //matchR[dice index]
     let mut matchR = vec![INVALID_MATCH_i32; n];
 
@@ -105,7 +105,7 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
             }
             rangeStart = cur_dice_value_i + 1;
             rangeEnd = cur_dice_value_i + 1;
-            cur_dice_value_i+=1;
+            cur_dice_value_i += 1;
             continue;
         }
         let mut queueHead = 0;
@@ -118,7 +118,7 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
             assert!(queue[queueHead] >= 0);
             let mut cur = queue[queueHead] as usize;
             queueHead += 1;
-            
+
             let mut cedges = &value_to_dice[cur];
             for j in 0..cedges.len() {
                 let mut next_dice_index = cedges[j] as usize;
@@ -144,7 +144,7 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
                     used.set(matchR[next_dice_index] as usize, true);
                     queue[queueTail] = matchR[next_dice_index];
                     queueTail += 1;
-                    
+
                     back[matchR[next_dice_index] as usize] = cur as i32;
                 }
             }
@@ -158,7 +158,7 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
             //				System.err.println(i + " NOFOUND");
             while (true) {
                 assert_ne!(rangeStart, rangeEnd);
-                //Reset dice index 
+                //Reset dice index
                 matchR[matchL[rangeStart] as usize] = INVALID_MATCH_i32;
                 matchL[rangeStart] = INVALID_MATCH_i32;
                 assert_ne!(rangeStart, rangeEnd);
@@ -182,7 +182,7 @@ fn solve(case_no: u32, dice: &Vec<Vec<i32>>) -> String
             used.set(queue[j] as usize, false);
         }
 
-        cur_dice_value_i+=1;
+        cur_dice_value_i += 1;
     }
 
     format!("Case #{}: {}\n", case_no, ans)

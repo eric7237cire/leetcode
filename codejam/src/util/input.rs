@@ -99,7 +99,6 @@ impl<'a> InputReader<'a>
     where
         T: std::str::FromStr,
         <T as std::str::FromStr>::Err: std::fmt::Debug,
-
     {
         self.s.clear();
         self.i.read_line(&mut self.s).unwrap();
