@@ -28,7 +28,7 @@ pub fn solve_all_cases()
     run_cases(
         &[
             "B-small-practice",
-            //"BA-large-practice"],
+            "B-large-practice"
         ],
         "y2017round4",
         |reader, buffer| {
@@ -99,10 +99,18 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
     neg_mul_cards.sort();
     neg_mul_cards.reverse();
 
+    let mut neg_div_cards : Vec<_> = cards.iter().filter( |(op, val)| (*op == '/' && val < &BigRational::zero())).cloned().collect();
+    neg_div_cards.sort();
+    neg_div_cards.reverse();
+
     let mul_pos_card : BigRational = cards.iter().filter( |(op, val)| *op == '*' && val > &BigRational::zero()  
      ).fold( BigRational::one(), |acc, (op,val)| &acc * val);
 
-    cards.retain( |(op, val) | *op != '+' && *op != '-' && *op != '*' );
+    let div_pos_card : BigRational = cards.iter().filter( |(op, val)| *op == '/' && val > &BigRational::zero()  
+     ).fold( BigRational::one(), |acc, (op,val)| &acc * val);
+
+    // cards.retain( |(op, val) | *op != '+' && *op != '-' && *op != '*' );
+    cards.clear();
 
     if add_card != BigRational::zero() {
         cards.push( ('+', add_card) );
@@ -125,6 +133,19 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
     }
     if has_mul_zero {
         cards.push( ('*', BigRational::from_u16(0).unwrap()) );
+    }
+
+    for (_, neg_val) in neg_div_cards.iter().take(2) {
+        cards.push( ('/', neg_val.clone()) );
+    }
+
+    if neg_div_cards.len() >= 3 {
+        let div_neg_val : BigRational = neg_div_cards.iter().skip(2).fold( BigRational::one(), |acc, (op,val)| &acc * val);
+        cards.push( ('/', div_neg_val) );
+    }
+        
+    if div_pos_card != BigRational::one() {
+        cards.push( ('/', div_pos_card) );
     }
 
     assert!(cards.len() <= 15);
