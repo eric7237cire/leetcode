@@ -22,6 +22,7 @@ use std::thread;
 /*
 Dynamic programming, min/max
 Arithmetic
+Grouping terms
 */
 pub fn solve_all_cases()
 {
@@ -109,7 +110,6 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
     let div_pos_card : BigRational = cards.iter().filter( |(op, val)| *op == '/' && val > &BigRational::zero()  
      ).fold( BigRational::one(), |acc, (op,val)| &acc * val);
 
-    // cards.retain( |(op, val) | *op != '+' && *op != '-' && *op != '*' );
     cards.clear();
 
     if add_card != BigRational::zero() {
@@ -149,10 +149,7 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
     }
 
     assert!(cards.len() <= 15);
-    /*
-    After all the groupings, we are left with at most 11 cards:  1 multiplication by a positive, 1 division by a positive, 3 multiplications by negatives and 3 divisions by negatives. 
-    */
-
+   
     if cards.len() == 0 {
         return format!("Case #{}: 0 1\n", case_no);
     }
