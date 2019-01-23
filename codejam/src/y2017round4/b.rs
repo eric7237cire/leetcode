@@ -15,7 +15,7 @@ use hamming::weight;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_rational::{BigRational, Ratio};
-use num_traits::{FromPrimitive, Signed, Zero, One};
+use num_traits::{FromPrimitive, One, Signed, Zero};
 use std::ops::{Add, Div, Mul, Sub};
 use std::thread;
 
@@ -27,10 +27,7 @@ Grouping terms
 pub fn solve_all_cases()
 {
     run_cases(
-        &[
-            "B-small-practice",
-            "B-large-practice"
-        ],
+        &["B-small-practice", "B-large-practice"],
         "y2017round4",
         |reader, buffer| {
             let t = reader.read_int();
@@ -81,75 +78,102 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
 
     let mut bits = vec![vec![0u16; 0]; 16];
 
-    
-
     let mut cards: Vec<(char, BigRational)> = cards
         .into_iter()
         .map(|&(c, n)| (c, BigRational::from(BigInt::from(n))))
         .collect();
 
-    let add_card : BigRational = cards.iter().filter( |(op, val)| (*op == '+' && val >= &BigRational::zero()) || 
-    (*op == '-' && val <= &BigRational::zero()) ).fold( BigRational::zero(), |acc, (op,val)| &acc + val.abs());
-    
-    let sub_card : BigRational = cards.iter().filter( |(op, val)| (*op == '+' && val < &BigRational::zero()) || 
-    (*op == '-' && val > &BigRational::zero()) ).fold( BigRational::zero(), |acc, (op,val)| &acc + val.abs());
+    let add_card: BigRational = cards
+        .iter()
+        .filter(|(op, val)| {
+            (*op == '+' && val >= &BigRational::zero())
+                || (*op == '-' && val <= &BigRational::zero())
+        })
+        .fold(BigRational::zero(), |acc, (op, val)| &acc + val.abs());
 
-    let has_mul_zero = cards.iter().any( |(op, val)| (*op == '*' && val == &BigRational::zero()));
+    let sub_card: BigRational = cards
+        .iter()
+        .filter(|(op, val)| {
+            (*op == '+' && val < &BigRational::zero()) || (*op == '-' && val > &BigRational::zero())
+        })
+        .fold(BigRational::zero(), |acc, (op, val)| &acc + val.abs());
 
-    let mut neg_mul_cards : Vec<_> = cards.iter().filter( |(op, val)| (*op == '*' && val < &BigRational::zero())).cloned().collect();
+    let has_mul_zero = cards
+        .iter()
+        .any(|(op, val)| (*op == '*' && val == &BigRational::zero()));
+
+    let mut neg_mul_cards: Vec<_> = cards
+        .iter()
+        .filter(|(op, val)| (*op == '*' && val < &BigRational::zero()))
+        .cloned()
+        .collect();
     neg_mul_cards.sort();
     neg_mul_cards.reverse();
 
-    let mut neg_div_cards : Vec<_> = cards.iter().filter( |(op, val)| (*op == '/' && val < &BigRational::zero())).cloned().collect();
+    let mut neg_div_cards: Vec<_> = cards
+        .iter()
+        .filter(|(op, val)| (*op == '/' && val < &BigRational::zero()))
+        .cloned()
+        .collect();
     neg_div_cards.sort();
     neg_div_cards.reverse();
 
-    let mul_pos_card : BigRational = cards.iter().filter( |(op, val)| *op == '*' && val > &BigRational::zero()  
-     ).fold( BigRational::one(), |acc, (op,val)| &acc * val);
+    let mul_pos_card: BigRational = cards
+        .iter()
+        .filter(|(op, val)| *op == '*' && val > &BigRational::zero())
+        .fold(BigRational::one(), |acc, (op, val)| &acc * val);
 
-    let div_pos_card : BigRational = cards.iter().filter( |(op, val)| *op == '/' && val > &BigRational::zero()  
-     ).fold( BigRational::one(), |acc, (op,val)| &acc * val);
+    let div_pos_card: BigRational = cards
+        .iter()
+        .filter(|(op, val)| *op == '/' && val > &BigRational::zero())
+        .fold(BigRational::one(), |acc, (op, val)| &acc * val);
 
     cards.clear();
 
     if add_card != BigRational::zero() {
-        cards.push( ('+', add_card) );
+        cards.push(('+', add_card));
     }
     if sub_card != BigRational::zero() {
-        cards.push( ('-', sub_card) );
+        cards.push(('-', sub_card));
     }
-    
+
     for (_, neg_val) in neg_mul_cards.iter().take(2) {
-        cards.push( ('*', neg_val.clone()) );
+        cards.push(('*', neg_val.clone()));
     }
 
     if neg_mul_cards.len() >= 3 {
-        let mul_neg_val : BigRational = neg_mul_cards.iter().skip(2).fold( BigRational::one(), |acc, (op,val)| &acc * val);
-        cards.push( ('*', mul_neg_val) );
+        let mul_neg_val: BigRational = neg_mul_cards
+            .iter()
+            .skip(2)
+            .fold(BigRational::one(), |acc, (op, val)| &acc * val);
+        cards.push(('*', mul_neg_val));
     }
-        
+
     if mul_pos_card != BigRational::one() {
-        cards.push( ('*', mul_pos_card) );
+        cards.push(('*', mul_pos_card));
     }
     if has_mul_zero {
-        cards.push( ('*', BigRational::from_u16(0).unwrap()) );
+        cards.push(('*', BigRational::from_u16(0).unwrap()));
     }
 
     for (_, neg_val) in neg_div_cards.iter().take(2) {
-        cards.push( ('/', neg_val.clone()) );
+        cards.push(('/', neg_val.clone()));
     }
 
     if neg_div_cards.len() >= 3 {
-        let div_neg_val : BigRational = neg_div_cards.iter().skip(2).fold( BigRational::one(), |acc, (op,val)| &acc * val);
-        cards.push( ('/', div_neg_val) );
+        let div_neg_val: BigRational = neg_div_cards
+            .iter()
+            .skip(2)
+            .fold(BigRational::one(), |acc, (op, val)| &acc * val);
+        cards.push(('/', div_neg_val));
     }
-        
+
     if div_pos_card != BigRational::one() {
-        cards.push( ('/', div_pos_card) );
+        cards.push(('/', div_pos_card));
     }
 
     assert!(cards.len() <= 15);
-   
+
     if cards.len() == 0 {
         return format!("Case #{}: 0 1\n", case_no);
     }

@@ -10,7 +10,7 @@ use std::ops::{Index, IndexMut};
 
 pub struct Grid<T>
 {
-    data: Vec<T>,
+    pub data: Vec<T>,
     pub R: usize,
     pub C: usize,
 }
