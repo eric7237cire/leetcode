@@ -125,7 +125,7 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
                 let mut new_min = apply_op(&c, &other_min_max.low);
                 let mut new_max = apply_op(&c, &other_min_max.high);
 
-                if c.1.is_negative() {
+                if c.1.is_negative() && (c.0 == '*' || c.0 == '/') {
                     mem::swap(&mut new_min, &mut new_max);
                 }
 
