@@ -15,7 +15,7 @@ use hamming::weight;
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_rational::{BigRational, Ratio};
-use num_traits::{FromPrimitive, Signed, Zero};
+use num_traits::{FromPrimitive, Signed, Zero, One};
 use std::ops::{Add, Div, Mul, Sub};
 use std::thread;
 
@@ -93,7 +93,16 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
     let sub_card : BigRational = cards.iter().filter( |(op, val)| (*op == '+' && val < &BigRational::zero()) || 
     (*op == '-' && val > &BigRational::zero()) ).fold( BigRational::zero(), |acc, (op,val)| &acc + val.abs());
 
-    cards.retain( |(op, val) | *op != '+' && *op != '-' );
+    let has_mul_zero = cards.iter().any( |(op, val)| (*op == '*' && val == &BigRational::zero()));
+
+    let mut neg_mul_cards : Vec<_> = cards.iter().filter( |(op, val)| (*op == '*' && val < &BigRational::zero())).cloned().collect();
+    neg_mul_cards.sort();
+    neg_mul_cards.reverse();
+
+    let mul_pos_card : BigRational = cards.iter().filter( |(op, val)| *op == '*' && val > &BigRational::zero()  
+     ).fold( BigRational::one(), |acc, (op,val)| &acc * val);
+
+    cards.retain( |(op, val) | *op != '+' && *op != '-' && *op != '*' );
 
     if add_card != BigRational::zero() {
         cards.push( ('+', add_card) );
@@ -101,6 +110,27 @@ fn solve(case_no: u32, cards: &Vec<(char, i16)>, S: i16) -> String
     if sub_card != BigRational::zero() {
         cards.push( ('-', sub_card) );
     }
+    
+    for (_, neg_val) in neg_mul_cards.iter().take(2) {
+        cards.push( ('*', neg_val.clone()) );
+    }
+
+    if neg_mul_cards.len() >= 3 {
+        let mul_neg_val : BigRational = neg_mul_cards.iter().skip(2).fold( BigRational::one(), |acc, (op,val)| &acc * val);
+        cards.push( ('*', mul_neg_val) );
+    }
+        
+    if mul_pos_card != BigRational::one() {
+        cards.push( ('*', mul_pos_card) );
+    }
+    if has_mul_zero {
+        cards.push( ('*', BigRational::from_u16(0).unwrap()) );
+    }
+
+    assert!(cards.len() <= 15);
+    /*
+    After all the groupings, we are left with at most 11 cards:  1 multiplication by a positive, 1 division by a positive, 3 multiplications by negatives and 3 divisions by negatives. 
+    */
 
     if cards.len() == 0 {
         return format!("Case #{}: 0 1\n", case_no);
