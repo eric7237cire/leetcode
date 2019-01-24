@@ -1,15 +1,43 @@
+use crate::util::codejam::run_cases;
 use crate::util::grid::Grid;
 use nalgebra::*;
 use rand::distributions::{Distribution, Uniform};
 use rand::prelude::StdRng;
 use rand::SeedableRng;
 use rulinalg::matrix::Matrix;
+use std::collections::{HashMap, HashSet};
+use std::io::Write;
+use std::time::Instant;
 
 const MAX_VERTEX: usize = 22;
+const K: usize = 10000;
+
+pub fn solve_all_cases()
+{
+    let mut spanning = Spanning::new();
+       let mut search = Search::new();
+
+       search.dfs(&mut spanning, 1);
+
+    run_cases(
+        &["C-small-practice",],
+        "y2017round4",
+        |reader, buffer| {
+            let t = reader.read_int();
+
+            for case in 1..=t {
+                let k = reader.read_int();
+
+                write!(buffer, "Case #{}: {}\n{}\n", case, search.mp[&k].len(), search.mp[&k].join("\n")).unwrap();
+            }
+        },
+    );
+}
+
 struct Spanning
 {
     is_connected: [[bool; MAX_VERTEX]; MAX_VERTEX],
-    matrix: [[f64; MAX_VERTEX]; MAX_VERTEX],
+    gauss_matrix: [[f64; MAX_VERTEX]; MAX_VERTEX],
 }
 
 impl Spanning
@@ -18,17 +46,16 @@ impl Spanning
     {
         Spanning {
             is_connected: [[false; MAX_VERTEX]; MAX_VERTEX],
-            matrix: [[0f64; MAX_VERTEX]; MAX_VERTEX],
+            gauss_matrix: [[0f64; MAX_VERTEX]; MAX_VERTEX],
         }
     }
 
-    fn count(&mut self, num_vertices: usize) -> usize
+    fn spanning_tree_count(&mut self, num_vertices: usize) -> usize
     {
         for i in 0..num_vertices {
             for j in 0..=i {
-                self.matrix[i][j] = 0.0;
-                self.matrix[j][i] = 0.0;
-;
+                self.gauss_matrix[i][j] = 0.0;
+                self.gauss_matrix[j][i] = 0.0;
             }
         }
 
@@ -36,11 +63,11 @@ impl Spanning
             for j in 0..i {
                 let ic = if self.is_connected[i][j] { 1f64 } else { 0f64 };
 
-                self.matrix[i][j] = -ic;
-                self.matrix[j][i] = -ic;
+                self.gauss_matrix[i][j] = -ic;
+                self.gauss_matrix[j][i] = -ic;
 
-                self.matrix[i][i] += ic;
-                self.matrix[j][j] += ic;
+                self.gauss_matrix[i][i] += ic;
+                self.gauss_matrix[j][j] += ic;
             }
         }
 
@@ -50,106 +77,94 @@ impl Spanning
         for e in 0..n {
             //assert(fabs(b[e][e]) > eps);
             for i in e + 1..n {
-                let coeff = -self.matrix[i][e] / self.matrix[e][e];
+                let coeff = -self.gauss_matrix[i][e] / self.gauss_matrix[e][e];
                 for j in e..n {
-                    self.matrix[i][j] += coeff * self.matrix[e][j];
+                    self.gauss_matrix[i][j] += coeff * self.gauss_matrix[e][j];
                 }
             }
         }
 
         let mut ans = 1.0;
         for i in 0..n {
-            ans *= self.matrix[i][i];
+            ans *= self.gauss_matrix[i][i];
         }
 
         (ans + 0.5) as usize
     }
 }
 
-pub fn solve_all_cases()
+struct Search
 {
-    let mut rng: StdRng = SeedableRng::seed_from_u64(42);
-    let is_connected = Uniform::from(0..2i16);
+    now: Instant,
+    mp: HashMap<usize, Vec<String>>,
+    mpn: HashSet<(usize, usize)>,
+}
 
-    let num_vertices = 4;
-    let mut vec2d = vec![vec![0f64; num_vertices]; num_vertices];
-    let mut matrix: Grid<f64> = Grid::new(num_vertices, num_vertices);
-
-    for i in 0..num_vertices {
-        for j in i + 1..num_vertices {
-            let ic = is_connected.sample(&mut rng) as f64;
-            matrix[(i, j)] = -ic;
-            matrix[(j, i)] = -ic;
-
-            matrix[(i, i)] += ic;
-            matrix[(j, j)] += ic;
-
-            vec2d[i][j] = -ic;
-            vec2d[j][i] = -ic;
-
-            vec2d[i][i] += ic;
-            vec2d[j][j] += ic;
+impl Search
+{
+    fn new() -> Self
+    {
+        Search {
+            now: Instant::now(),
+            mp: HashMap::new(),
+            mpn: HashSet::new(),
         }
     }
-
-    let mut g: Grid<f64> = Grid::new(num_vertices, num_vertices);
-    for i in 0..num_vertices {
-        for j in 0..num_vertices {
-            g[(i, j)] = vec2d[i][j];
+    fn dfs(&mut self, spanning: &mut Spanning, v: usize)
+    {
+        if (self.mp.len() == K - 1) {
+            return;
         }
-    }
-    println!("{:#.6?}", g);
+        if (v == MAX_VERTEX) {
+            return;
+        }
+        for t in 1..(1 << v) {
+            if (self.mp.len() == K - 1) {
+                return;
+            }
+            for i in 0..v {
+                spanning.is_connected[v][i] = if t & (1 << (v - i - 1)) > 0 {
+                    true
+                } else {
+                    false
+                };
+            }
+            let cnt = spanning.spanning_tree_count(v + 1);
+            if (cnt > K) {
+                continue;
+            }
+            if !self.mp.contains_key(&cnt) {
+                let mut z: Vec<String> = (0..=v)
+                    .map(|i| {
+                        (0..=v)
+                            .map(|j| {
+                                if spanning.is_connected[max(i, j)][min(i, j)] {
+                                    '1'
+                                } else {
+                                    '0'
+                                }
+                            })
+                            .collect::<String>()
+                    })
+                    .collect();
 
-    //gaussian elimination
-    let mut n = num_vertices;
-    n -= 1;
-    for e in 0..n {
-        //assert(fabs(b[e][e]) > eps);
-        for i in e + 1..n {
-            let coeff = -vec2d[i][e] / vec2d[e][e];
-            for j in e..n {
-                vec2d[i][j] += coeff * vec2d[e][j];
+                self.mp.insert(cnt, z);
+                println!(
+                    "found cnt = {} with n = {}; time = {} secs ; mp.size() = {}",
+                    cnt,
+                    v + 1,
+                    self.now.elapsed().as_secs(),
+                    self.mp.len()
+                );
+            }
+            if !self.mpn.contains(&(cnt, v + 1)) {
+                self.mpn.insert((cnt, v + 1));
+                self.dfs(spanning, v + 1);
             }
         }
     }
-
-    let mut g: Grid<f64> = Grid::new(num_vertices, num_vertices);
-    for i in 0..num_vertices {
-        for j in 0..num_vertices {
-            g[(i, j)] = vec2d[i][j];
-        }
-    }
-
-    let mut ans = 1.0;
-    for i in 0..n {
-        ans *= vec2d[i][i];
-    }
-
-    let dm = DMatrix::from_row_slice(num_vertices, num_vertices, &matrix.data);
-
-    /*let dm = DMatrix::from_row_slice(4, 4, &[
-       2.0, 0f64, -1.0, -1.0,
-            0., 2., -1.0, -1.0,
-            -1.0, -1.0, 3., -1.0,
-            -1.0, -1.0, -1.0, 3.
-    ]);*/
-    //let dm = Matrix::new(num_vertices, num_vertices, matrix.data.clone());
-
-    println!("{:#.6?}", matrix);
-
-    println!("{:#.6?}\n{}", g, ans);
-
-    for row in 0..num_vertices {
-        println!("{:?}", dm.row(row).iter().collect::<Vec<_>>());
-        // println!("{:?}", dm);
-    }
-
-    println!(
-        "{}",
-        dm.slice((1, 1), (num_vertices - 1, num_vertices - 1))
-            .determinant()
-    );
 }
+
 
 #[cfg(test)]
 mod test_2017_round4_c
@@ -198,7 +213,7 @@ mod test_2017_round4_c
                 .slice((1, 1), (num_vertices - 1, num_vertices - 1))
                 .determinant();
 
-            let det2 = spanning.count(num_vertices);
+            let det2 = spanning.spanning_tree_count(num_vertices);
 
             let mut g: Grid<f64> = Grid::new(num_vertices, num_vertices);
             for i in 0..num_vertices {
