@@ -12,6 +12,13 @@ use std::time::Instant;
 const MAX_VERTEX: usize = 22;
 const K: usize = 10000;
 
+/*
+Counting spanning trees
+Searching
+Gaussian elimination
+Determinant of a matrix
+*/
+
 pub fn solve_all_cases()
 {
     let mut spanning = Spanning::new();
@@ -118,12 +125,13 @@ impl Search
         if (v == MAX_VERTEX) {
             return;
         }
-        for t in 1..(1 << v) {
+        //try connecting v to all vertices less than it
+        for v_connected_perm in 1..(1 << v) {
             if (self.mp.len() == K - 1) {
                 return;
             }
             for i in 0..v {
-                spanning.is_connected[v][i] = if t & (1 << (v - i - 1)) > 0 {
+                spanning.is_connected[v][i] = if v_connected_perm & (1 << (v - i - 1)) > 0 {
                     true
                 } else {
                     false
@@ -157,6 +165,7 @@ impl Search
                     self.mp.len()
                 );
             }
+            //only try different vertices for here-to-for unseen values of k
             if !self.mpn.contains(&(cnt, v + 1)) {
                 self.mpn.insert((cnt, v + 1));
                 self.dfs(spanning, v + 1);
