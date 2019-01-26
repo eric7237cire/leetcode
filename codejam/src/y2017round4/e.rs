@@ -49,7 +49,13 @@ pub fn solve_all_cases()
                     premade_stacks[*si].iter().cloned().collect::<VecDeque<_>>()
                 }).collect();
 
+                if case != 1 {
+                    //continue;
+                }
+
                 writeln!(buffer, "{}", solve(case, &stacks)).unwrap();
+
+                
             }
         },
     );
@@ -59,26 +65,31 @@ pub fn solve_all_cases()
 fn solve(case_no: u32, stacks: &Vec<VecDeque<(u16, u16)>>) -> String
 {
     let mut suitToCards : HashMap<u16, Vec<u16>> = HashMap::new();
-    for &(suit, card) in stacks.iter().flatten() {
-        suitToCards.entry(suit).or_insert(Vec::new()).push(card);
+    for &(value,suit) in stacks.iter().flatten() {
+        suitToCards.entry(suit).or_insert(Vec::new()).push(value);
     } 
 
     for cards in suitToCards.values_mut() {
         cards.sort();
     }
 
+    for (idx,s) in stacks.iter().enumerate() {
+        debug!("Before  Stack #{}: {:?}", idx, s);
+    }
+
+
     let mut stacks = stacks.clone();
     //pre processing
     'stack_loop: loop {
         let mut suitToStackIndex: HashMap<u16, usize> = HashMap::new();
         for stack_idx in 0..stacks.len() {
-            if let Some( &(suit, value) ) = stacks[stack_idx].front()
+            if let Some( &(value, suit) ) = stacks[stack_idx].front()
             {
                 let last_index = *suitToStackIndex.entry(suit).or_insert(stack_idx);
                 if last_index == stack_idx {
                     continue;
                 }
-                if stacks[stack_idx].front().unwrap().1 > stacks[last_index].front().unwrap().1 {
+                if stacks[stack_idx].front().unwrap().0 > stacks[last_index].front().unwrap().0 {
                     stacks[last_index].pop_front();
                 } else {
                     stacks[stack_idx].pop_front();
@@ -90,31 +101,53 @@ fn solve(case_no: u32, stacks: &Vec<VecDeque<(u16, u16)>>) -> String
 
         break;
     }
+
+    for (idx,s) in stacks.iter().enumerate() {
+        debug!("Stack #{}: {:?}", idx, s);
+    }
+
+
+    if stacks.iter().all( |s| s.len() <= 1) 
+    {
+        return format!("Case #{}: POSSIBLE", case_no);
+    }
+
+    if !stacks.iter().any( |s| s.len() == 0) { 
+    
+        return format!("Case #{}: IMPOSSIBLE", case_no)
+    }
+
     
 
     let vertices: Vec<_> = stacks.iter().enumerate().filter( |&(_, stack)|
     {
-        if let Some(&(bot_suit, bot_value)) = stack.back() {
+        if let Some(&(bot_value, bot_suit)) = stack.back() {
         bot_value == *suitToCards[&bot_suit].last().unwrap()
         } else {false}
     }).map( |(stack_idx, stack)| {
-        let (bot_suit, bot_value) = *stack.back().unwrap();
+        let (bot_value, bot_suit) = *stack.back().unwrap();
         (stack_idx, bot_suit, bot_value) 
     }
     ).collect();
+
+    debug!("Vertices {:?}", vertices);
 
     //We say that a vertex (suit) s is a source if the ace is the only card in this suit, 
     let sources:Vec<usize> = vertices.iter().enumerate().filter( |(_, (_, suit, _)) |
         suitToCards[suit].len() == 1
     ).map( | (vertex_index, _) | vertex_index).collect();
 
+    debug!("Sources {:?}", sources);
+
     // that s is a target if there is another ace (of a different suit) in the stack in which the ace of s is at the bottom
     let target:HashSet<usize> = vertices.iter().enumerate().filter( |(_, (stack_idx, suit, _)) |
-        stacks[*stack_idx].iter().any(| (search_suit,search_card) | suit!=search_suit &&
+        stacks[*stack_idx].iter().any(| (search_card, search_suit) | suit!=search_suit &&
 
         suitToCards[search_suit].last().unwrap() == search_card)
 
     ).map( | (vertex_index, _) | vertex_index).collect();
+
+    debug!("Targets: {:?}", target);
 
     //We add an edge from vertex s1 to a different vertex s2 if the king of s2 is in the stack that has the ace of s1 at the bottom.
     let mut edges : HashMap<usize, Vec<usize>> = HashMap::new();
@@ -149,6 +182,10 @@ fn DFS(edges: &HashMap<usize, Vec<usize>>, visited: &mut HashSet<usize>, v: usiz
     }
     visited.insert(v);
     let mut found = false;
+
+    if !edges.contains_key(&v) {
+        return false;
+    }
     for w in edges[&v].iter() {
         if visited.contains(w) {
             continue;
