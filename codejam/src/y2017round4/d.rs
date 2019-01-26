@@ -53,6 +53,7 @@ fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
 
     let mut rng: StdRng = SeedableRng::seed_from_u64(42);
             
+    //speed up checks 
     rng.shuffle(&mut points);
 
     for i in 0..points.len()
@@ -60,7 +61,9 @@ fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
         //println!("Point {}={:#?}", i, points[i]);
         for j in 0..i
         {
-            //line is from origin to i, then hit point j
+            //a plane defined by origin + point i & j.  
+            //The cross product of AB + AC (where A is origin)
+            //is normal to the plane
             let normal = vec3_cross(&points[i], &points[j]);
 
             if normal == [0,0,0] {
@@ -72,7 +75,8 @@ fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
             let mut pos_count = 0;
             let mut neg_count = 0;
             let mut zero_count = 0;
-            for p in points.iter() { 
+            for p in points.iter() {
+                //the dot product determines if the point is on one side of the plane 
                 let dot = vec3_dot(&normal, p);
                 if dot > 0 {
                     pos_count += 1;
@@ -82,6 +86,8 @@ fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
                     zero_count += 1;
                     coplanar.push(*p);
                 }
+
+                //Short circuit
                 if pos_count > 0 && neg_count > 0 {
                     break;
                 }
@@ -89,29 +95,25 @@ fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
             }
 
             if pos_count == 0 || neg_count == 0 {
+                //Special handling for the coplanar case
                 if zero_count > 2 {
-                    if check_coplanar(&coplanar, &points[i], &points[j]) 
-                    && check_coplanar(&coplanar, &points[j], &points[i]) 
+                    //One of the points make a line from origin which we rotate to hit the 2nd point
+                    if check_coplanar(&coplanar, &points[i], &points[j], &normal) 
+                    && check_coplanar(&coplanar, &points[j], &points[i], &normal) 
                     {
+                        //the coplanar points cannot be seperated with a dividing line
                         continue;
                     }
                     
-                    return format!("Case #{}: NO",case_no);
-                } else {
-                    return format!("Case #{}: NO",case_no);
+                    
                 }
+
+                return format!("Case #{}: NO",case_no);
+                
             }
         }
     }
     format!("Case #{}: YES",case_no)
-}
-
-fn unit_normal_triangle( a: &Vector3<i64>, b: &Vector3<i64>, c: &Vector3<i64> ) -> Vector3<f64> {
-    let cp = vec3_cross( &vec3_sub(b, a), &vec3_sub(c,b) );
-
-    let cp_f64 : Vector3<f64> = vec3_cast(&cp);
-
-    return vec3_normalized(&cp_f64);
 }
 
 fn to_debug_string(a: &Vector3<BigInt>) -> String 
@@ -122,27 +124,29 @@ fn to_debug_string(a: &Vector3<BigInt>) -> String
 }
 
 
-const EPSILON:f64 = 0.0001;
-fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<i64> ) -> bool {
+fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<i64>, normal_to_plane: &Vector3<i64> ) -> bool {
 
     let point: Vector3<BigInt> = vec3_cast_bigint(&point);
     let line: Vector3<BigInt> = vec3_cast_bigint(&line);
+    let normal_to_plane: Vector3<BigInt> = vec3_cast_bigint(&normal_to_plane);
 
     debug!("Point: {:#?} Line: {:#?}", to_debug_string(&point), 
     to_debug_string(&line));
 
     let zero = BigInt::zero();
 
-    let perp = vec3_cross_ref(&point, &line);
-    let normal = vec3_cross_ref(&perp, &line);
+    //let perp = vec3_cross_ref(&point, &line);
 
-    debug!("Perp: {:#?} Normal: {:#?}", to_debug_string(&perp), 
-    to_debug_string(&normal));
+    //This is both normal to the plane containing the points and the line
+    let normal_to_line = vec3_cross_ref(&normal_to_plane, &line);
+
+    debug!("Perp: {:#?} Normal: {:#?}", to_debug_string(&normal_to_plane), 
+    to_debug_string(&normal_to_line));
     
 
     //they are perpendicular.  normal should be on the plane
-    assert_eq!(vec3_dot_ref(&line, &normal), zero);
-    assert_eq!(vec3_dot_ref(&line, &perp), zero);
+    debug_assert!(vec3_dot_ref(&line, &normal_to_line) == zero);
+    debug_assert!(vec3_dot_ref(&line, &normal_to_plane) == zero);
 
     let mut pos_count = 0;
     let mut neg_count = 0;
@@ -150,9 +154,9 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
     for p in points.iter() { 
         let p: Vector3<BigInt> = vec3_cast_bigint(&p);
 
-        assert_eq!(vec3_dot_ref(&p, &perp), zero);
+        debug_assert!(vec3_dot_ref(&p, &normal_to_plane) == zero);
 
-        let dot = vec3_dot_ref(&normal, &p);
+        let dot = vec3_dot_ref(&normal_to_line, &p);
 
         debug!("Looking at point: {} dot: {}",
         to_debug_string(&p), dot);
@@ -171,24 +175,14 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
     //assert_eq!(zero_count, 1);
     assert!(points.len() > 2);
 
-    //deal with colinear case
+    //deal with colinear case.  If there are colinear points, then we the dividing line if
+    //we rotate it will have one of the colinear points to the other side.
+    
     if zero_count <= 1 && (pos_count == 0 || neg_count == 0) {
         //all to 1 side
         return false;
     }
 
-    /*
-    for i in 1..points.len() {
-        for j in 1..i {
-            let n1 = unit_normal_triangle( &points[0], &points[i], &[0,0,0]);
-            let n2 = unit_normal_triangle( &points[i], &points[j], &[0,0,0]);
-            let n3 = unit_normal_triangle( &points[j], &points[0], &[0,0,0]);
-
-            if (1f64-vec3_dot(&n1, &n2).abs()) < EPSILON && (1f64-vec3_dot(&n2, &n3).abs()) < EPSILON {
-                return false;
-            }
-        }
-    }*/
 
     return true;
 }
