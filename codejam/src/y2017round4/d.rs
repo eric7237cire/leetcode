@@ -135,14 +135,11 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
 
     let zero = BigInt::zero();
 
-    //let perp = vec3_cross_ref(&point, &line);
-
     //This is both normal to the plane containing the points and the line
     let normal_to_line = vec3_cross_ref(&normal_to_plane, &line);
 
     debug!("Perp: {:#?} Normal: {:#?}", to_debug_string(&normal_to_plane), 
     to_debug_string(&normal_to_line));
-    
 
     //they are perpendicular.  normal should be on the plane
     debug_assert!(vec3_dot_ref(&line, &normal_to_line) == zero);
@@ -172,23 +169,18 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
         
     }
 
-    //assert_eq!(zero_count, 1);
     assert!(points.len() > 2);
 
     //deal with colinear case.  If there are colinear points, then we the dividing line if
     //we rotate it will have one of the colinear points to the other side.
     
     if zero_count <= 1 && (pos_count == 0 || neg_count == 0) {
-        //all to 1 side
+        //All the points are on one side of the dividing line
         return false;
     }
 
-
     return true;
 }
-
-
-
 
 #[cfg(test)]
 mod test_2017_round4_d
