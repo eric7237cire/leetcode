@@ -22,23 +22,26 @@ Determinant of a matrix
 pub fn solve_all_cases()
 {
     let mut spanning = Spanning::new();
-       let mut search = Search::new();
+    let mut search = Search::new();
 
-       search.dfs(&mut spanning, 1,0);
+    search.dfs(&mut spanning, 1, 0);
 
-    run_cases(
-        &["C-small-practice",],
-        "y2017round4",
-        |reader, buffer| {
-            let t = reader.read_int();
+    run_cases(&["C-small-practice"], "y2017round4", |reader, buffer| {
+        let t = reader.read_int();
 
-            for case in 1..=t {
-                let k = reader.read_int();
+        for case in 1..=t {
+            let k = reader.read_int();
 
-                write!(buffer, "Case #{}: {}\n{}\n", case, search.mp[&k].len(), search.mp[&k].join("\n")).unwrap();
-            }
-        },
-    );
+            write!(
+                buffer,
+                "Case #{}: {}\n{}\n",
+                case,
+                search.mp[&k].len(),
+                search.mp[&k].join("\n")
+            )
+            .unwrap();
+        }
+    });
 }
 
 struct Spanning
@@ -118,36 +121,36 @@ impl Search
         }
     }
     /*
-    final search tree looks like
-    DFS 1
-DFS 2
-DFS 3
-DFS 4
-DFS 5
-DFS 6
-DFS 7
-DFS 8
-DFS 9
-DFS 10
-DFS 11
-DFS 12
-DFS 13
-DFS 14
-DFS 15
-DFS 16
-DFS 17
-DFS 18
-DFS 19
-DFS 20
-DFS 21
-DFS 21
-DFS 21
-DFS 21
-DFS 21
-DFS 21
-DFS 21
-DFS 21
-*/
+        final search tree looks like
+        DFS 1
+    DFS 2
+    DFS 3
+    DFS 4
+    DFS 5
+    DFS 6
+    DFS 7
+    DFS 8
+    DFS 9
+    DFS 10
+    DFS 11
+    DFS 12
+    DFS 13
+    DFS 14
+    DFS 15
+    DFS 16
+    DFS 17
+    DFS 18
+    DFS 19
+    DFS 20
+    DFS 21
+    DFS 21
+    DFS 21
+    DFS 21
+    DFS 21
+    DFS 21
+    DFS 21
+    DFS 21
+    */
     fn dfs(&mut self, spanning: &mut Spanning, v: usize, level: usize)
     {
         if (self.mp.len() == K - 1) {
@@ -202,12 +205,11 @@ DFS 21
             //only try different vertices for here-to-for unseen values of k
             if !self.mpn.contains(&(cnt, v + 1)) {
                 self.mpn.insert((cnt, v + 1));
-                self.dfs(spanning, v + 1, 1+level);
+                self.dfs(spanning, v + 1, 1 + level);
             }
         }
     }
 }
-
 
 #[cfg(test)]
 mod test_2017_round4_c
