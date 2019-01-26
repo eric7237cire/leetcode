@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
 use std::ops::Sub;
 use std::time::Instant;
+use bimap::BiMap;
 
 /*
 Cross product / dot product
@@ -29,7 +30,7 @@ pub fn solve_all_cases()
     run_cases(
         &[
             "E-small-practice",
-          //  "E-large-practice"
+            "E-large-practice"
         ],
         "y2017round4",
         |reader, buffer| {
@@ -58,8 +59,9 @@ pub fn solve_all_cases()
                     })
                     .collect();
 
-                if case != 1 {
+                if case != 12 {
                     //continue;
+
                 }
 
                 println!("Solving {}", case);
@@ -83,8 +85,8 @@ pub fn solve_all_cases()
 fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
 {
     let mut suitToCards: HashMap<u16, Vec<u16>> = HashMap::new();
-    let mut kingSuitToStack: HashMap<u16, usize> = HashMap::new();
-    let mut aceSuitToStack: HashMap<u16, usize> = HashMap::new();
+    let mut kingSuitToStack: BiMap<u16, usize> = BiMap::new();
+    let mut lastAceSuitToStack: HashMap<u16, usize> = HashMap::new();
 
     for &(value, suit) in stacks.iter().flatten() {
         suitToCards.entry(suit).or_insert(Vec::new()).push(value);
@@ -99,7 +101,7 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
         for (card_idx, &(value, suit)) in stack.iter().enumerate() {
             let suitCards = &suitToCards[&suit];
             if card_idx == stack.len()-1 && value == suitCards[suitCards.len() - 1] {
-                aceSuitToStack.insert( suit, idx);
+                lastAceSuitToStack.insert( suit, idx);
             }
             if suitCards.len() > 1 && value == suitCards[suitCards.len() - 2] {
                 kingSuitToStack.insert(suit, idx);
@@ -120,7 +122,8 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
     }
 
     //stack => suit; these stacks have a unique ace at the bottom
-    let vertices: HashMap<usize, u16> = aceSuitToStack
+    // Let us construct a graph in which vertices are the suits for which the ace begins the game at the bottom of some stack
+    let vertices: BiMap<usize, u16> = lastAceSuitToStack
         .iter()
         .map(|(suit, stack_idx)| {
             (*stack_idx, *suit)
@@ -158,23 +161,28 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
     //We add an edge from vertex s1 to a different vertex s2 if the king of s2 is in the stack that has the ace of s1 at the bottom.
     let mut edges: HashMap<u16, Vec<u16>> = HashMap::new();
 
-    for (stack_idx_1, suit_1) in vertices.iter() {
+    for (stack_idx_1, ace_suit_1) in vertices.iter() {
         /*
-        We add an edge from vertex s1 to a different vertex s2 if the king of s2 is in the stack that has the ace of s1 at the bottom.
+        We add an edge from vertex s1 to a different vertex s2 
+        if the king of s2 is in the stack that has the ace of s1 at the bottom.
         */
         
-        if !kingSuitToStack.contains_key(suit_1) {
+        if !kingSuitToStack.contains_right(stack_idx_1) {
             continue;
         }
-        let kingStack = kingSuitToStack[suit_1];
+        let kingSuit = kingSuitToStack.get_by_right(stack_idx_1).unwrap();
 
-        if !vertices.contains_key(&kingStack) {
+        if !vertices.contains_right(&kingSuit) {
             continue;
         }
 
-        let vertex_2_suit = vertices[&kingStack];
+        let vertex_2_suit = vertices.get_by_right(&kingSuit).unwrap();
 
-        edges.entry(*suit_1).or_insert(Vec::new()).push(vertex_2_suit);
+        if kingSuit == ace_suit_1 {
+            continue;
+        }
+
+        edges.entry(*ace_suit_1).or_insert(Vec::new()).push(*kingSuit);
             
         
     }
@@ -182,12 +190,45 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
     println!("Starting DFS {}", sources.len());
     for source in sources {
         println!("DFS {}", source);
-        if DFS(&edges, &mut HashSet::new(), source, &target) {
+        if BFS(&edges, &mut HashSet::new(), source, &target) {
             return true;
         }
     }
 
     false
+}
+
+fn BFS ( edges: &HashMap<u16, Vec<u16>>,
+    visited: &mut HashSet<u16>,
+    v: u16,
+    targets: &HashSet<u16>,
+) -> bool
+{
+    let mut queue: VecDeque<u16> = VecDeque::new();
+    let mut visited = HashSet::new();
+
+    queue.push_back(v);
+    visited.insert(v);
+
+    while let Some(w) = queue.pop_front()
+    {
+        if targets.contains(&w) {
+            return true;
+        }
+        if !edges.contains_key(&w) {
+            continue;
+        }
+        for u in edges[&w].iter() {
+            if visited.contains(u)  {
+                continue;
+            }
+            visited.insert(*u);
+            queue.push_back(*u);
+        
+        }
+    }
+
+    return false;
 }
 
 fn DFS(
