@@ -12,7 +12,15 @@ use crate::algo::vectors::*;
 use num_traits::*;
 
 /*
+Cross product / dot product
+normal vectors in a plane
+Dividing plane
+Sphere
+integer math 
+big ints
 
+Idea: Looking at eatmore's solution, using dot*cross product https://mathinsight.org/scalar_triple_product
+and maybe using interior of 3d polygons
 */
 
 pub fn solve_all_cases()
