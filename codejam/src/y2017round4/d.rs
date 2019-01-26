@@ -2,8 +2,8 @@ use num_bigint::BigInt;
 use crate::util::codejam::run_cases;
 use crate::util::grid::Grid;
 use rand::distributions::{Distribution, Uniform};
-use rand::prelude::StdRng;
-use rand::SeedableRng;
+use rand::prelude::{StdRng, SliceRandom};
+use rand::{SeedableRng,Rng};
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::time::Instant;
@@ -22,7 +22,7 @@ pub fn solve_all_cases()
      */
 
     run_cases(
-        &["D-small-practice",],
+        &["D-small-practice","D-large-practice"],
         "y2017round4",
         |reader, buffer| {
             let t = reader.read_int();
@@ -45,19 +45,21 @@ pub fn solve_all_cases()
 
 fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
 {
+    println!("Case {}.  # of points: {}", case_no, points.len());
+
     let mut points = points.clone();
     points.sort();
     points.dedup();
 
+    let mut rng: StdRng = SeedableRng::seed_from_u64(42);
+            
+    rng.shuffle(&mut points);
+
     for i in 0..points.len()
     {
-        println!("Point {}={:#?}", i, points[i]);
+        //println!("Point {}={:#?}", i, points[i]);
         for j in 0..i
         {
-            if i==j {
-                continue;
-            }
-
             //line is from origin to i, then hit point j
             let normal = vec3_cross(&points[i], &points[j]);
 
@@ -80,7 +82,9 @@ fn solve(case_no: u32, points: &Vec<Vector3<i64>>) -> String
                     zero_count += 1;
                     coplanar.push(*p);
                 }
-
+                if pos_count > 0 && neg_count > 0 {
+                    break;
+                }
                 
             }
 
@@ -124,7 +128,7 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
     let point: Vector3<BigInt> = vec3_cast_bigint(&point);
     let line: Vector3<BigInt> = vec3_cast_bigint(&line);
 
-    println!("Point: {:#?} Line: {:#?}", to_debug_string(&point), 
+    debug!("Point: {:#?} Line: {:#?}", to_debug_string(&point), 
     to_debug_string(&line));
 
     let zero = BigInt::zero();
@@ -132,7 +136,7 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
     let perp = vec3_cross_ref(&point, &line);
     let normal = vec3_cross_ref(&perp, &line);
 
-    println!("Perp: {:#?} Normal: {:#?}", to_debug_string(&perp), 
+    debug!("Perp: {:#?} Normal: {:#?}", to_debug_string(&perp), 
     to_debug_string(&normal));
     
 
@@ -150,7 +154,7 @@ fn check_coplanar(points: &[Vector3<i64>], point: &Vector3<i64>, line: &Vector3<
 
         let dot = vec3_dot_ref(&normal, &p);
 
-        println!("Looking at point: {} dot: {}",
+        debug!("Looking at point: {} dot: {}",
         to_debug_string(&p), dot);
 
         if dot > zero {
