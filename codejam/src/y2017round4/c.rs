@@ -24,7 +24,7 @@ pub fn solve_all_cases()
     let mut spanning = Spanning::new();
        let mut search = Search::new();
 
-       search.dfs(&mut spanning, 1);
+       search.dfs(&mut spanning, 1,0);
 
     run_cases(
         &["C-small-practice",],
@@ -117,7 +117,38 @@ impl Search
             mpn: HashSet::new(),
         }
     }
-    fn dfs(&mut self, spanning: &mut Spanning, v: usize)
+    /*
+    final search tree looks like
+    DFS 1
+DFS 2
+DFS 3
+DFS 4
+DFS 5
+DFS 6
+DFS 7
+DFS 8
+DFS 9
+DFS 10
+DFS 11
+DFS 12
+DFS 13
+DFS 14
+DFS 15
+DFS 16
+DFS 17
+DFS 18
+DFS 19
+DFS 20
+DFS 21
+DFS 21
+DFS 21
+DFS 21
+DFS 21
+DFS 21
+DFS 21
+DFS 21
+*/
+    fn dfs(&mut self, spanning: &mut Spanning, v: usize, level: usize)
     {
         if (self.mp.len() == K - 1) {
             return;
@@ -125,6 +156,8 @@ impl Search
         if (v == MAX_VERTEX) {
             return;
         }
+        //println!("DFS {}", v);
+
         //try connecting v to all vertices less than it
         for v_connected_perm in 1..(1 << v) {
             if (self.mp.len() == K - 1) {
@@ -158,17 +191,18 @@ impl Search
 
                 self.mp.insert(cnt, z);
                 println!(
-                    "found cnt = {} with n = {}; time = {} secs ; mp.size() = {}",
+                    "found cnt = {} with n = {}; time = {} secs ; mp.size() = {}; level = {}",
                     cnt,
                     v + 1,
                     self.now.elapsed().as_secs(),
-                    self.mp.len()
+                    self.mp.len(),
+                    level
                 );
             }
             //only try different vertices for here-to-for unseen values of k
             if !self.mpn.contains(&(cnt, v + 1)) {
                 self.mpn.insert((cnt, v + 1));
-                self.dfs(spanning, v + 1);
+                self.dfs(spanning, v + 1, 1+level);
             }
         }
     }
