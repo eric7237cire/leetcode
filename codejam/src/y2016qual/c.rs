@@ -11,7 +11,8 @@ use std::collections::VecDeque;
 use std::io::Write;
 use std::mem;
 use std::usize;
-
+use num_bigint::BigUint; 
+use num_traits::*;
 use byteorder::{ByteOrder, NativeEndian, LittleEndian, BigEndian, WriteBytesExt};
 
 use std::thread;
@@ -23,7 +24,7 @@ pub fn solve_all_cases()
 {
     run_cases(
         &["C-small-practice", 
-        //"B-large-practice"
+        "C-large-practice"
         ],
         "y2016qual",
         |reader, buffer| {
@@ -46,37 +47,37 @@ pub fn solve_all_cases()
 
 fn solve(N: u16, J: u16) -> String
 {
-    let mut ans : Vec<Vec<u64>> = Vec::new();
+    let mut ans : Vec<Vec<BigUint>> = Vec::new();
 
-    let mut buf = [0; 4];
+    //let mut buf = [0; 4];
 
     let mut sieve = SieveOfAtkin::new(10000);
     sieve.run();
-    let primes = sieve.get_results_vec();
+    let primes: Vec<BigUint> = sieve.get_results_vec().into_iter().map( |p| BigUint::from(p)).collect();
 
     //brute force
     'jamcoin: for jamcoin in (1 + (1 << (N-1))..= ((1u64 << N) - 1)  ).step_by(2) {
         //println!("{:b}  N={}", jamcoin, N);
 
-        let mut num_ks = Vec::new();
+        let mut num_ks: Vec<BigUint> = Vec::new();
         
         //BigEndian::write_u32(&mut buf, jamcoin);
         //let bitvec = BitVec::from_bytes(&buf);
 
-        'next_base: for base in 2..=10 {
-            let mut num = 0u64;
-            let mut base_mul = 1u64;
+        'next_base: for base in 2..=10u16 {
+            let mut num = BigUint::zero();
+            let mut base_mul = BigUint::one();
             for pos in 0..N {
-                num += ((jamcoin >> pos) & 1 ) * base_mul;
-                base_mul *= base;
+                num += ((jamcoin >> pos) & 1 ) * &base_mul;
+                base_mul *= BigUint::from(base);
             }
             //println!("In base {}, num is {}, is prime: {}", base, num, primes.contains(& (num as u64)));
             
-            for &k in primes.iter() {
-                if num % k == 0 {
-                    num_ks.push(k);
+            for k in primes.iter() {
+                if &num % k == BigUint::zero() {
+                    num_ks.push(k.clone());
                     if base == 10 {
-                        num_ks.insert(0, num as u64);
+                        num_ks.insert(0, num.clone());
                         ans.push(num_ks);
                         if ans.len() == J as usize {
                             break 'jamcoin;
