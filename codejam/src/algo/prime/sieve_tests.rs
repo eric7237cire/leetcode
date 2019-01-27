@@ -11,14 +11,14 @@ mod sieve_tests {
         let mut sieve = SieveOfAtkin::new(50);
 
         sieve.run();
-        assert_eq!(sieve.get_results(), primes_to_50);
+        assert_eq!(sieve.get_results_vec(), primes_to_50);
     }
 
     #[test]
     fn atkin_output() {
         let mut sieve = SieveOfAtkin::new(10000);
         sieve.run();
-        let results = sieve.get_results();
+        let results = sieve.get_results_vec();
         for prime in results.iter() {
            assert!(is_n_prime(*prime), "Failed with {}", prime);
         }

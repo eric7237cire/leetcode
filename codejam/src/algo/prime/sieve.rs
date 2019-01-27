@@ -3,7 +3,7 @@ use super::test_integer::TestInteger;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc;
 use std::thread;
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashSet};
 
 /// An iterator that returns the nth integer squared.
 struct Squares {
@@ -66,7 +66,13 @@ impl SieveOfAtkin {
 
     // returns a copy so we don't need to worry about our vector being mutated
     /// Returns a copy of the vector containing sieved primes.
-    pub fn get_results(&self) -> Vec<u64> {
+    pub fn get_results_set(&self) -> HashSet<u64> {
+        let mut set = HashSet::new();
+        set.extend(self.results.iter());
+        set 
+    }
+
+    pub fn get_results_vec(&self) -> Vec<u64> {
         self.results.clone()
     }
     
