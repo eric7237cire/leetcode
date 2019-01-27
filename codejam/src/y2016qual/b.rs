@@ -13,8 +13,7 @@ use std::usize;
 use std::thread;
 
 /*
-Simulation
-Digits
+Greedy alogrithm
 */
 pub fn solve_all_cases()
 {
@@ -43,5 +42,16 @@ pub fn solve_all_cases()
 
 fn solve(pancakes: BitVec) -> usize
 {
-    3
+    let mut flips = 0;
+    //go through from bottom(right) to top, flipping as we needed
+    for p in pancakes.iter().rev() {
+        //Need a flip?  Take into account how many flips we have already done
+        if (p && flips % 2 == 0) || (!p && flips % 2 == 1) {
+            continue;
+        }
+
+        flips += 1;
+    }
+    
+    flips
 }
