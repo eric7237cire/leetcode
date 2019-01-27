@@ -20,6 +20,7 @@ mod y2017round1C;*/
 mod y2017round2;
 mod y2017round3;
 mod y2017round4;
+mod y2016qual;
 
 #[macro_use]
 extern crate log;
@@ -43,5 +44,7 @@ fn main()
     y2017round3::c::solve_all_cases();
     y2017round3::d::solve_all_cases();*/
 
-    y2017round4::e::solve_all_cases();
+    //y2017round4::e::solve_all_cases();
+
+    y2016qual::b::solve_all_cases();
 }
