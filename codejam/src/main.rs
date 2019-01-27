@@ -46,5 +46,5 @@ fn main()
 
     //y2017round4::e::solve_all_cases();
 
-    y2016qual::b::solve_all_cases();
+    y2016qual::c::solve_all_cases();
 }
