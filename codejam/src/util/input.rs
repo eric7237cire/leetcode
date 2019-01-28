@@ -126,6 +126,22 @@ impl<'a> InputReader<'a>
         )
     }
 
+    pub fn read_array_3<T>(&mut self) -> [T; 3]
+    where
+        T: std::str::FromStr,
+        <T as std::str::FromStr>::Err: std::fmt::Debug,
+    {
+        self.s.clear();
+        self.i.read_line(&mut self.s).unwrap();
+        //debug!("Read line {}", self.s);
+        let mut sw = self.s.split_whitespace();
+        
+        [sw.next().unwrap().parse::<T>().unwrap(),
+        sw.next().unwrap().parse::<T>().unwrap(),
+        sw.next().unwrap().parse::<T>().unwrap()]
+    
+    }
+
     pub fn read_chars(&mut self, amt: usize) -> Vec<char>
     {
         self.s.clear();
