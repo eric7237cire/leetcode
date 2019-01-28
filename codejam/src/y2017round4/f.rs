@@ -328,10 +328,40 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
     */
     for i in 1..10000
     {
+        /*
         if i < 68 {
         println!("i {} max is {}",
         i, U.iter().max().unwrap());
+        }*/
+
+        if i == 2 {
+            let current_umax = U.iter().max().unwrap();
+            let pre_max = (0..teleporters.len()).map(
+                |t_idx| dist_matrix[0][t_idx].iter().max().unwrap() + 
+                dist(&home, &teleporters[t_idx])); 
         }
+        
+        if i == 3 {
+            let current_umax = U.iter().max().unwrap();
+            let pre_max = (0..teleporters.len()).map(
+                |t_idx| dist_matrix[1][t_idx].iter().max().unwrap() + 
+                dist(&home, &teleporters[t_idx])); 
+        }
+        
+        if i == 5 {
+            let current_umax = U.iter().max().unwrap();
+            let pre_max = (0..teleporters.len()).map(
+                |t_idx| dist_matrix[2][t_idx].iter().max().unwrap() + 
+                dist(&home, &teleporters[t_idx])); 
+        }
+        
+        if i == 9 {
+            let current_umax = U.iter().max().unwrap();
+            let pre_max = (0..teleporters.len()).map(
+                |t_idx| dist_matrix[3][t_idx].iter().max().unwrap() + 
+                dist(&home, &teleporters[t_idx])); 
+        }
+
         let mut new_L = Vec::new();
         let mut new_U = Vec::new();
 
