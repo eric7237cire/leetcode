@@ -13,7 +13,7 @@ use std::time::Instant;
 use bimap::BiMap;
 use std::mem;
 use std::i64;
-use std::cmp::min;
+use std::cmp::{min,max};
 
 
 /*
@@ -83,7 +83,43 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 
 2 steps B->C
 2 steps C->Z
+
+
+16 steps T1->T2
+8 steps T1->V
+8 steps V->T2
 */
+
+    //create a matrix [log steps][t_idx][t2_idx]
+    let mut dist_matrix = Vec::new();
+
+    for steps_idx in 0..10 {
+        dist_matrix.push(vec![ vec![ -1; teleporters.len() ]; teleporters.len() ]);
+
+        if steps_idx == 0 {
+            for (t1_idx, t1) in teleporters.iter().enumerate() {
+                for (t2_idx, t2) in teleporters.iter().enumerate() {
+                    dist_matrix[steps_idx][t1_idx][t2_idx] = dist( t1,t2);
+                }
+            }
+        } else {
+            for (t1_idx, t1) in teleporters.iter().enumerate() {
+                for (t2_idx, t2) in teleporters.iter().enumerate() {
+                    let mut best = -1;
+                    for (v_idx, v) in teleporters.iter().enumerate() {
+                    
+                        best = max( best, dist_matrix[steps_idx-1][t1_idx][v_idx] +
+                        dist_matrix[steps_idx-1][v_idx][t2_idx]);
+                    }
+
+                    dist_matrix[steps_idx][t1_idx][t2_idx] = best;
+                }
+            }
+        }
+    }
+
+
+
     let target_distance = dist(home, dest);
 
     let min_dist_home = teleporters.iter().fold( i64::MAX,
@@ -210,6 +246,41 @@ i = j + k - j
 
 fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 {
+    ///extra
+    let mut dist_matrix = Vec::new();
+
+    for steps_idx in 0..6 {
+        dist_matrix.push(vec![ vec![ -1; teleporters.len() ]; teleporters.len() ]);
+
+        if steps_idx == 0 {
+            for (t1_idx, t1) in teleporters.iter().enumerate() {
+                for (t2_idx, t2) in teleporters.iter().enumerate() {
+                    dist_matrix[steps_idx][t1_idx][t2_idx] = dist( t1,t2);
+                }
+            }
+        } else {
+            for (t1_idx, t1) in teleporters.iter().enumerate() {
+                for (t2_idx, t2) in teleporters.iter().enumerate() {
+                    let mut best = -1;
+                    for (v_idx, v) in teleporters.iter().enumerate() {
+                    
+                        best = max( best, dist_matrix[steps_idx-1][t1_idx][v_idx] +
+                        dist_matrix[steps_idx-1][v_idx][t2_idx]);
+                    }
+
+                    dist_matrix[steps_idx][t1_idx][t2_idx] = best;
+
+                   /* println!("Dist matrix {} to {}, step {} = {}",
+                    t1_idx, t2_idx, steps_idx, best); */
+                }
+            }
+        }
+
+        println!("After step idx {} max is {}",
+        steps_idx, dist_matrix[steps_idx].iter().flatten().max().unwrap());
+    }
+
+///extra
     let target_distance = dist(home, dest);
     //let mut L: Vec<Vec<i64>> = Vec::new();
     //let mut U: Vec<Vec<i64>> = Vec::new();
@@ -240,7 +311,9 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
 
     
     let mut initial = Vec::new();
-    for t in teleporters.iter() {
+    for (t_idx,t) in teleporters.iter().enumerate() {
+        /*println!("Teleporter #{}, dist home: {}",
+        t_idx, dist(home, t));*/
         initial.push( dist(home, t) );
     }
     
@@ -255,6 +328,10 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
     */
     for i in 1..10000
     {
+        if i < 68 {
+        println!("i {} max is {}",
+        i, U.iter().max().unwrap());
+        }
         let mut new_L = Vec::new();
         let mut new_U = Vec::new();
 
@@ -270,6 +347,11 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
                 return None;
             }
 
+/*           println!("Starting iteration #{}, teleporter #{} U[{}] = {}",
+            i, t_idx, t_idx, U[t_idx]);*/
+
+                
+
             let mut low = None;
             let mut high = None;    
             for (u_idx, u) in teleporters.iter().enumerate()
@@ -284,6 +366,8 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
                     high = Some(maybe_high);
                     
                 }
+
+                
 
                 /*
                 . For each teleporter u we need to consider:
@@ -308,6 +392,7 @@ Lu,i - dist(t, u) if dist(t, u) < Lu,i (t is inside the inner sphere), or
                     low = Some(maybe_low);
                 }
             }
+
 
 
             new_L.push(low.unwrap());
