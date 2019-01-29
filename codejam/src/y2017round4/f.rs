@@ -25,7 +25,7 @@ pub fn solve_all_cases()
     run_cases(
         &[
             "F-small-practice",
-            //"F-large-practice"
+            "F-large-practice"
         ],
         "y2017round4",
         |reader, buffer| {
@@ -39,7 +39,7 @@ pub fn solve_all_cases()
 
                 let teleporters:Vec<_> = (0..N).map(|_| reader.read_array_3::<i64>()).collect();
                 
-                if case != 12 {
+                if case != 22 {
                     //continue;
 
                 }
@@ -166,11 +166,11 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 
     let mut max_step_idx = 1;
 
-    for steps_idx in 0..50 {
-        if (1i64 << steps_idx) > max_dist {
+    for steps_idx in 0..44 {
+        /*if (1i64 << (steps_idx-1)) > max_dist {
             max_step_idx = steps_idx;
             break;
-        }
+        }*/
         dist_matrix.push(vec![ vec![ -1; teleporters.len() ]; teleporters.len() ]);
 
         if steps_idx == 0 {
@@ -197,8 +197,15 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
             }
         }
 
-        /*println!("In precalculations: After step idx {} max is {}",
-        steps_idx, dist_matrix[steps_idx].iter().flatten().max().unwrap());*/
+        let u_max = dist_matrix[steps_idx].iter().flatten().max().unwrap(); 
+
+
+        if *u_max >= (1i64 << 50) {
+            break;
+        }
+
+        println!("In precalculations: After step idx {} max is {}",
+        steps_idx, u_max);
     }
 
 ///extra
@@ -278,7 +285,7 @@ Since the problem is symmetric, swap P and Q if needed to make P the closest of 
     */
 
     let mut min_num_steps = 1;
-    let mut max_num_steps = (1 << max_step_idx) - 1;
+    let mut max_num_steps = 1 << (dist_matrix.len()-1);
 
     while max_num_steps > min_num_steps
     {
@@ -286,15 +293,19 @@ Since the problem is symmetric, swap P and Q if needed to make P the closest of 
 
         let fast_umax = get_longest_path_for_step(&dist_matrix, &dist_home, steps);
         
-       /* println!("Steps {} min {} max {} umax {:?}", steps, 
+        /*
+       println!("Steps {} min {} max {} umax {}\n{:?}\nDist target:\n{:?}", steps, 
         min_num_steps,
         max_num_steps,
-        fast_umax);*/
+        fast_umax.iter().max().unwrap(),
+        fast_umax,
+        dist_target
+        );*/
 
-        let all_greater = (0..teleporters.len()).all( |t_idx|
-            dist_target[t_idx] > fast_umax[t_idx] );
+        let any_in_range = (0..teleporters.len()).any( |t_idx|
+            dist_target[t_idx] <= fast_umax[t_idx] );
 
-        if all_greater {
+        if !any_in_range {
             min_num_steps = steps + 1;
         } else {
             max_num_steps = steps;
@@ -447,7 +458,7 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
             let fast_umax_all = fast_umax.iter().max().unwrap();
         let current_umax = U.iter().max().unwrap();
         
-        assert_eq!(*current_umax, *fast_umax_all);
+        assert_eq!(*current_umax + 1, *fast_umax_all);
         
             /*println!("maxes: {} and {}\nU vs fast: {:?} ",
             fast_umax_all,current_umax, fast_umax.iter().zip(U.iter()).collect::<Vec<_>>());
@@ -462,7 +473,7 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
 
         for (t_idx, t) in teleporters.iter().enumerate() {
 
-            if i > 5 {
+            if i > 1 {
                 let current_umax = U[t_idx];
                 let fast_umax_t = fast_umax[t_idx];
                 assert_eq!(current_umax, fast_umax_t);
