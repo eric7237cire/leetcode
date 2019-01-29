@@ -72,6 +72,54 @@ fn dist( a: &Point, b: &Point) -> i64
     (a[0]-b[0]).abs() + (a[1]-b[1]).abs() + (a[2]-b[2]).abs()
 }
 
+fn get_longest_path_for_step( dist_matrix: &Vec<Vec<Vec<i64>>>, home_dist: &Vec<i64>, steps: usize) -> i64
+{
+    let N = dist_matrix[0].len();
+
+    let mut ans = vec![ vec![ -1; N ]; N ];
+
+    for step_idx in 0..dist_matrix.len()
+    {
+        if (1 << step_idx) & steps == 0 {
+            continue;
+        }
+
+        if ans[0][0] == -1 {
+            //println!("Initializing with {}", step_idx);
+            ans = dist_matrix[step_idx].clone();
+            continue;
+        }
+
+        // println!("Multiplying with {}", step_idx);
+        let mut new_ans = vec![ vec![ -1; N ]; N ];
+        //
+        for t1_idx in 0..N {
+                for t2_idx in 0..N {
+                    let mut best = -1;
+                    for v_idx in 0..N {
+                    
+                        best = max( best,
+                        ans[t1_idx][v_idx] +
+                         dist_matrix[step_idx][v_idx][t2_idx]);
+                    }
+
+                    new_ans[t1_idx][t2_idx] = best;
+
+                   /* println!("Dist matrix {} to {}, step {} = {}",
+                    t1_idx, t2_idx, steps_idx, best); */
+                }
+            }
+
+        mem::swap(&mut ans, &mut new_ans);
+
+    }
+
+    (0..N).map(
+                |t_idx| ans[t_idx].iter().max().unwrap() + 
+                home_dist[t_idx]).max().unwrap() 
+
+}
+
 fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 {
     /*
@@ -120,7 +168,7 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 
 
 
-    let target_distance = dist(home, dest);
+   // let target_distance = dist(home, dest);
 
     let min_dist_home = teleporters.iter().fold( i64::MAX,
     |acc, t| min(acc, dist(&home, t)));
@@ -130,6 +178,7 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 
     println!("min. d home {} dest {}", min_dist_home, min_dist_dest);
 
+    //make sure home is the closest point
     let (home,dest) = if min_dist_home > min_dist_dest {
         (dest,home)
     } else { (home, dest) };
@@ -246,10 +295,35 @@ i = j + k - j
 
 fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 {
+    
+    let target_distance = dist(home, dest);
+    //let mut L: Vec<Vec<i64>> = Vec::new();
+    //let mut U: Vec<Vec<i64>> = Vec::new();
+
+
+    let target_distance = dist(home, dest);
+
+    let min_dist_home = teleporters.iter().fold( i64::MAX,
+    |acc, t| min(acc, dist(&home, t)));
+
+    let min_dist_dest = teleporters.iter().fold( i64::MAX,
+    |acc, t| min(acc, dist(&dest, t)));
+
+    let max_dist_home = teleporters.iter().fold( i64::MIN,
+    |acc, t| max(acc, dist(&home, t)));
+
+    let max_dist_dest = teleporters.iter().fold( i64::MIN,
+    |acc, t| max(acc, dist(&dest, t)));
+
+    let max_dist = max(max_dist_dest, max_dist_home);
+
     ///extra
     let mut dist_matrix = Vec::new();
 
-    for steps_idx in 0..6 {
+    for steps_idx in 0..50 {
+        if (1i64 << steps_idx) > max_dist {
+            break;
+        }
         dist_matrix.push(vec![ vec![ -1; teleporters.len() ]; teleporters.len() ]);
 
         if steps_idx == 0 {
@@ -281,18 +355,6 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
     }
 
 ///extra
-    let target_distance = dist(home, dest);
-    //let mut L: Vec<Vec<i64>> = Vec::new();
-    //let mut U: Vec<Vec<i64>> = Vec::new();
-
-
-    let target_distance = dist(home, dest);
-
-    let min_dist_home = teleporters.iter().fold( i64::MAX,
-    |acc, t| min(acc, dist(&home, t)));
-
-    let min_dist_dest = teleporters.iter().fold( i64::MAX,
-    |acc, t| min(acc, dist(&dest, t)));
 
     println!("min. d home {} dest {}", min_dist_home, min_dist_dest);
 
@@ -328,39 +390,26 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
     */
     for i in 1..10000
     {
-        /*
+        
         if i < 68 {
         println!("i {} max is {}",
         i, U.iter().max().unwrap());
-        }*/
+        }
 
-        if i == 2 {
-            let current_umax = U.iter().max().unwrap();
-            let pre_max = (0..teleporters.len()).map(
+        if i > 1 {
+            let pre_max1 = (0..teleporters.len()).map(
                 |t_idx| dist_matrix[0][t_idx].iter().max().unwrap() + 
-                dist(&home, &teleporters[t_idx])); 
-        }
-        
-        if i == 3 {
-            let current_umax = U.iter().max().unwrap();
-            let pre_max = (0..teleporters.len()).map(
+                dist(&home, &teleporters[t_idx])).max().unwrap();
+            let pre_max2 = (0..teleporters.len()).map(
                 |t_idx| dist_matrix[1][t_idx].iter().max().unwrap() + 
-                dist(&home, &teleporters[t_idx])); 
+                dist(&home, &teleporters[t_idx])).max().unwrap();
+
+        let current_umax = U.iter().max().unwrap();
+        let fast_umax = get_longest_path_for_step(&dist_matrix, &initial, i-1);
+        assert_eq!(*current_umax, fast_umax);
         }
-        
-        if i == 5 {
-            let current_umax = U.iter().max().unwrap();
-            let pre_max = (0..teleporters.len()).map(
-                |t_idx| dist_matrix[2][t_idx].iter().max().unwrap() + 
-                dist(&home, &teleporters[t_idx])); 
-        }
-        
-        if i == 9 {
-            let current_umax = U.iter().max().unwrap();
-            let pre_max = (0..teleporters.len()).map(
-                |t_idx| dist_matrix[3][t_idx].iter().max().unwrap() + 
-                dist(&home, &teleporters[t_idx])); 
-        }
+
+       
 
         let mut new_L = Vec::new();
         let mut new_U = Vec::new();
@@ -370,7 +419,7 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
             if //dist(&dest, t) >= L[t_idx] &&
             i>1 &&
                dist(&dest, t) <= U[t_idx] {
-                return Some(i);
+                return Some(i as u64);
             }
        
             if teleporters.len()==1 {
