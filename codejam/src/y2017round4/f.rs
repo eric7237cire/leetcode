@@ -52,7 +52,8 @@ pub fn solve_all_cases()
                     buffer,
                     "Case #{}: {}",
                     case,
-                    if let Some(ans) = solve_small_only_U(&home, &dest, &teleporters) {
+                    //if let Some(ans) = solve_small_only_U(&home, &dest, &teleporters) {
+                    if let Some(ans) = solve(&home, &dest, &teleporters) {
                         format!("{}", ans)
                     } else {
                         "IMPOSSIBLE".to_string()
@@ -72,7 +73,7 @@ fn dist( a: &Point, b: &Point) -> i64
     (a[0]-b[0]).abs() + (a[1]-b[1]).abs() + (a[2]-b[2]).abs()
 }
 
-fn get_longest_path_for_step( dist_matrix: &Vec<Vec<Vec<i64>>>, home_dist: &Vec<i64>, steps: usize) -> i64
+fn get_longest_path_for_step( dist_matrix: &Vec<Vec<Vec<i64>>>, home_dist: &Vec<i64>, steps: usize) -> Vec<i64>
 {
     let N = dist_matrix[0].len();
 
@@ -114,9 +115,16 @@ fn get_longest_path_for_step( dist_matrix: &Vec<Vec<Vec<i64>>>, home_dist: &Vec<
 
     }
 
-    (0..N).map(
+   /* (0..N).map(
                 |t_idx| ans[t_idx].iter().max().unwrap() + 
-                home_dist[t_idx]).max().unwrap() 
+                home_dist[t_idx]).collect()*/
+
+    //return indexed by end point
+    (0..N).map(
+                |stop_idx| {
+                    (0..N).map( |start_idx|
+                    ans[start_idx][stop_idx] +
+                home_dist[start_idx]) }.max().unwrap()).collect()
 
 }
 
@@ -139,9 +147,30 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 */
 
     //create a matrix [log steps][t_idx][t2_idx]
+    let min_dist_home = teleporters.iter().fold( i64::MAX,
+    |acc, t| min(acc, dist(&home, t)));
+
+    let min_dist_dest = teleporters.iter().fold( i64::MAX,
+    |acc, t| min(acc, dist(&dest, t)));
+
+    let max_dist_home = teleporters.iter().fold( i64::MIN,
+    |acc, t| max(acc, dist(&home, t)));
+
+    let max_dist_dest = teleporters.iter().fold( i64::MIN,
+    |acc, t| max(acc, dist(&dest, t)));
+
+    let max_dist = max(max_dist_dest, max_dist_home);
+
+    ///extra
     let mut dist_matrix = Vec::new();
 
-    for steps_idx in 0..10 {
+    let mut max_step_idx = 1;
+
+    for steps_idx in 0..50 {
+        if (1i64 << steps_idx) > max_dist {
+            max_step_idx = steps_idx;
+            break;
+        }
         dist_matrix.push(vec![ vec![ -1; teleporters.len() ]; teleporters.len() ]);
 
         if steps_idx == 0 {
@@ -161,30 +190,38 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
                     }
 
                     dist_matrix[steps_idx][t1_idx][t2_idx] = best;
+
+                   /* println!("Dist matrix {} to {}, step {} = {}",
+                    t1_idx, t2_idx, steps_idx, best); */
                 }
             }
         }
+
+        /*println!("In precalculations: After step idx {} max is {}",
+        steps_idx, dist_matrix[steps_idx].iter().flatten().max().unwrap());*/
     }
 
-
-
-   // let target_distance = dist(home, dest);
-
-    let min_dist_home = teleporters.iter().fold( i64::MAX,
-    |acc, t| min(acc, dist(&home, t)));
-
-    let min_dist_dest = teleporters.iter().fold( i64::MAX,
-    |acc, t| min(acc, dist(&dest, t)));
+///extra
 
     println!("min. d home {} dest {}", min_dist_home, min_dist_dest);
 
-    //make sure home is the closest point
     let (home,dest) = if min_dist_home > min_dist_dest {
         (dest,home)
     } else { (home, dest) };
     
+        
+    for t in teleporters.iter() {
+        //Check if one teleport is enough
+        if dist(home, t) == dist(dest, t) {
+            return Some(1);
+        }
+     
+    }
+
+    
 
     let mut dist_home = Vec::new();
+    let mut dist_target = Vec::new();
          
     for t in teleporters.iter() {
         //Check if one teleport is enough
@@ -192,6 +229,11 @@ fn solve(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
             return Some(1);
         }
         dist_home.push( dist(home, t) );
+        dist_target.push( dist(dest, t) );
+    }
+
+    if teleporters.len() == 1 {
+        return None;
     }
     /*
     Let us now consider the case where there exists
@@ -235,33 +277,33 @@ Since the problem is symmetric, swap P and Q if needed to make P the closest of 
        where the length of each step is simply the distance between the two points.
     */
 
-    let min_num_steps = 2;
-    let max_num_steps = 10000;
+    let mut min_num_steps = 1;
+    let mut max_num_steps = (1 << max_step_idx) - 1;
 
     while max_num_steps > min_num_steps
     {
         let steps = (max_num_steps + min_num_steps) / 2;
 
-        //init step 1
-        let mut U = dist_home.clone();
-        let mut new_U = Vec::new();
+        let fast_umax = get_longest_path_for_step(&dist_matrix, &dist_home, steps);
+        
+       /* println!("Steps {} min {} max {} umax {:?}", steps, 
+        min_num_steps,
+        max_num_steps,
+        fast_umax);*/
 
-        for (t_idx, t) in teleporters.iter().enumerate() {
+        let all_greater = (0..teleporters.len()).all( |t_idx|
+            dist_target[t_idx] > fast_umax[t_idx] );
 
-            let mut high = None ;
-            for (t2_idx, t2) in teleporters.iter().enumerate() 
-            {
-                if t_idx == t2_idx {
-                    continue;
-                }
+        if all_greater {
+            min_num_steps = steps + 1;
+        } else {
+            max_num_steps = steps;
+        }
 
-                let maybe_high = U[t2_idx] + dist(t, t2);
-                if high.is_none() || maybe_high > high.unwrap() {
-                    high = Some(maybe_high);
-                }
-            }
+        //let u_max = get_longest_path_for_step(&dist_matrix, &dist_home, steps);
 
-            new_U.push(high.unwrap());
+
+       
 
 
             /*
@@ -286,13 +328,15 @@ t -> v in j steps + v->u in k-j steps for some v
 i = j + k - j
             */
             
-        }
+        
 
     }
 
-    None 
+    Some(1+max_num_steps as u64)
 }
 
+/// Tests large observation that we only need to calculate U
+/// And validates iterative squaring approach to calculing max U distance per step
 fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
 {
     
@@ -396,17 +440,19 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
         i, U.iter().max().unwrap());
         }
 
-        if i > 1 {
-            let pre_max1 = (0..teleporters.len()).map(
-                |t_idx| dist_matrix[0][t_idx].iter().max().unwrap() + 
-                dist(&home, &teleporters[t_idx])).max().unwrap();
-            let pre_max2 = (0..teleporters.len()).map(
-                |t_idx| dist_matrix[1][t_idx].iter().max().unwrap() + 
-                dist(&home, &teleporters[t_idx])).max().unwrap();
-
-        let current_umax = U.iter().max().unwrap();
         let fast_umax = get_longest_path_for_step(&dist_matrix, &initial, i-1);
-        assert_eq!(*current_umax, fast_umax);
+        
+        if i > 1 {
+            
+            let fast_umax_all = fast_umax.iter().max().unwrap();
+        let current_umax = U.iter().max().unwrap();
+        
+        assert_eq!(*current_umax, *fast_umax_all);
+        
+            /*println!("maxes: {} and {}\nU vs fast: {:?} ",
+            fast_umax_all,current_umax, fast_umax.iter().zip(U.iter()).collect::<Vec<_>>());
+            */
+
         }
 
        
@@ -416,9 +462,18 @@ fn solve_small_only_U(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> O
 
         for (t_idx, t) in teleporters.iter().enumerate() {
 
+            if i > 5 {
+                let current_umax = U[t_idx];
+                let fast_umax_t = fast_umax[t_idx];
+                assert_eq!(current_umax, fast_umax_t);
+            }
+
             if //dist(&dest, t) >= L[t_idx] &&
             i>1 &&
                dist(&dest, t) <= U[t_idx] {
+
+                
+
                 return Some(i as u64);
             }
        
@@ -487,91 +542,3 @@ Lu,i - dist(t, u) if dist(t, u) < Lu,i (t is inside the inner sphere), or
     None 
 }
 
-
-fn solve_small(home: &Point, dest: &Point, teleporters: &Vec<Point>) -> Option<u64>
-{
-    let target_distance = dist(home, dest);
-    //let mut L: Vec<Vec<i64>> = Vec::new();
-    //let mut U: Vec<Vec<i64>> = Vec::new();
-
-    let mut initial = Vec::new();
-    for t in teleporters.iter() {
-        initial.push( dist(home, t) );
-    }
-    let mut L = initial.clone();
-    let mut U = initial.clone();
-
-    /*
-    By definition, Lt,i+1 and Ut,i+1 are the distances from t to its closest and farthest points in Ri, respectively.
-     The farthest point in Ri from t is at a distance which is the maximum over all teleporters u of dist(t, u) + Uu,i 
-     (this is the distance to the point on the surface of the sphere centered at u with radius Uu,
-     i that is the opposite direction from t).
-    */
-    for i in 1..10000
-    {
-        let mut new_L = Vec::new();
-        let mut new_U = Vec::new();
-
-        for (t_idx, t) in teleporters.iter().enumerate() {
-
-            if dist(&dest, t) >= L[t_idx] &&
-               dist(&dest, t) <= U[t_idx] {
-                return Some(i);
-            }
-       
-            if teleporters.len()==1 {
-                return None;
-            }
-
-            let mut low = None;
-            let mut high = None;    
-            for (u_idx, u) in teleporters.iter().enumerate()
-            {
-                if u_idx == t_idx {
-                    continue;
-                }
-                //Greatest distance from teleporter u + distance of t to u; 
-                //this is the furthest one could teleport using teleporter t 
-                let maybe_high = U[u_idx] + dist(u, t);
-                if high.is_none() || maybe_high > high.unwrap() {
-                    high = Some(maybe_high);
-                    
-                }
-
-                /*
-                . For each teleporter u we need to consider:
-
-dist(t, u) - Uu,i if dist(t, u) > Uu,i (t is outside the outer sphere centered at u),
-Lu,i - dist(t, u) if dist(t, u) < Lu,i (t is inside the inner sphere), or
-0, in all other cases (t is in between, that is, it is itself a reachable point).
-*/
-
-                let dist_tu = dist(t,u);
-                let maybe_low = if dist_tu > U[u_idx] {
-                    //lowest distance is outside the outer sphere
-                    dist_tu - U[u_idx]
-                } else if dist_tu < L[u_idx] {
-                    //teleport to lower sphere
-                    L[u_idx] - dist_tu 
-                } else {
-                    0 
-                };
-
-                if low.is_none() || maybe_low < low.unwrap() {
-                    low = Some(maybe_low);
-                }
-            }
-
-
-            new_L.push(low.unwrap());
-            new_U.push(high.unwrap());
-        }
-
-        mem::swap(&mut L, &mut new_L);
-        mem::swap(&mut U, &mut new_U);
-
-
-    }
-
-    None 
-}
