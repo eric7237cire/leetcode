@@ -1,6 +1,7 @@
 use crate::algo::vectors::*;
 use crate::util::codejam::run_cases;
 use crate::util::grid::Grid;
+use bimap::BiMap;
 use num_bigint::BigInt;
 use num_traits::*;
 use rand::distributions::{Distribution, Uniform};
@@ -10,7 +11,6 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
 use std::ops::Sub;
 use std::time::Instant;
-use bimap::BiMap;
 
 /*
 Cross product / dot product
@@ -28,10 +28,7 @@ pub fn solve_all_cases()
     */
 
     run_cases(
-        &[
-            "E-small-practice",
-            "E-large-practice"
-        ],
+        &["E-small-practice", "E-large-practice"],
         "y2017round4",
         |reader, buffer| {
             let P = reader.read_int();
@@ -100,8 +97,8 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
         debug!("Before  Stack #{}: {:?}", idx, stack);
         for (card_idx, &(value, suit)) in stack.iter().enumerate() {
             let suitCards = &suitToCards[&suit];
-            if card_idx == stack.len()-1 && value == suitCards[suitCards.len() - 1] {
-                lastAceSuitToStack.insert( suit, idx);
+            if card_idx == stack.len() - 1 && value == suitCards[suitCards.len() - 1] {
+                lastAceSuitToStack.insert(suit, idx);
             }
             if suitCards.len() > 1 && value == suitCards[suitCards.len() - 2] {
                 kingSuitToStack.insert(suit, idx);
@@ -125,9 +122,7 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
     // Let us construct a graph in which vertices are the suits for which the ace begins the game at the bottom of some stack
     let vertices: BiMap<usize, u16> = lastAceSuitToStack
         .iter()
-        .map(|(suit, stack_idx)| {
-            (*stack_idx, *suit)
-        })
+        .map(|(suit, stack_idx)| (*stack_idx, *suit))
         .collect();
 
     debug!("Vertices {:?}", vertices);
@@ -163,10 +158,10 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
 
     for (stack_idx_1, ace_suit_1) in vertices.iter() {
         /*
-        We add an edge from vertex s1 to a different vertex s2 
+        We add an edge from vertex s1 to a different vertex s2
         if the king of s2 is in the stack that has the ace of s1 at the bottom.
         */
-        
+
         if !kingSuitToStack.contains_right(stack_idx_1) {
             continue;
         }
@@ -182,9 +177,10 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
             continue;
         }
 
-        edges.entry(*ace_suit_1).or_insert(Vec::new()).push(*kingSuit);
-            
-        
+        edges
+            .entry(*ace_suit_1)
+            .or_insert(Vec::new())
+            .push(*kingSuit);
     }
 
     println!("Starting DFS {}", sources.len());
@@ -198,7 +194,8 @@ fn solve(stacks: &Vec<VecDeque<(u16, u16)>>) -> bool
     false
 }
 
-fn BFS ( edges: &HashMap<u16, Vec<u16>>,
+fn BFS(
+    edges: &HashMap<u16, Vec<u16>>,
     visited: &mut HashSet<u16>,
     v: u16,
     targets: &HashSet<u16>,
@@ -210,8 +207,7 @@ fn BFS ( edges: &HashMap<u16, Vec<u16>>,
     queue.push_back(v);
     visited.insert(v);
 
-    while let Some(w) = queue.pop_front()
-    {
+    while let Some(w) = queue.pop_front() {
         if targets.contains(&w) {
             return true;
         }
@@ -219,12 +215,11 @@ fn BFS ( edges: &HashMap<u16, Vec<u16>>,
             continue;
         }
         for u in edges[&w].iter() {
-            if visited.contains(u)  {
+            if visited.contains(u) {
                 continue;
             }
             visited.insert(*u);
             queue.push_back(*u);
-        
         }
     }
 

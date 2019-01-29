@@ -1,13 +1,17 @@
-
 #[cfg(test)]
-mod sieve_tests {
+mod sieve_tests
+{
     use crate::algo::prime::sieve::*;
-    
+
     //use sieve::SieveOfAtkin;
 
     #[test]
-    fn atkin_test() {
-        let primes_to_50 = [2u64, 3u64, 5u64, 7u64, 11u64, 13u64, 17u64, 19u64, 23u64, 29u64, 31u64, 37u64, 41u64, 43u64, 47u64];
+    fn atkin_test()
+    {
+        let primes_to_50 = [
+            2u64, 3u64, 5u64, 7u64, 11u64, 13u64, 17u64, 19u64, 23u64, 29u64, 31u64, 37u64, 41u64,
+            43u64, 47u64,
+        ];
         let mut sieve = SieveOfAtkin::new(50);
 
         sieve.run();
@@ -15,19 +19,21 @@ mod sieve_tests {
     }
 
     #[test]
-    fn atkin_output() {
+    fn atkin_output()
+    {
         let mut sieve = SieveOfAtkin::new(10000);
         sieve.run();
         let results = sieve.get_results_vec();
         for prime in results.iter() {
-           assert!(is_n_prime(*prime), "Failed with {}", prime);
+            assert!(is_n_prime(*prime), "Failed with {}", prime);
         }
     }
     /// A slower brute force method to check if a value assumed prime actually is.
-    fn is_n_prime(n: u64) -> bool {
+    fn is_n_prime(n: u64) -> bool
+    {
         let mut prime: bool = true;
         if n > 2 {
-            for i in 2..n/2 {
+            for i in 2..n / 2 {
                 if n % i == 0 {
                     prime = false;
                     break;

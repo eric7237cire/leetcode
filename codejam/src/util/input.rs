@@ -135,11 +135,12 @@ impl<'a> InputReader<'a>
         self.i.read_line(&mut self.s).unwrap();
         //debug!("Read line {}", self.s);
         let mut sw = self.s.split_whitespace();
-        
-        [sw.next().unwrap().parse::<T>().unwrap(),
-        sw.next().unwrap().parse::<T>().unwrap(),
-        sw.next().unwrap().parse::<T>().unwrap()]
-    
+
+        [
+            sw.next().unwrap().parse::<T>().unwrap(),
+            sw.next().unwrap().parse::<T>().unwrap(),
+            sw.next().unwrap().parse::<T>().unwrap(),
+        ]
     }
 
     pub fn read_chars(&mut self, amt: usize) -> Vec<char>

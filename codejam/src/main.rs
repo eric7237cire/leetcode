@@ -17,10 +17,10 @@ mod algo;
 mod y2017round1A;
 mod y2017round1B;
 mod y2017round1C;*/
+mod y2016qual;
 mod y2017round2;
 mod y2017round3;
 mod y2017round4;
-mod y2016qual;
 
 #[macro_use]
 extern crate log;

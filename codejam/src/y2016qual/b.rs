@@ -18,9 +18,7 @@ Greedy alogrithm
 pub fn solve_all_cases()
 {
     run_cases(
-        &["B-small-practice", 
-        "B-large-practice"
-        ],
+        &["B-small-practice", "B-large-practice"],
         "y2016qual",
         |reader, buffer| {
             let t = reader.read_int();
@@ -52,6 +50,6 @@ fn solve(pancakes: BitVec) -> usize
 
         flips += 1;
     }
-    
+
     flips
 }

@@ -1,27 +1,32 @@
 //https://raw.githubusercontent.com/JRegimbal/sieve-of-atkin/
 use super::test_integer::TestInteger;
-use std::sync::{Arc, Mutex};
+use std::collections::{HashSet, VecDeque};
 use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::thread;
-use std::collections::{VecDeque, HashSet};
 
 /// An iterator that returns the nth integer squared.
-struct Squares {
+struct Squares
+{
     count: u64,
     max: u64,
 }
 
-impl Squares {
-    pub fn new(max: u64) -> Squares {
+impl Squares
+{
+    pub fn new(max: u64) -> Squares
+    {
         Squares { count: 0, max: max }
     }
 }
 
-impl Iterator for Squares {
+impl Iterator for Squares
+{
     type Item = u64;
-    fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self::Item>
+    {
         self.count += 1;
-        let square = self.count*self.count;
+        let square = self.count * self.count;
         if square > self.max {
             None
         } else {
@@ -31,14 +36,16 @@ impl Iterator for Squares {
 }
 
 /// A struct containing the range of integers to test for primeness and primes in that set.
-pub struct SieveOfAtkin {
+pub struct SieveOfAtkin
+{
     results: Vec<u64>,
     tests: Vec<TestInteger>,
 }
 /// The possible cases for deciding what happens to an integer in the sieve.
 /// Uses their value (mod 60).
-enum AtkinCases {
-    /// For n = 1, 13, 17, 29, 37, 41, 49, or 53 (mod 60). 
+enum AtkinCases
+{
+    /// For n = 1, 13, 17, 29, 37, 41, 49, or 53 (mod 60).
     C1,
     /// For n = 7, 19, 31, or 43 (mod 60).
     C2,
@@ -48,34 +55,46 @@ enum AtkinCases {
     C4,
 }
 
-impl SieveOfAtkin {
+impl SieveOfAtkin
+{
     /// Creates a new `SieveOfAtkin` that can find primes up to `limit`.
-    pub fn new(limit: u64) -> SieveOfAtkin {
-        let res = vec![2,3,5];
+    pub fn new(limit: u64) -> SieveOfAtkin
+    {
+        let res = vec![2, 3, 5];
         let mut tests: Vec<TestInteger> = Vec::new();
         if limit < 2 {
-            panic!("The limit for the sieve must be above 2. {} was set as limit.", limit);
+            panic!(
+                "The limit for the sieve must be above 2. {} was set as limit.",
+                limit
+            );
         } else {
-
             for i in 2..limit {
-                tests.push(TestInteger{ value: i, is_prime: false });
+                tests.push(TestInteger {
+                    value: i,
+                    is_prime: false,
+                });
             }
         }
-        SieveOfAtkin { results: res, tests: tests }
+        SieveOfAtkin {
+            results: res,
+            tests: tests,
+        }
     }
 
     // returns a copy so we don't need to worry about our vector being mutated
     /// Returns a copy of the vector containing sieved primes.
-    pub fn get_results_set(&self) -> HashSet<u64> {
+    pub fn get_results_set(&self) -> HashSet<u64>
+    {
         let mut set = HashSet::new();
         set.extend(self.results.iter());
-        set 
+        set
     }
 
-    pub fn get_results_vec(&self) -> Vec<u64> {
+    pub fn get_results_vec(&self) -> Vec<u64>
+    {
         self.results.clone()
     }
-    
+
     /// Sets possible primes for integers in the sieve.
     ///
     /// Will flip `TestInteger::prime` for each solution to some equation defined by case.
@@ -84,28 +103,32 @@ impl SieveOfAtkin {
     /// `AtkinCases::C3`: 3x^2 - y^2 = n for x > y.
     ///
     /// For `AtkinCases::C4` nothing is done and `TestInteger::prime` is not flipped.
-    fn process_case_static(n : u64, index : usize, case: AtkinCases, tests: &mut Vec<TestInteger>) {
+    fn process_case_static(n: u64, index: usize, case: AtkinCases, tests: &mut Vec<TestInteger>)
+    {
         //Case 1: flip for each solution to 4x^2 + y^2 = n
         //Case 2: flip for each solution to 3x^2 + y^2 = n
         //Case 3: flip for each solution to 3x^2 - y^2 = n where x > y
         //Case 4: do nothing
 
-        let (co_x,co_y): (u64, u64) = match case {
-            AtkinCases::C1  => (4,1),
-            AtkinCases::C2  => (3,1),
-            AtkinCases::C3  => (3,1),
-            _               => { return; },
+        let (co_x, co_y): (u64, u64) = match case {
+            AtkinCases::C1 => (4, 1),
+            AtkinCases::C2 => (3, 1),
+            AtkinCases::C3 => (3, 1),
+            _ => {
+                return;
+            }
         };
 
         let expression: Box<Fn(u64, u64) -> u64> = match case {
-            AtkinCases::C3  => Box::new( |x, y| { if x > y { co_x*x - co_y*y } else { 0 } } ),
-            _               => Box::new( |x, y| { co_x*x + co_y*y } ),
+            AtkinCases::C3 => Box::new(|x, y| if x > y { co_x * x - co_y * y } else { 0 }),
+            _ => Box::new(|x, y| co_x * x + co_y * y),
         };
 
         for i in Squares::new(n) {
             for j in Squares::new(n) {
                 if expression(i, j) == n {
-                    tests.get_mut(index)
+                    tests
+                        .get_mut(index)
                         .expect("Index passed in process is invalid. This shouldn't happen.")
                         .flip();
                 }
@@ -114,9 +137,10 @@ impl SieveOfAtkin {
     }
 
     /// Function which finds primes in the sieve using multiple threads.
-    pub fn run(&mut self) {
+    pub fn run(&mut self)
+    {
         let mut deque: VecDeque<usize> = VecDeque::new();
-        for i in 0..self.tests.len()-1 {
+        for i in 0..self.tests.len() - 1 {
             deque.push_back(i);
         }
         let integers = Arc::new(Mutex::new(deque));
@@ -124,7 +148,8 @@ impl SieveOfAtkin {
         let mut tests = vec![];
         let (tx, rx) = mpsc::channel();
         // process test integers for different cases
-        for _ in 0..10 { //spawns 10 threads
+        for _ in 0..10 {
+            //spawns 10 threads
             let integers = integers.clone();
             let mut test = self.tests.clone();
             let t = tx.clone();
@@ -135,14 +160,15 @@ impl SieveOfAtkin {
                         break;
                     }
                     let integer = integer.unwrap();
-                    let val = test.get(integer)
+                    let val = test
+                        .get(integer)
                         .expect("Index passed is invalid. This shouldn't happen.")
                         .clone();
                     let case: AtkinCases = match val.value() % 60 {
-                        1  | 13 | 17 | 29 | 37 | 41 | 49 | 53   => AtkinCases::C1,
-                        7  | 19 | 31 | 43                       => AtkinCases::C2,
-                        11 | 23 | 47 | 59                       => AtkinCases::C3,
-                        _                                       => AtkinCases::C4,
+                        1 | 13 | 17 | 29 | 37 | 41 | 49 | 53 => AtkinCases::C1,
+                        7 | 19 | 31 | 43 => AtkinCases::C2,
+                        11 | 23 | 47 | 59 => AtkinCases::C3,
+                        _ => AtkinCases::C4,
                     };
                     SieveOfAtkin::process_case_static(val.value(), integer, case, &mut test);
                 }
@@ -150,28 +176,33 @@ impl SieveOfAtkin {
             });
             handles.push(handle);
         }
-        
+
         for handle in handles {
             handle.join().unwrap();
         }
 
         for _ in 0..9 {
             match rx.recv() {
-                Ok(x)   => tests.push(x),
-                _       => (),
+                Ok(x) => tests.push(x),
+                _ => (),
             }
         }
 
         for i in tests {
-            for j in 0..self.tests.len()-1 {
+            for j in 0..self.tests.len() - 1 {
                 let current = self.tests.get(j).unwrap().is_prime();
-                self.tests.get_mut(j).unwrap().set_prime(current ^ i.get(j).unwrap().is_prime());
+                self.tests
+                    .get_mut(j)
+                    .unwrap()
+                    .set_prime(current ^ i.get(j).unwrap().is_prime());
             }
         }
 
         // start sieving
         while !self.tests.is_empty() {
-            let first = self.tests.first()
+            let first = self
+                .tests
+                .first()
                 .expect("Attempted to get item from tests vector while it was empty.")
                 .clone();
             if first.is_prime() {
@@ -179,20 +210,27 @@ impl SieveOfAtkin {
                 let square = first.value() * first.value();
                 let naturals = 1..;
                 for i in naturals {
-                    let n_square = i*square;
-                    if n_square > self.tests.last()
-                        .expect("Attempted to get item from tests vector while it was empty.")
-                        .value() {
+                    let n_square = i * square;
+                    if n_square
+                        > self
+                            .tests
+                            .last()
+                            .expect("Attempted to get item from tests vector while it was empty.")
+                            .value()
+                    {
                         break;
                     }
 
-                    match self.tests.binary_search(&TestInteger{ value: n_square, is_prime: true }) {
-                        Ok(index)   => {
+                    match self.tests.binary_search(&TestInteger {
+                        value: n_square,
+                        is_prime: true,
+                    }) {
+                        Ok(index) => {
                             self.tests.get_mut(index)
                                     .expect("Attempted to get known index from tests vector. This shouldn't happen.")
                                     .set_prime(false);
-                        },
-                        Err(_)      => (),
+                        }
+                        Err(_) => (),
                     }
                 }
             }
@@ -200,4 +238,3 @@ impl SieveOfAtkin {
         }
     }
 }
-
